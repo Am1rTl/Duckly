@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Hello</title>
+    <style>
+      body {
+        background: url("{{url_for('static', filename='fone.png')}}");
+        background-size: 100%;
+        background-color: rgba(255, 255, 255, 0.7);
+
+      }
+
+      .top_menu {
+        height: 100px;
+        width: 30%;
+        font-size: 200%;
+        background-color: #CBCFEF;
+        font-family: strong;
+      }
+      .about {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        height: 50px;
+        font-size: 200%;
+        background-color: #CBCFEF;
+        font-family: strong;
+        margin-right: 100%;
+        left: 0;
+      }
+      .profile {
+        border-radius: 50%;
+        height: 100px;
+        width: 100px;
+        text-align: center;
+        margin-left: 2.5%;
+        font-size: 200%;
+      }
+    </style>
+  </head>
+  <body>
+    <button id="words" class="top_menu" style="font-family: sans-serif;">
+      Слова
+    </button>
+    <button id="tests" class="top_menu" style="font-family: sans-serif;">
+      Тесты
+    </button>
+    <button id="games" class="top_menu" style="font-family: sans-serif;">
+      Игры
+    </button>
+    <button id="profile" class="profile" style="font-family: sans-serif;">
+      {{ letters }}
+    </button>
+
+    <h1 style="text-align: center; margin-top: 17.5%; background-color: #CBCFEF; width: 50%; margin-left: 25%; font-size: 250%; padding-top: 1%; padding-bottom: 1%">Hello, {{username}}!</h1>
+    <button id="about" class="about" style="font-family: sans-serif;">О нас</button>
+
+  </body>
+  <script type="text/javascript">
+    document.getElementById("words").onclick = function () {
+        location.href = window.location.origin+'/words';
+    };
+    document.getElementById("tests").onclick = function () {
+        location.href = window.location.origin+'/tests';
+    };
+    document.getElementById("games").onclick = function () {
+        location.href = window.location.origin+'/games';
+    };
+    document.getElementById("about").onclick = function () {
+        location.href = window.location.origin+'/about';
+    };
+    document.getElementById("profile").onclick = function () {
+        location.href = window.location.origin+'/profile';
+    };
+</script>
+</html>

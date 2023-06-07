@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Add words</title>
+    <style type="text/css">
+      .back {
+        border-radius: 10%;
+        height: 100px;
+        width: 8%;
+        text-align: center;
+        font-size: 200%;
+      }
+      .top_menu {
+        height: 100px;
+        width: 30%;
+        font-size: 200%;
+        background-color: #CBCFEF;
+        position: absolute;
+      }
+    </style>
+  </head>
+  <body>
+    <button id="back" class="back">
+      Back
+    </button>
+    <button id="words" class="top_menu" style="background-color: #7982DA; right: 61.5%;">
+      Слова
+    </button>
+    <button id="tests" class="top_menu" style="right: 31%;">
+      Тесты
+    </button>
+    <button id="games" class="top_menu" style="right: 0.5%;">
+      Игры
+    </button>
+    <h1></h1>
+    <form class="add_word" method="POST" action="">
+      <label for="classSelect">Class:</label>
+      <select id="classSelect" name="class">
+        <option value="1">Class 1</option>
+        <option value="2">Class 2</option>
+        <option value="3">Class 3</option>
+        <option value="4">Class 4</option>
+        <option value="5">Class 5</option>
+        <option value="6">Class 6</option>
+        <option value="7">Class 7</option>
+        <option value="8">Class 8</option>
+        <option value="9">Class 9</option>
+        <option value="10">Class 10</option>
+        <option value="11">Class 11</option>
+      </select>
+      <br><br>
+      <label for="unitSelect">Unit:</label>
+      <select id="unitSelect" name="unit">
+        <option value="1">Unit 1</option>
+        <option value="2">Unit 2</option>
+        <option value="3">Unit 3</option>
+        <option value="4">Unit 4</option>
+        <option value="5">Unit 5</option>
+        <option value="6">Unit 6</option>
+        <option value="7">Unit 7</option>
+        <option value="8">Unit 8</option>
+        <option value="9">Unit 9</option>
+        <option value="10">Unit 10</option>
+      </select>
+      <br><br>
+      <div id="wordFields">
+        <label for="textInput1">Слово:</label>
+        <input type="text" id="word" name="word"><br><br>
+        <label for="textInput2">Перевод:</label>
+        <input type="text" id="perevod" name="perevod"><br><br>
+      </div>
+      <button type="button" onclick="addWordField()">Add Word</button>
+      <br><br>
+      <input type="submit" value="Submit">
+    </form>
+  </body>
+  <script type="text/javascript">
+    document.getElementById("words").onclick = function () {
+      location.href = window.location.origin + '/words';
+    };
+    document.getElementById("tests").onclick = function () {
+      location.href = window.location.origin + '/tests';
+    };
+    document.getElementById("games").onclick = function () {
+      location.href = window.location.origin + '/games';
+    };
+    document.getElementById("back").onclick = function () {
+      location.href = window.location.origin + '/words';
+    };
+
+    function addWordField() {
+      var wordFieldsDiv = document.getElementById("wordFields");
+      var newWordField = document.createElement("div");
+      var counter = document.querySelectorAll("div.word-field").length + 1; // Get the number of existing word fields
+      newWordField.className = "word-field"; // Assign a class name for styling purposes
+      newWordField.innerHTML =
+        '<label for="word' + counter + '">Слово:</label>' +
+        '<input type="text" id="word' + counter + '" name="word' + counter + '"><br><br>' +
+        '<label for="perevod' + counter + '">Перевод:</label>' +
+        '<input type="text" id="perevod' + counter + '" name="perevod' + counter + '"><br><br>';
+      wordFieldsDiv.appendChild(newWordField);
+    }
+  </script>
+</html>

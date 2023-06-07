@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Registration Page</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center; /* Horizontally center align */
+      align-items: center; /* Vertically center align */
+      height: 90vh; /* Make the body take up the full height of the viewport */
+      font-size: 150%;
+    } 
+    .form-container {
+      margin: 0 auto;
+      width: 50%;
+    }
+
+    .form-container input[type=text], 
+    .form-container input[type=password] {
+      width: 100%;
+      padding: 12px 20px;
+      margin: 8px 0;
+      display: inline-block;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    .form-container input[type=submit] {
+      width: 100%;
+      background-color: #4CAF50;
+      color: white;
+      padding: 14px 20px;
+      margin: 8px 0;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .form-container input[type=submit]:hover {
+      background-color: #45a049;
+    }
+
+    label {
+      font-family: sans-serif;
+    }
+    button {
+      font-family: sans-serif;
+    }
+    h2 {
+      font-family: sans-serif;
+    }
+
+  </style>
+</head>
+<body>
+  <div>
+    <h2 style="text-align: center;">Registration</h2>
+    <button id="login" class="float-left submit-button" style="width: 49%; height: 35px; font-size: 100%;" >Login</button>/<button id="registration" class="float-left submit-button" style="width: 49%; height: 35px; font-size: 100%;">Registration</button>
+    <h2></h2>
+    {% if error %}
+      <p style="color:red">{{ error }}</p>
+    {% endif %}
+    <form action="/registration" method="post">
+      <label for="fio">Введите ФИО:</label><br>
+      <input type="text" id="fio" name="fio" size="50%" style="height: 25px;"><br>
+      <label for="username">Username:</label><br>
+      <input type="text" id="username" minlength="3" name="username" size="50%" style="height: 25px;"><br>
+      <label for="password">Password:</label><br>
+      <input type="password" id="password" name="password" minlength="5" size="50%" style="height: 25px;"><br><br>
+      <input type="submit" value="Зарегистрироваться"  style="width: 100%; height: 35px; font-size: 100%;"></input>
+    </form> 
+  </div>
+</body>
+
+<script type="text/javascript">
+    document.getElementById("login").onclick = function () {
+        location.href = window.location.origin+'/login';
+    };
+</script>
+<script type="text/javascript">
+    document.getElementById("registration").onclick = function () {
+        location.href = window.location.origin+'/registration';
+    };
+</script>
+
+
+
+</html>
