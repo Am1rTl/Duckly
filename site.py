@@ -19,6 +19,41 @@ def index():
 def greet(name):
     return f"Hello, {name}!"
 
+@app.route("/profile")
+def profile():
+    reqinnone = 0
+    con = sqlite3.connect('app.db')
+    cur = con.cursor()
+    res = cur.execute('''SELECT nick FROM users;''')
+    res = res.fetchall()
+    for i in res:
+        query = f'''SELECT password FROM users WHERE nick='{i[0]}';'''
+        passwd = cur.execute(query)
+        passwd = passwd.fetchall()
+        passwd = passwd[0]
+        secret_key = bs64.b64encode(str.encode(i[0]+passwd[0][:2])).decode("utf-8") 
+        ##print('"'+str(request.cookies.get(i[0]))+'"','"'+secret_key+'"')
+        if request.cookies.get(i[0]) == secret_key:
+
+            query = f'''SELECT fio FROM users WHERE nick='{i[0]}';'''
+            fio = cur.execute(query)
+            fio = fio.fetchall()
+            fio = fio[0][0]
+            print(fio)
+
+            return render_template('profile.html', nick=i[0], fio=fio)
+        elif request.cookies.get(i[0]) != None:
+            res = make_response(redirect('hello', 301))
+            res.set_cookie(i[0], request.cookies.get(i[0]), max_age=0)
+            return res
+        elif request.cookies.get(i[0]) == None:
+            reqinnone == None
+    if reqinnone == None:
+        return redirect('/login', 301)
+    return render_template("profile.html")
+
+
+
 @app.route("/add_words", methods=['POST', 'GET'])
 def add_words():
     if request.method == "POST":

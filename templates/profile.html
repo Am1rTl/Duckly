@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Мой профиль</title>
+    <style type="text/css">
+      .back {
+        border-radius: 10%;
+        height: 100px;
+        width: 8%;
+        text-align: center;
+        font-size: 200%;
+      }
+    </style>
+  </head>
+  <body>
+    <button id="back" class="back">
+      Back
+    </button>
+    <h1>Профиль пользователя</h1>
+    <img src="path/to/profile/image.jpg" alt="Фото пользователя">
+    <ul>
+      <li><b>ФИО: </b>{{ fio }}</li>
+      <li><b>Nick: </b>{{ nick }}</li>
+    </ul>
+  
+
+  </body>
+<script type="text/javascript">
+  document.getElementById("back").onclick = function () {
+    location.href = window.location.origin + '/hello';
+  };
+</script>
+</html>
