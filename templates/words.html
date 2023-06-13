@@ -6,8 +6,13 @@
     ul ul {
       display: none;
     }
-    ul li:hover > ul {
+
+    ul.collapsible li:hover > ul {
       display: block;
+    }
+
+    ul.collapsible li.collapsed > ul {
+      display: none;
     }
     .back {
       border-radius: 10%;

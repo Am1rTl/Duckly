@@ -52,7 +52,46 @@ def profile():
         return redirect('/login', 301)
     return render_template("profile.html")
 
+@app.route("/edit_profile")
+def edit_profile():
+    reqinnone = 0
+    con = sqlite3.connect('app.db')
+    cur = con.cursor()
+    res = cur.execute('''SELECT nick FROM users;''')
+    res = res.fetchall()
+    for i in res:
+        query = f'''SELECT password FROM users WHERE nick='{i[0]}';'''
+        passwd = cur.execute(query)
+        passwd = passwd.fetchall()
+        passwd = passwd[0]
+        secret_key = bs64.b64encode(str.encode(i[0]+passwd[0][:2])).decode("utf-8") 
+        if request.cookies.get(i[0]) == secret_key:
+            query = f'''SELECT fio FROM users WHERE nick='{i[0]}';'''
+            fio = cur.execute(query)
+            fio = fio.fetchall()
+            fio = fio[0][0]
+            return render_template('edit_profile.html', nick=i[0], fio=fio)
+        elif request.cookies.get(i[0]) != None:
+            res = make_response(redirect('hello', 301))
+            res.set_cookie(i[0], request.cookies.get(i[0]), max_age=0)
+            return res
+        elif request.cookies.get(i[0]) == None:
+            reqinnone == None
+    if reqinnone == None:
+        return redirect('/login', 301)
+    return render_template("edit_profile.html")
 
+@app.route("/save_profile", methods=["POST"])
+def save_profile():
+    fio = request.form.get("fio")
+    nick = request.form.get("nick")
+
+    print(fio, nick)
+    # Здесь можно выполнить необходимые действия для сохранения изменений профиля
+    # Например, обновить данные в базе данных
+
+    # После сохранения изменений, можно перенаправить пользователя на страницу профиля
+    return redirect("/profile")
 
 @app.route("/add_words", methods=['POST', 'GET'])
 def add_words():

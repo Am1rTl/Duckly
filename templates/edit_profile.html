@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Мой профиль</title>
+    <title>Редактирование профиля</title>
     <style type="text/css">
       .back {
         border-radius: 10%;
@@ -32,21 +32,20 @@
     <button id="games" class="top_menu" style="right: 0.5%;">
       Игры
     </button>
-    <h1>Профиль пользователя</h1>
-    <img src="path/to/profile/image.jpg" alt="Фото пользователя">
-    <ul>
-      <li><b>ФИО: </b>{{ fio }}</li>
-      <li><b>Nick: </b>{{ nick }}</li>
-    </ul>
-
-    <button id="editProfile" class="top_menu" style="background-color: #7982DA; right: 0.5%;">
-      Редактировать профиль
-    </button>
-
+    <h1>Редактирование профиля</h1>
+    <form action="/save_profile" method="POST">
+      <label for="fio">ФИО:</label>
+      <input type="text" id="fio" name="fio" value="{{ fio }}" required>
+      <br>
+      <label for="nick">Nick:</label>
+      <input type="text" id="nick" name="nick" value="{{ nick }}" required>
+      <br>
+      <input type="submit" value="Сохранить">
+    </form>
   </body>
 <script type="text/javascript">
   document.getElementById("back").onclick = function () {
-    location.href = window.location.origin + '/hello';
+    location.href = window.location.origin + '/profile';
   };
   document.getElementById("words").onclick = function () {
     location.href = window.location.origin+'/words';
