@@ -39,8 +39,11 @@
       <li><b>Nick: </b>{{ nick }}</li>
     </ul>
 
-    <button id="editProfile" class="top_menu" style="background-color: #7982DA; right: 0.5%;">
+    <button id="editProfile" class="" style="background-color: #7982DA; right: 0.5%;">
       Редактировать профиль
+    </button>
+    <button id="logout" class="" style="background-color: #7982DA; right: 0.5%;">
+      Выйти из профиля
     </button>
 
   </body>
@@ -59,6 +62,9 @@
   };
   document.getElementById("editProfile").onclick = function () {
     location.href = window.location.origin + '/edit_profile';
+  };
+  document.getElementById("logout").onclick = function () {
+    location.href = window.location.origin + '/logout';
   };
 </script>
 </html>

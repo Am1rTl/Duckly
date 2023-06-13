@@ -86,9 +86,12 @@ def save_profile():
     fio = request.form.get("fio")
     nick = request.form.get("nick")
 
-    print(fio, nick)
-    # Здесь можно выполнить необходимые действия для сохранения изменений профиля
-    # Например, обновить данные в базе данных
+    con = sqlite3.connect('app.db')
+    cur = con.cursor()
+    # Обновляем данные в базе данных
+    cur.execute(f'''UPDATE users SET fio='{fio}' WHERE nick='{nick}';''')
+    con.commit()
+    con.close()
 
     # После сохранения изменений, можно перенаправить пользователя на страницу профиля
     return redirect("/profile")
@@ -194,6 +197,24 @@ def login():
     # the code below is executed if the request method
     # was GET or the credentials were invalid
     return render_template('login.html', error=error)
+
+@app.route("/logout")
+def logout():
+    username = None
+    con = sqlite3.connect('app.db')
+    cur = con.cursor()
+    res = cur.execute('''SELECT nick FROM users;''')
+    res = res.fetchall()
+    for i in res:
+        if request.cookies.get(i[0]):
+            username = i[0]
+            break
+    if username:
+        res = make_response(redirect('/login', 301))
+        res.set_cookie(username, '', expires=0)
+        return res
+    else:
+        return redirect('/login', 301)
 
 
 @app.route('/registration', methods=['POST', 'GET'])
