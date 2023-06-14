@@ -101,8 +101,8 @@ def add_words():
 
     if request.method == "POST":
         print("asdasd")
-        unit = request.form['classSelect']
-        classs = request.form['unitSelect']
+        classs = request.form['classSelect']
+        unit = request.form['unitSelect']
         words = []
         perevods = []
 
@@ -123,12 +123,17 @@ def add_words():
             cur = con.cursor()
             res = cur.execute('''SELECT MAX(id) FROM words;''')
             max_id = res.fetchone()
-            max_id = max_id[0] + 1
+            print(max_id)
+            if max_id == (None,):
+                max_id = 0
+            else:
+                max_id = max_id[0] + 1
 
             query = f'''INSERT INTO words (word, perevod, class, unit, id) VALUES ('{word}', '{perevod}', '{classs}', '{unit}', '{max_id}');'''
             cur.execute(query)
             con.commit()
             con.close()
+        return redirect('/words', 301)
 
     return render_template("add_words.html")
 
