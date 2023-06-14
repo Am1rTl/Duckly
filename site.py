@@ -98,11 +98,15 @@ def save_profile():
 
 @app.route("/add_words", methods=['POST', 'GET'])
 def add_words():
+
     if request.method == "POST":
-        unit = request.form['unit']
-        classs = request.form['class']
+        print("asdasd")
+        unit = request.form['classSelect']
+        classs = request.form['unitSelect']
         words = []
         perevods = []
+
+        print(unit, classs)
 
         # Loop through all form fields and extract the word and perevod values
         for key, value in request.form.items():
@@ -313,5 +317,5 @@ def about():
     return render_template("about.html")
 
 if __name__ == "__main__":
-    app.run("0.0.0.0")
-#    app.run()
+#    app.run("0.0.0.0")
+    app.run()
