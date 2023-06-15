@@ -49,6 +49,7 @@
     }
     td {
       height: 25px;
+      text-align: center;
 
     }
 
@@ -79,12 +80,14 @@
       <th>Тип</th>
       <th>Ссылка</th>
     </tr>
-    <tr>
-      <td>Ячeйка 3</td>
-      <td>Ячейка 4</td>
-      <td>Ячeйка 3</td>
-      <td>Ячейка 4</td>
-    </tr>
+    {% for item in tests %}
+      <tr>
+        <td>{{ item[0] }}</td>
+        <td>{{ item[1] }}</td>
+        <td>{{ item[2] }}</td>
+        <td><a style="color: black;" href="/tests/{{ item[3] }}">{{ item[3] }}</a><button onclick="copy()">Скопировать</button></td>
+      </tr>
+    {% endfor %}
   </table>
   <h1></h1>
   <h1>Scoreboard</h1>
@@ -107,5 +110,8 @@
   document.getElementById("add").onclick = function () {
     location.href = window.location.origin+'/add_tests';
   };
+
+
+  
 </script>
 </html>

@@ -90,15 +90,12 @@ def tests():
         print('"'+str(request.cookies.get(i[0]))+'"','"'+secret_key+'"')
         if request.cookies.get(i[0]) == secret_key:
 
-            query = f'''SELECT fio FROM users WHERE nick='{i[0]}';'''
-            fio = cur.execute(query)
-            fio = fio.fetchall()
-            fio = fio[0][0].split(' ')
-            print(fio)
-            letters = fio[0][:1]+fio[1][:1]
-            print(letters)
+            query = f'''SELECT * FROM tests;'''
+            res = cur.execute(query)
+            res = res.fetchall()
+            print(res)
 
-            return render_template('tests.html')
+            return render_template('tests.html', tests=res)
         elif request.cookies.get(i[0]) != None:
             res = make_response(redirect('hello', 302))
             res.set_cookie(i[0], request.cookies.get(i[0]), max_age=0)
