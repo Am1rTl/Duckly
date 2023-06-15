@@ -3,7 +3,7 @@ from flask import Flask, request, render_template
 import sqlite3
 import base64 as bs64
 from flask import Flask, render_template, request, redirect, url_for, flash, make_response
-
+import time
 
 
 
@@ -57,9 +57,20 @@ def profile():
 def add_tests():
     if request.method == "POST":
         classs = request.form['classSelect']
-        unit = request.form['unitSelect']
+        print(classs, request.form)
+        unit = request.form['unit']
         types = request.form['type']
         print(classs, unit, types)
+
+        con = sqlite3.connect('app.db')
+        cur = con.cursor()
+        times = str(time.time()).split(".")
+        link = times[0]+times[1]
+        print(link)
+        cur.execute(f'''INSERT INTO tests VALUES ('{classs}', '{unit}', '{types}', '{link}');''')
+        con.commit()
+        con.close()
+        return redirect('/tests', 302)
     else:
         return render_template("add_tests.html")
 
