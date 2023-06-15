@@ -106,6 +106,10 @@ def tests():
         return redirect('/login', 302)
     return redirect('/login', 302)
 
+@app.route("/tests/<id>")
+def test_id(id):
+    return f"Hello, {id}!"
+
 @app.route("/edit_profile")
 def edit_profile():
     reqinnone = 0
