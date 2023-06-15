@@ -50,10 +50,7 @@
     td {
       height: 25px;
       text-align: center;
-
     }
-
-
   </style>
 </head>
 <body>
@@ -70,7 +67,7 @@
     Игры
   </button>
 
-<button id="add" class="add"> ADD</button>
+  <button id="add" class="add"> ADD</button>
 
   <h1>Существующие тесты</h1>
   <table border="1">
@@ -85,7 +82,10 @@
         <td>{{ item[0] }}</td>
         <td>{{ item[1] }}</td>
         <td>{{ item[2] }}</td>
-        <td><a style="color: black;" href="/tests/{{ item[3] }}">{{ item[3] }}</a><button onclick="copy()">Скопировать</button></td>
+        <td>
+          <a style="color: black;" href="/tests/{{ item[3] }}">{{ item[3] }}</a>
+          <button onclick="copyToClipboard('http://ctf.djambek.com:5000/test/{{ item[3] }}')">Скопировать</button>
+        </td>
       </tr>
     {% endfor %}
   </table>
@@ -95,6 +95,16 @@
   </ul>
 </body>
 <script type="text/javascript">
+  function copyToClipboard(text) {
+    navigator.clipboard.writeText(text)
+      .then(function() {
+        console.log('Link copied to clipboard.');
+      })
+      .catch(function(error) {
+        console.error('Failed to copy link: ', error);
+      });
+  }
+
   document.getElementById("words").onclick = function () {
     location.href = window.location.origin+'/words';
   };
@@ -110,8 +120,5 @@
   document.getElementById("add").onclick = function () {
     location.href = window.location.origin+'/add_tests';
   };
-
-
-  
 </script>
 </html>
