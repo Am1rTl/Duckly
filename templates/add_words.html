@@ -4,87 +4,101 @@
     <title>Add words</title>
     <style type="text/css">
       .back {
-        border-radius: 10%;
-        height: 100px;
-        width: 10%;
+        height: 71%;
+        width: 11%;
         text-align: center;
-        font-size: 200%;
+        font-size: 170%;
         border-radius: 10px;
+        background-color: #d7daee;
+        font-style: Arial;
+        font-family: sans-serif;
       }
       .top_menu {
-        height: 100px;
-        width: 28%;
-        font-size: 210%;
-        background-color: #CBCFEF;
-        position: absolute;
+        margin-top: 1.5%;
+        height: 71%;
+        width: 19%;
+        font-size: 170%;
+        background-color: #d7daee;
         border-radius: 10px;
+        font-style: Arial;
+        font-family: sans-serif;
       }
       .beforeFields1 {
-/*        position:absolute;*/
-/*        top: 54%;*/
+        margin-top: 3%;
         height: 36px;
-        width: 10%;
-        font-size: 180%;
-        left: 20%;
+        width: 30%;
+        font-size: 160%;
+        margin-left: 21%;
         background-color: #CBCFEF;
         border-radius: 10px;
-      }
-      .slova {
-/*        position:absolute;*/
-/*        top: 54%;*/
-        height: 36px;
-        width: 10%;
-        font-size: 180%;
-        left: 20%;
-        background-color: #CBCFEF;
-        border-radius: 10px;
+        text-align: center;
+        font-style: Arial;
+        font-family: sans-serif;
+        text-align: center;
       }
       .field1 {
-/*        top: 54%;*/
-/*        position:absolute;*/
-        left:30.5%; 
-        height: 32px;
-        width: 20%;
-      }
-      .unitstext {
+        margin-top: 3%;
+        margin-left:30.5%; 
         font-size: 160%;
-/*        position:absolute;*/
-        left:30.5%; 
-/*        top:42%;*/
-        height: 36px; 
-        width: 8%;
-      }
+        height: 32px;
+        width: 40%;
+        font-style: Arial;
+        font-family: sans-serif;
+        text-align: center;
 
+      }
 
     </style>
   </head>
   <body>
-    <button id="back" class="back" style="right: 80%;">
-      Back
-    </button>
-    <button id="words" class="top_menu" style="background-color: #8d96e4; right: 60%;">
-      List of words
-    </button>
-    <button id="tests" class="top_menu" style="right: 30.5%;">
-      Tests
-    </button>
-    <button id="games" class="top_menu" style="right: 1%;">
-      Games
-    </button>
+    <div style="margin-left:1%; width: 98%; height: 12%; background-color: #e5e7f6;">
+    <button id="back" class="back" style="margin-left: 1%;">
+        Обратно
+      </button>
+
+    <button id="words" class="top_menu" style="background-color: #9fa7f6; margin-left: 0.5%; margin-bottom: 1.5%">
+        Модули
+      </button>
+
+    <button id="tests" style="margin-left: 28%;" class="top_menu">
+        Тесты
+      </button>
+
+    <button id="games" class="top_menu" style="margin-left: 0.5%;">
+        Игры
+      </button>
+    </div>
+      
+    
     <h1></h1>
     <form class="add_word" method="POST" action="">
-      <label class="slova" for="classSelect">Папки:</label>
-      <input class="field1" type="text" id="classSelect" name="classSelect"><br><br>
-      <label class="slova" for="unitSelect">Модули:</label>
-      <input class="field1" type="text" id="unitSelect" name="unitSelect"><br><br>
-      <div id="wordFields">
-        <label class="slova" for="word0">Слово:</label>
-        <input class="field1" type="text" id="word0" name="word0"><br><br>
-        <label class="slova" style="left: 53%;" for="perevod0">Значение:</label>
-        <input class="field1" style="left: 63.5%;" type="text" id="perevod0" name="perevod'0'"><br><br>
+      <div>
+      <div style="margin-left: 24%; margin-top: 9%; width: 50%; height: 30%; background-color: #e5e7f6;">
+
+      <div>
+        <label class="beforeFields1" style="margin-top: 2%; margin-left: 2%; height: 20%; margin-bottom: 1%;" for="classSelect">Название папки:</label>
+        <input class="field1" style="margin-top: 2%; margin-left: 0.5%; width: 68%; margin-bottom: 1%;" type="text" id="classSelect" name="classSelect">
       </div>
-      <button type="button" style="left: 20%; font-size: 140%; top: 60%; width: 10%; background-color: #8d96e4; border-radius: 10px;" onclick="addWordField()">Add Word</button><br><br>
-      <input type="submit"  style="left: 20%; font-size: 140%; top: 66%; width: 10%; background-color: #8d96e4; border-radius: 10px;" value="Submit">
+      <div>
+        <label class="beforeFields1" style="margin-top: 2%; margin-left: 2%; margin-bottom: 2%;" for="unitSelect">Название модуля:</label>
+        <input class="field1" style="margin-top: 2%; margin-left: 0.5%; width: 65.4%; margin-bottom: 2%;" type="text" id="unitSelect" name="unitSelect">
+      </div>
+      </div>
+      <div id="wordFields">
+        
+        <div style="margin-left:24%; margin-top: 1.5%; width: 50%; height: 30%; background-color: #e5e7f6;">
+        
+          <label class="beforeFields1" style="margin-left: 3%; margin-top: 2%;" for="word0">Слово:</label>
+          <input class="field1" style="margin-left: 0.5%; margin-top: 2%; width: 82%;" type="text" id="word0" name="word0"><br><br>
+        
+        <div style="font-style: Arial; font-family: sans-serif; font-size: 125%; margin-top: 0%; margin-left: 1%;" >0 </div>
+  
+          <label class="beforeFields1" style="margin-left: 3%; margin-top: 1%;" for="perevod0">Значение:</label>
+          <input class="field1" style="margin-left: 0.5%; margin-top: 1%; width: 77%;" type="text" id="perevod0" name="perevod0"><br><br>
+        </div>
+      </div>
+      <button class="beforeFields1" style="margin-left: 24%; margin-top: 2%; width:20%;" type="button" onclick="addWordField()">Добавить Слово</button>
+      <input class="beforeFields1" style="margin-left: 10%; margin-top: 2%; width:20%;" type="submit" value="Создать список"></input>
     </form>
   </body>
   <script type="text/javascript">
@@ -106,13 +120,17 @@
       var newWordField = document.createElement("div");
       var counter = document.querySelectorAll("div.word-field").length + 1; // Get the number of existing word fields
       newWordField.className = "word-field"; // Assign a class name for styling purposes
-
       newWordField.innerHTML =
-        '<label class="slova" for="word' + counter + '">Слово:</label>' +
-        '<input class="field1" type="text" id="word' + counter + '" name="word' + counter + '"><br><br>' +
-        '<label class="slova" style="left: 53%;" for="perevod' + counter + '">Значение:</label>' +
-        '<input class="field1" style="left: 63.5%;" type="text" id="perevod' + counter + '" name="perevod' + counter + '"><br><br>';
-
+        '<div style="margin-left:24%; margin-top:1%; width: 50%; height: 30%; background-color: #e5e7f6;">' +
+        
+        '<label class="beforeFields1" style="margin-left: 3%;" for="word' + counter + '">Слово:</label>' +
+        '<input class="field1" style="margin-left: 0.5%; width: 82%;" type="text" id="word' + counter + '" name="word' + counter + '"><br><br>' +
+        
+        '<div style="font-style: Arial; font-family: sans-serif; font-size: 125%; margin-top: 0%; margin-left: 1%;" >'+counter+'</div>' +
+        
+        '<label class="beforeFields1" style="margin-left: 3%;" for="perevod' + counter + '">Значение:</label>' +
+        '<input class="field1" style="margin-left: 0.5%; width: 77%;" type="text" id="perevod' + counter + '" name="perevod' + counter + '"><br><br>';
+        '</div>'
       wordFieldsDiv.appendChild(newWordField);
     }
   </script>

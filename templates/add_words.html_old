@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Add words</title>
+    <style type="text/css">
+      .back {
+        border-radius: 10%;
+        height: 100px;
+        width: 10%;
+        text-align: center;
+        font-size: 200%;
+        border-radius: 10px;
+      }
+      .top_menu {
+        height: 100px;
+        width: 28%;
+        font-size: 210%;
+        background-color: #CBCFEF;
+        position: absolute;
+        border-radius: 10px;
+      }
+      .beforeFields1 {
+/*        position:absolute;*/
+/*        top: 54%;*/
+        height: 36px;
+        width: 10%;
+        font-size: 180%;
+        left: 20%;
+        background-color: #CBCFEF;
+        border-radius: 10px;
+      }
+      .slova {
+/*        position:absolute;*/
+/*        top: 54%;*/
+        height: 36px;
+        width: 10%;
+        font-size: 180%;
+        left: 20%;
+        background-color: #CBCFEF;
+        border-radius: 10px;
+      }
+      .field1 {
+/*        top: 54%;*/
+/*        position:absolute;*/
+        left:30.5%; 
+        height: 32px;
+        width: 20%;
+      }
+      .unitstext {
+        font-size: 160%;
+/*        position:absolute;*/
+        left:30.5%; 
+/*        top:42%;*/
+        height: 36px; 
+        width: 8%;
+      }
+
+
+    </style>
+  </head>
+  <body>
+    <button id="back" class="back" style="right: 80%;">
+      Back
+    </button>
+    <button id="words" class="top_menu" style="background-color: #8d96e4; right: 60%;">
+      List of words
+    </button>
+    <button id="tests" class="top_menu" style="right: 30.5%;">
+      Tests
+    </button>
+    <button id="games" class="top_menu" style="right: 1%;">
+      Games
+    </button>
+    <h1></h1>
+    <form class="add_word" method="POST" action="">
+      <label class="slova" for="classSelect">Папки:</label>
+      <input class="field1" type="text" id="classSelect" name="classSelect"><br><br>
+      <label class="slova" for="unitSelect">Модули:</label>
+      <input class="field1" type="text" id="unitSelect" name="unitSelect"><br><br>
+      <div id="wordFields">
+        <label class="slova" for="word0">Слово:</label>
+        <input class="field1" type="text" id="word0" name="word0"><br><br>
+        <label class="slova" style="left: 53%;" for="perevod0">Значение:</label>
+        <input class="field1" style="left: 63.5%;" type="text" id="perevod0" name="perevod'0'"><br><br>
+      </div>
+      <button type="button" style="left: 20%; font-size: 140%; top: 60%; width: 10%; background-color: #8d96e4; border-radius: 10px;" onclick="addWordField()">Add Word</button><br><br>
+      <input type="submit"  style="left: 20%; font-size: 140%; top: 66%; width: 10%; background-color: #8d96e4; border-radius: 10px;" value="Submit">
+    </form>
+  </body>
+  <script type="text/javascript">
+    document.getElementById("words").onclick = function () {
+      location.href = window.location.origin + '/words';
+    };
+    document.getElementById("tests").onclick = function () {
+      location.href = window.location.origin + '/tests';
+    };
+    document.getElementById("games").onclick = function () {
+      location.href = window.location.origin + '/games';
+    };
+    document.getElementById("back").onclick = function () {
+      location.href = window.location.origin + '/words';
+    };
+
+    function addWordField() {
+      var wordFieldsDiv = document.getElementById("wordFields");
+      var newWordField = document.createElement("div");
+      var counter = document.querySelectorAll("div.word-field").length + 1; // Get the number of existing word fields
+      newWordField.className = "word-field"; // Assign a class name for styling purposes
+
+      newWordField.innerHTML =
+        '<label class="slova" for="word' + counter + '">Слово:</label>' +
+        '<input class="field1" type="text" id="word' + counter + '" name="word' + counter + '"><br><br>' +
+        '<label class="slova" style="left: 53%;" for="perevod' + counter + '">Значение:</label>' +
+        '<input class="field1" style="left: 63.5%;" type="text" id="perevod' + counter + '" name="perevod' + counter + '"><br><br>';
+
+      wordFieldsDiv.appendChild(newWordField);
+    }
+  </script>
+</html>
