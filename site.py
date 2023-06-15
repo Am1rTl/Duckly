@@ -361,7 +361,10 @@ def hello():
             fio = fio.fetchall()
             fio = fio[0][0].split(' ')
             print(fio)
-            letters = fio[0][:1]+fio[1][:1]
+            try:
+                letters = fio[0][:1]+fio[1][:1]
+            except:
+                letters = fio[0][0]+fio[0][1]
             print(letters)
 
             return render_template('hello.html', username=i[0], letters=letters)
