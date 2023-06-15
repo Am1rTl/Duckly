@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    return redirect('/hello', 301)
+    return redirect('/hello', 302)
 
 @app.route("/user/<name>")
 def greet(name):
@@ -43,14 +43,60 @@ def profile():
 
             return render_template('profile.html', nick=i[0], fio=fio)
         elif request.cookies.get(i[0]) != None:
-            res = make_response(redirect('hello', 301))
+            res = make_response(redirect('hello', 302))
             res.set_cookie(i[0], request.cookies.get(i[0]), max_age=0)
             return res
         elif request.cookies.get(i[0]) == None:
             reqinnone == None
     if reqinnone == None:
-        return redirect('/login', 301)
+        return redirect('/login', 302)
     return render_template("profile.html")
+
+
+@app.route("/add_tests", methods=['POST', 'GET'])
+def add_tests():
+    if request.method == "POST":
+        classs = request.form['classSelect']
+        unit = request.form['unitSelect']
+        types = request.form['type']
+        print(classs, unit, types)
+    else:
+        return render_template("add_tests.html")
+
+@app.route("/tests")
+def tests():
+    reqinnone = 0
+    con = sqlite3.connect('app.db')
+    cur = con.cursor()
+    res = cur.execute('''SELECT nick FROM users;''')
+    res = res.fetchall()
+    for i in res:
+        query = f'''SELECT password FROM users WHERE nick='{i[0]}';'''
+        passwd = cur.execute(query)
+        passwd = passwd.fetchall()
+        passwd = passwd[0]
+        secret_key = bs64.b64encode(str.encode(i[0]+passwd[0][:2])).decode("utf-8") 
+        print('"'+str(request.cookies.get(i[0]))+'"','"'+secret_key+'"')
+        if request.cookies.get(i[0]) == secret_key:
+
+            query = f'''SELECT fio FROM users WHERE nick='{i[0]}';'''
+            fio = cur.execute(query)
+            fio = fio.fetchall()
+            fio = fio[0][0].split(' ')
+            print(fio)
+            letters = fio[0][:1]+fio[1][:1]
+            print(letters)
+
+            return render_template('tests.html')
+        elif request.cookies.get(i[0]) != None:
+            res = make_response(redirect('hello', 302))
+            res.set_cookie(i[0], request.cookies.get(i[0]), max_age=0)
+            return res
+        elif request.cookies.get(i[0]) == None:
+            reqinnone == None
+    if reqinnone == None:
+        return redirect('/login', 302)
+    return redirect('/login', 302)
 
 @app.route("/edit_profile")
 def edit_profile():
@@ -72,13 +118,13 @@ def edit_profile():
             fio = fio[0][0]
             return render_template('edit_profile.html', nick=i[0], fio=fio)
         elif request.cookies.get(i[0]) != None:
-            res = make_response(redirect('hello', 301))
+            res = make_response(redirect('hello', 302))
             res.set_cookie(i[0], request.cookies.get(i[0]), max_age=0)
             return res
         elif request.cookies.get(i[0]) == None:
             reqinnone == None
     if reqinnone == None:
-        return redirect('/login', 301)
+        return redirect('/login', 302)
     return render_template("edit_profile.html")
 
 @app.route("/save_profile", methods=["POST"])
@@ -133,7 +179,7 @@ def add_words():
             cur.execute(query)
             con.commit()
             con.close()
-        return redirect('/words', 301)
+        return redirect('/words', 302)
 
     return render_template("add_words.html")
 
@@ -195,7 +241,7 @@ def login():
             print(username+password[:2])
             secret_key = bs64.b64encode(str.encode(username+password[:2])).decode("utf-8") 
 
-            resp = make_response(redirect('hello', 301))
+            resp = make_response(redirect('hello', 302))
             resp.set_cookie(username, secret_key, 60*60*24*15)
             return resp
     except:
@@ -219,11 +265,11 @@ def logout():
             username = i[0]
             break
     if username:
-        res = make_response(redirect('/login', 301))
+        res = make_response(redirect('/login', 302))
         res.set_cookie(username, '', expires=0)
         return res
     else:
-        return redirect('/login', 301)
+        return redirect('/login', 302)
 
 
 @app.route('/registration', methods=['POST', 'GET'])
@@ -266,7 +312,7 @@ def registration():
                 cur.execute(query)
                 con.commit()
                 con.close()
-                resp = make_response(redirect('hello', 301))
+                resp = make_response(redirect('hello', 302))
                 resp.set_cookie(username, secret_key, 60*60*24*15)
                 return resp
             else:
@@ -308,14 +354,14 @@ def hello():
 
             return render_template('hello.html', username=i[0], letters=letters)
         elif request.cookies.get(i[0]) != None:
-            res = make_response(redirect('hello', 301))
+            res = make_response(redirect('hello', 302))
             res.set_cookie(i[0], request.cookies.get(i[0]), max_age=0)
             return res
         elif request.cookies.get(i[0]) == None:
             reqinnone == None
     if reqinnone == None:
-        return redirect('/login', 301)
-    return redirect('/login', 301)
+        return redirect('/login', 302)
+    return redirect('/login', 302)
 
 @app.route("/about")
 def about():
@@ -323,4 +369,4 @@ def about():
 
 if __name__ == "__main__":
 #    app.run("0.0.0.0")
-    app.run()
+    app.run(debug=True)

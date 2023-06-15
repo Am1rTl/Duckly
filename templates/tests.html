@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Words</title>
+  <style type="text/css">
+    ul ul {
+      display: none;
+    }
+
+    ul.collapsible li:hover > ul {
+      display: block;
+    }
+
+    ul.collapsible li.collapsed > ul {
+      display: none;
+    }
+    .back {
+      border-radius: 10%;
+      height: 100px;
+      width: 8%;
+      text-align: center;
+      font-size: 200%;
+    }
+    .top_menu {
+      height: 100px;
+      width: 30%;
+      font-size: 200%;
+      background-color: #CBCFEF;
+      position: absolute;
+    }
+    * {
+      font-family: sans-serif;
+    }
+    li a {
+      color: black;
+    }
+    .add {
+      position: absolute;
+      right: 0.5%;
+      top: 115px;
+      height: 7.75%;
+      width: 10%;
+      font-size: 150%;
+      background-color: #e8562a;
+    }
+
+
+  </style>
+</head>
+<body>
+  <button id="back" class="back">
+    Back
+  </button>
+  <button id="words" class="top_menu" style="right: 61.5%;">
+    Слова
+  </button>
+  <button id="tests" class="top_menu" style="background-color: #7982DA; right: 31%;">
+    Тесты
+  </button>
+  <button id="games" class="top_menu" style="right: 0.5%;">
+    Игры
+  </button>
+
+<button id="add" class="add"> ADD</button>
+
+  <h1>Существующие тесты</h1>
+  <h1></h1>
+  <h1>Scoreboard</h1>
+  <ul class="collapsible">
+  </ul>
+</body>
+<script type="text/javascript">
+  document.getElementById("words").onclick = function () {
+    location.href = window.location.origin+'/words';
+  };
+  document.getElementById("tests").onclick = function () {
+    location.href = window.location.origin+'/tests';
+  };
+  document.getElementById("games").onclick = function () {
+    location.href = window.location.origin+'/games';
+  };
+  document.getElementById("back").onclick = function () {
+    location.href = window.location.origin+'/hello';
+  };
+  document.getElementById("add").onclick = function () {
+    location.href = window.location.origin+'/add_tests';
+  };
+</script>
+</html>
