@@ -10,6 +10,7 @@ import sqlite3
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.secret_key = 'your-super-secret-key-12345'  # Added secret key for session management
 db = SQLAlchemy(app)
 
 class User(db.Model):
@@ -213,22 +214,27 @@ def add_words():
     if request.method == "POST":
         class_val = request.form.get('classSelect')
         unit_val = request.form.get('unitSelect')
-        module_val = request.form.get('moduleSelect')
+        module_val = request.form.get('module') # Corrected form field name
 
         if class_val == 'add_new_class':
-            classs = request.form.get('newClassInput')
+            classs = request.form.get('newClassInput', '').strip()
         else:
             classs = class_val
 
         if unit_val == 'add_new_unit':
-            unit = request.form.get('newUnitInput')
+            unit = request.form.get('newUnitInput', '').strip()
         else:
             unit = unit_val
 
         if module_val == 'add_new_module':
-            module = request.form.get('newModuleInput')
+            module = request.form.get('newModuleInput', '').strip()
         else:
             module = module_val
+
+        # Ensure classs, unit, and module are not None and provide defaults if necessary
+        classs = classs if classs is not None else ""
+        unit = unit if unit is not None else ""
+        module = module if module is not None else ""
 
         words = []
         perevods = []
@@ -411,8 +417,20 @@ def delete_word():
 
 @app.route("/edit_word")
 def edit_word_form():
-    word_id = request.args.get("word_id")
-    word_to_edit = Word.query.get(word_id)
+    # Get word details from URL parameters
+    word = request.args.get("word")
+    perevod = request.args.get("perevod")
+    classs = request.args.get("class")
+    unit = request.args.get("unit")
+    
+    # Find the word by its attributes
+    word_to_edit = db.session.query(Word).filter_by(
+        word=word,
+        perevod=perevod,
+        classs=classs,
+        unit=unit
+    ).first()
+    
     if not word_to_edit:
         flash("Word not found!", "error")
         return redirect(url_for('words'))
