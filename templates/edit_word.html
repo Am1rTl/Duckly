@@ -178,47 +178,218 @@
     </div>
 
     <form class="form-container" method="POST" action="/update_word">
-      <input type="hidden" name="old_class" value="{{ classs }}" />
-      <input type="hidden" name="old_unit" value="{{ unit }}" />
-      <input type="hidden" name="old_word" value="{{ word }}" />
+      <input type="hidden" name="word_id" value="{{ word.id }}">
 
       <div class="form-group">
         <label class="form-label" for="word">Слово:</label>
-        <input type="text" class="form-input" id="word" name="word" value="{{ word }}" required />
+        <input type="text" class="form-input" id="word" name="word" value="{{ word.word }}" required />
       </div>
 
       <div class="form-group">
         <label class="form-label" for="perevod">Перевод:</label>
-        <input type="text" class="form-input" id="perevod" name="perevod" value="{{ perevod }}" required />
+        <input type="text" class="form-input" id="perevod" name="perevod" value="{{ word.perevod }}" required />
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="classs">Класс:</label>
-        <input type="text" class="form-input" id="classs" name="classs" value="{{ classs }}" required />
+        <label class="form-label" for="classSelect">Класс:</label>
+        <select class="form-input" id="classSelect" name="classSelect" required>
+          <option value="" disabled>--- Выберите класс ---</option>
+          {% for c in all_classes %}
+          <option value="{{ c }}" {% if c == word.classs %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+          <!-- No "add new class" on edit page, assuming class must exist -->
+        </select>
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="unit">Юнит:</label>
-        <input type="text" class="form-input" id="unit" name="unit" value="{{ unit }}" required />
+        <label class="form-label" for="unitSelect">Юнит:</label>
+        <select class="form-input" id="unitSelect" name="unitSelect" required>
+          <option value="" disabled selected>--- Сначала выберите класс ---</option>
+        </select>
+        <input type="text" class="form-input" id="newUnitInput" name="newUnitInput" placeholder="Введите новый юнит" style="margin-top: 10px; display: none;" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="moduleSelect">Модуль:</label>
+        <select class="form-input" id="moduleSelect" name="moduleSelect">
+          <option value="" selected>--- Сначала выберите юнит ---</option> <!-- Allow no module -->
+        </select>
+        <input type="text" class="form-input" id="newModuleInput" name="newModuleInput" placeholder="Введите новый модуль" style="margin-top: 10px; display: none;" />
       </div>
 
       <div class="form-actions">
-        <button type="button" class="btn btn-secondary" id="cancel">
-          <i class="fas fa-times"></i> Отмена
-        </button>
-        <button type="submit" class="btn btn-primary">
-          <i class="fas fa-save"></i> Сохранить изменения
-        </button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Сохранить изменения</button>
+        <button type="button" id="cancelEdit" class="btn btn-secondary"><i class="fas fa-times"></i> Отмена</button>
       </div>
     </form>
   </div>
 
   <script>
-    document.getElementById("back").onclick = function() {
-      window.location.href = window.location.origin + "/words";
+    const classSelect = document.getElementById("classSelect");
+    const unitSelect = document.getElementById("unitSelect");
+    const newUnitInput = document.getElementById("newUnitInput");
+    const moduleSelect = document.getElementById("moduleSelect");
+    const newModuleInput = document.getElementById("newModuleInput");
+
+    const currentWordClass = {{ word.classs | tojson }};
+    const currentWordUnit = {{ word.unit | tojson }};
+    const currentWordModule = {{ word.module | tojson }};
+
+    function clearSelect(selectElement, defaultOptionText, isDisabled = true) {
+      selectElement.innerHTML = '';
+      if (defaultOptionText) {
+        const defaultOption = document.createElement('option');
+        defaultOption.value = "";
+        defaultOption.textContent = defaultOptionText;
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
+        selectElement.appendChild(defaultOption);
+      }
+      selectElement.disabled = isDisabled;
+    }
+
+    function populateSelect(selectElement, items, addNewValue, addNewText, currentValue, addEmptyOption = false) {
+      if(addEmptyOption && addNewValue !== 'add_new_module') { // Specific for module to allow empty selection
+        const emptyOption = document.createElement('option');
+        emptyOption.value = "";
+        emptyOption.textContent = "--- Нет модуля ---";
+        selectElement.appendChild(emptyOption);
+      }
+      items.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item;
+        option.textContent = item;
+        if (item === currentValue) {
+          option.selected = true;
+        }
+        selectElement.appendChild(option);
+      });
+      if (addNewValue) {
+        const addNewOption = document.createElement('option');
+        addNewOption.value = addNewValue;
+        addNewOption.textContent = addNewText;
+        selectElement.appendChild(addNewOption);
+      }
+      selectElement.disabled = false;
+    }
+
+    async function fetchAndPopulateUnits(selectedClass, preselectUnit) {
+      if (!selectedClass) {
+        clearSelect(unitSelect, "--- Сначала выберите класс ---");
+        unitSelect.disabled = true;
+        clearSelect(moduleSelect, "--- Сначала выберите юнит ---");
+        moduleSelect.disabled = true;
+        return;
+      }
+      clearSelect(unitSelect, "--- Загрузка юнитов... ---");
+      try {
+        const response = await fetch(`/get_units_for_class?class_name=${selectedClass}`);
+        const units = await response.json();
+        clearSelect(unitSelect, "--- Выберите юнит ---", false); // Enable before populating
+        populateSelect(unitSelect, units, "add_new_unit", "Добавить новый юнит...", preselectUnit);
+        if (preselectUnit && unitSelect.value === preselectUnit) {
+           // If unit was preselected, trigger module loading
+           fetchAndPopulateModules(selectedClass, preselectUnit, currentWordModule);
+        } else if (units.length > 0 && !preselectUnit) {
+            // If no specific unit to preselect, but units exist, still enable module select with placeholder
+            clearSelect(moduleSelect, "--- Сначала выберите юнит ---");
+            moduleSelect.disabled = false; 
+        } else if (units.length === 0) {
+            clearSelect(moduleSelect, "--- Нет юнитов, добавьте новый ---");
+            moduleSelect.disabled = true;
+        }
+      } catch (error) {
+        console.error('Error fetching units:', error);
+        clearSelect(unitSelect, "--- Ошибка загрузки юнитов ---");
+      }
+    }
+
+    async function fetchAndPopulateModules(selectedClass, selectedUnit, preselectModule) {
+      if (!selectedClass || !selectedUnit || selectedUnit === 'add_new_unit') {
+        clearSelect(moduleSelect, "--- Сначала выберите юнит ---");
+        moduleSelect.disabled = true;
+        return;
+      }
+      clearSelect(moduleSelect, "--- Загрузка модулей... ---");
+      try {
+        const response = await fetch(`/get_modules_for_unit?class_name=${selectedClass}&unit_name=${selectedUnit}`);
+        const modules = await response.json();
+        clearSelect(moduleSelect, "", false); // No default text, allow empty selection
+        populateSelect(moduleSelect, modules, "add_new_module", "Добавить новый модуль...", preselectModule, true);
+      } catch (error) {
+        console.error('Error fetching modules:', error);
+        clearSelect(moduleSelect, "--- Ошибка загрузки модулей ---");
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      if (currentWordClass) {
+        fetchAndPopulateUnits(currentWordClass, currentWordUnit);
+      } else {
+        clearSelect(unitSelect, "--- Сначала выберите класс ---");
+        unitSelect.disabled = true;
+        clearSelect(moduleSelect, "--- Сначала выберите юнит ---");
+        moduleSelect.disabled = true;
+      }
+    });
+
+    classSelect.addEventListener("change", function() {
+      newUnitInput.style.display = "none";
+      newUnitInput.required = false;
+      newModuleInput.style.display = "none";
+      newModuleInput.required = false;
+      fetchAndPopulateUnits(this.value, null); // Don't preselect unit on class change, only on load
+      clearSelect(moduleSelect, "--- Сначала выберите юнит ---"); // Reset modules
+      moduleSelect.disabled = true;
+    });
+
+    unitSelect.addEventListener("change", function() {
+      newModuleInput.style.display = "none"; // Reset module text input visibility
+      newModuleInput.required = false;
+
+      if (this.value === "add_new_unit") {
+        newUnitInput.style.display = "block";
+        newUnitInput.required = true;
+        
+        clearSelect(moduleSelect, "", false); // Clear select, no default text, enable it
+
+        const noModuleOption = document.createElement('option');
+        noModuleOption.value = ""; 
+        noModuleOption.textContent = "--- Нет модуля ---";
+        moduleSelect.appendChild(noModuleOption);
+
+        const addNewModuleOption = document.createElement('option');
+        addNewModuleOption.value = "add_new_module";
+        addNewModuleOption.textContent = "Добавить новый модуль...";
+        moduleSelect.appendChild(addNewModuleOption);
+        
+        moduleSelect.value = "add_new_module"; // Programmatically select "Add new module"
+        moduleSelect.disabled = false; // Ensure it's enabled
+        moduleSelect.dispatchEvent(new Event('change')); // Trigger moduleSelect's listener 
+        
+      } else {
+        // This is for an existing unit selection
+        newUnitInput.style.display = "none";
+        newUnitInput.required = false;
+        fetchAndPopulateModules(classSelect.value, this.value, null); 
+      }
+    });
+
+    moduleSelect.addEventListener("change", function() {
+      if (this.value === "add_new_module") {
+        newModuleInput.style.display = "block";
+        newModuleInput.required = false; // Modules are optional
+      } else {
+        newModuleInput.style.display = "none";
+        newModuleInput.required = false;
+      }
+    });
+
+    document.getElementById("back").onclick = function () {
+      history.back(); // More reliable than fixed URL
     };
-    document.getElementById("cancel").onclick = function() {
-      window.location.href = window.location.origin + "/words";
+    document.getElementById("cancelEdit").onclick = function () {
+      history.back();
     };
   </script>
 </body>

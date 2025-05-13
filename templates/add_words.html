@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Create Word List</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins :wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link
     rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css "
   />
   <style>
     :root {
@@ -21,33 +21,28 @@
       --border: #e0e0e0;
       --light-bg: #f0f2ff;
     }
-
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
-
     body {
       font-family: "Poppins", sans-serif;
       background-color: var(--background);
       color: var(--text);
       line-height: 1.6;
     }
-
     .container {
       max-width: 1000px;
       margin: 0 auto;
       padding: 20px;
     }
-
     .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 30px;
     }
-
     .back-btn {
       display: inline-flex;
       align-items: center;
@@ -62,23 +57,19 @@
       transition: all 0.3s ease;
       box-shadow: 0 2px 10px rgba(108, 99, 255, 0.2);
     }
-
     .back-btn:hover {
       background-color: #5a52e0;
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
     }
-
     .back-btn i {
       margin-right: 8px;
     }
-
     .page-title {
       font-size: 2rem;
       color: var(--secondary);
       font-weight: 600;
     }
-
     .nav-tabs {
       display: flex;
       background: white;
@@ -87,7 +78,6 @@
       margin-bottom: 30px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
-
     .nav-tab {
       flex: 1;
       padding: 15px 20px;
@@ -101,18 +91,15 @@
       cursor: pointer;
       transition: all 0.3s ease;
     }
-
     .nav-tab.active {
       background: var(--primary);
       color: white;
       box-shadow: 0 2px 8px rgba(108, 99, 255, 0.3);
     }
-
     .nav-tab:hover:not(.active) {
       color: var(--primary);
       background: rgba(108, 99, 255, 0.1);
     }
-
     .form-container {
       background: white;
       border-radius: 16px;
@@ -120,11 +107,9 @@
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
       margin-bottom: 20px;
     }
-
     .form-group {
       margin-bottom: 25px;
     }
-
     .form-label {
       display: block;
       font-size: 1rem;
@@ -132,7 +117,6 @@
       margin-bottom: 10px;
       color: var(--text);
     }
-
     .form-input {
       width: 100%;
       padding: 12px 16px;
@@ -143,13 +127,11 @@
       background: white;
       transition: all 0.3s ease;
     }
-
     .form-input:focus {
       outline: none;
       border-color: var(--primary);
       box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
     }
-
     .word-pair-container {
       background: var(--light-bg);
       border-radius: 12px;
@@ -157,7 +139,6 @@
       margin-bottom: 20px;
       position: relative;
     }
-
     .word-pair-number {
       position: absolute;
       top: -10px;
@@ -173,19 +154,16 @@
       font-size: 0.9rem;
       font-weight: 600;
     }
-
     .word-pair-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 15px;
     }
-
     .form-actions {
       display: flex;
       justify-content: space-between;
       margin-top: 30px;
     }
-
     .btn {
       padding: 12px 24px;
       font-size: 1rem;
@@ -195,46 +173,37 @@
       cursor: pointer;
       transition: all 0.3s ease;
     }
-
     .btn-primary {
       background-color: var(--primary);
       color: white;
       box-shadow: 0 2px 10px rgba(108, 99, 255, 0.2);
     }
-
     .btn-primary:hover {
       background-color: #5a52e0;
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
     }
-
     .btn-secondary {
       background-color: white;
       color: var(--primary);
       border: 1px solid var(--primary);
     }
-
     .btn-secondary:hover {
       background-color: rgba(108, 99, 255, 0.1);
     }
-
     @media (max-width: 768px) {
       .nav-tabs {
         flex-direction: column;
       }
-
       .nav-tab {
         margin-bottom: 8px;
       }
-
       .container {
         padding: 20px 15px;
       }
-
       .form-container {
         padding: 20px;
       }
-
       .word-pair-grid {
         grid-template-columns: 1fr;
       }
@@ -249,7 +218,6 @@
       </button>
       <h1 class="page-title">Create Word List</h1>
     </div>
-
     <div class="nav-tabs">
       <button id="words" class="nav-tab active">
         <i class="fas fa-list-ul"></i> Word Lists
@@ -261,7 +229,6 @@
         <i class="fas fa-gamepad"></i> Games
       </button>
     </div>
-
     <form class="add_word" method="POST" action="">
       <div class="form-container">
         <div class="form-group">
@@ -275,7 +242,6 @@
           </select>
           <input type="text" class="form-input" id="newClassInput" name="newClassInput" placeholder="Enter new class number" style="margin-top: 10px; display: none;" />
         </div>
-
         <div class="form-group">
           <label class="form-label" for="unitSelect">Unit Number:</label>
           <select class="form-input" id="unitSelect" name="unitSelect" required>
@@ -287,7 +253,6 @@
           </select>
           <input type="text" class="form-input" id="newUnitInput" name="newUnitInput" placeholder="Enter new unit number" style="margin-top: 10px; display: none;" />
         </div>
-
         <div class="form-group">
           <label class="form-label" for="moduleSelect">Module:</label>
           <select class="form-input" id="moduleSelect" name="moduleSelect">
@@ -300,14 +265,13 @@
           <input
             type="text"
             class="form-input"
-            id="newModuleInput" /* Changed id from newModule to newModuleInput */
-            name="newModuleInput" /* Changed name from newModule to newModuleInput */
+            id="newModuleInput"
+            name="newModuleInput"
             placeholder="Or enter new module name"
-            style="margin-top: 10px; display: none;" /* Added display:none */
+            style="margin-top: 10px; display: none;"
           />
         </div>
       </div>
-
       <div id="wordFields">
         <div class="word-pair-container">
           <div class="word-pair-number">1</div>
@@ -329,7 +293,6 @@
           </div>
         </div>
       </div>
-
       <div class="form-actions">
         <button type="button" class="btn btn-secondary" onclick="addWordField()">
           <i class="fas fa-plus"></i> Add Word Pair
@@ -340,7 +303,6 @@
       </div>
     </form>
   </div>
-
   <script>
     const classSelect = document.getElementById("classSelect");
     const newClassInput = document.getElementById("newClassInput");
@@ -349,45 +311,153 @@
     const moduleSelect = document.getElementById("moduleSelect");
     const newModuleInput = document.getElementById("newModuleInput");
 
+    function clearSelect(selectElement, defaultOptionText) {
+      selectElement.innerHTML = '';
+      const defaultOption = document.createElement('option');
+      defaultOption.value = "";
+      defaultOption.textContent = defaultOptionText;
+      defaultOption.disabled = true;
+      defaultOption.selected = true;
+      selectElement.appendChild(defaultOption);
+    }
+
+    function populateSelect(selectElement, items, addNewValue, addNewText) {
+      selectElement.innerHTML = '';
+      items.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item;
+        option.textContent = item;
+        selectElement.appendChild(option);
+      });
+      const addNewOption = document.createElement('option');
+      addNewOption.value = addNewValue;
+      addNewOption.textContent = addNewText;
+      selectElement.appendChild(addNewOption);
+      selectElement.disabled = false;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      clearSelect(unitSelect, "--- Сначала выберите класс ---");
+      unitSelect.disabled = true;
+      newUnitInput.style.display = "none";
+      newUnitInput.required = false;
+      clearSelect(moduleSelect, "--- Сначала выберите юнит ---");
+      moduleSelect.disabled = true;
+      newModuleInput.style.display = "none";
+      newModuleInput.required = false;
+    });
+
     classSelect.addEventListener("change", function() {
+      newUnitInput.style.display = "none";
+      newUnitInput.required = false;
+      newModuleInput.style.display = "none";
+      newModuleInput.required = false;
+      clearSelect(unitSelect, "--- Загрузка юнитов... ---");
+      unitSelect.disabled = true;
+      clearSelect(moduleSelect, "--- Сначала выберите юнит ---");
+      moduleSelect.disabled = true;
+
       if (this.value === "add_new_class") {
         newClassInput.style.display = "block";
         newClassInput.required = true;
       } else {
         newClassInput.style.display = "none";
         newClassInput.required = false;
+        if (this.value) {
+          fetch(`/get_units_for_class?class_name=${this.value}`)
+            .then(response => response.json())
+            .then(units => {
+              if (units.length === 0) {
+                // Нет юнитов - сразу активируем добавление нового юнита и модуля
+                unitSelect.innerHTML = '';
+                const addNewUnitOption = document.createElement("option");
+                addNewUnitOption.value = "add_new_unit";
+                addNewUnitOption.textContent = "Добавить новый юнит...";
+                unitSelect.appendChild(addNewUnitOption);
+                unitSelect.value = "add_new_unit";
+
+                newUnitInput.style.display = "block";
+                newUnitInput.required = true;
+
+                // Автоматически активируем добавление модуля
+                moduleSelect.innerHTML = '';
+                const addNewModuleOption = document.createElement("option");
+                addNewModuleOption.value = "add_new_module";
+                addNewModuleOption.textContent = "Добавить новый модуль...";
+                moduleSelect.appendChild(addNewModuleOption);
+                moduleSelect.value = "add_new_module";
+
+                newModuleInput.style.display = "block";
+                newModuleInput.required = true;
+              } else {
+                clearSelect(unitSelect, "--- Выберите юнит ---");
+                populateSelect(unitSelect, units, "add_new_unit", "Добавить новый юнит...");
+              }
+              unitSelect.disabled = false;
+            })
+            .catch(error => {
+              console.error('Error fetching units:', error);
+              clearSelect(unitSelect, "--- Ошибка загрузки юнитов ---");
+            });
+        }
       }
     });
 
     unitSelect.addEventListener("change", function() {
+      newModuleInput.style.display = "none";
+      newModuleInput.required = false;
+
       if (this.value === "add_new_unit") {
         newUnitInput.style.display = "block";
         newUnitInput.required = true;
-      } else {
-        newUnitInput.style.display = "none";
-        newUnitInput.required = false;
-      }
-    });
 
-    moduleSelect.addEventListener("change", function() {
-      if (this.value === "add_new_module") {
+        clearSelect(moduleSelect, "--- Нет модуля ---");
+        const addNewModuleOption = document.createElement('option');
+        addNewModuleOption.value = "add_new_module";
+        addNewModuleOption.textContent = "Добавить новый модуль...";
+        moduleSelect.appendChild(addNewModuleOption);
+        moduleSelect.value = "add_new_module";
+        moduleSelect.disabled = false;
+
         newModuleInput.style.display = "block";
         newModuleInput.required = true;
+        alert(1);
       } else {
-        newModuleInput.style.display = "none";
-        newModuleInput.required = false;
+        alert(2);
+        newUnitInput.style.display = "none";
+        newUnitInput.required = false;
+
+        clearSelect(moduleSelect, "--- Загрузка модулей... ---");
+        moduleSelect.disabled = true;
+
+        const selectedClass = classSelect.value;
+        if (this.value && selectedClass && selectedClass !== 'add_new_class') {
+          fetch(`/get_modules_for_unit?class_name=${selectedClass}&unit_name=${this.value}`)
+            .then(response => response.json())
+            .then(modules => {
+              clearSelect(moduleSelect, "--- Выберите модуль ---");
+              populateSelect(moduleSelect, modules, "add_new_module", "Добавить новый модуль...");
+            })
+            .catch(error => {
+              console.error('Error fetching modules:', error);
+              clearSelect(moduleSelect, "--- Ошибка загрузки модулей ---");
+            });
+        }
       }
     });
 
     document.getElementById("words").onclick = function () {
       location.href = window.location.origin + "/words";
     };
+
     document.getElementById("tests").onclick = function () {
       location.href = window.location.origin + "/tests";
     };
+
     document.getElementById("games").onclick = function () {
       location.href = window.location.origin + "/games";
     };
+
     document.getElementById("back").onclick = function () {
       location.href = window.location.origin + "/words";
     };
@@ -396,7 +466,6 @@
       var wordFieldsDiv = document.getElementById("wordFields");
       var counter = document.querySelectorAll(".word-pair-container").length;
       var newWordField = document.createElement("div");
-
       newWordField.className = "word-pair-container";
       newWordField.innerHTML = `
         <div class="word-pair-number">${counter + 1}</div>
@@ -411,10 +480,7 @@
           </div>
         </div>
       `;
-
       wordFieldsDiv.appendChild(newWordField);
-
-      // Scroll to the newly added field
       newWordField.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
   </script>

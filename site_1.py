@@ -245,13 +245,36 @@ def add_words():
         db.session.commit()
         return redirect('/words', 302)
 
+    # GET method: query existing classes
+    classes = [str(i) for i in range(1, 12)]
+    # Units and Modules will be fetched dynamically by JavaScript
+    return render_template("add_words.html", classes=classes, units=[], modules=[])
+
+@app.route("/get_units_for_class")
+def get_units_for_class():
+    class_name = request.args.get('class_name')
+    if not class_name or class_name == 'add_new_class': # Handle placeholder
+        return jsonify([])
+    units = db.session.query(Word.unit).filter(Word.classs == class_name).distinct().all()
+    # Ensure units are actual strings and not None, then sort
+    units_list = sorted([u[0] for u in units if u[0]]) 
+    return jsonify(units_list)
+
+@app.route("/get_modules_for_unit")
+def get_modules_for_unit():
+    class_name = request.args.get('class_name')
+    unit_name = request.args.get('unit_name')
+    if not class_name or not unit_name or class_name == 'add_new_class' or unit_name == 'add_new_unit': # Handle placeholders
+        return jsonify([])
+    modules = db.session.query(Word.module).filter(Word.classs == class_name, Word.unit == unit_name).distinct().all()
+    # Ensure modules are actual strings and not None, then sort
+    modules_list = sorted([m[0] for m in modules if m[0]])
+    return jsonify(modules_list)
+
     # GET method: query existing classes and modules
     classes = [str(i) for i in range(1, 12)]
-
-    modules = db.session.query(Word.module).distinct().all()
-    modules = [m[0] for m in modules]
-
-    return render_template("add_words.html", classes=classes, modules=modules)
+    # Units and Modules will be fetched dynamically by JavaScript based on class selection
+    return render_template("add_words.html", classes=classes, units=[], modules=[])
 
 @app.route('/words')
 def words():
@@ -388,32 +411,54 @@ def delete_word():
 
 @app.route("/edit_word")
 def edit_word_form():
-    class_name = request.args.get("class")
-    unit_name = request.args.get("unit")
-    word = request.args.get("word")
-    perevod = request.args.get("perevod")
+    word_id = request.args.get("word_id")
+    word_to_edit = Word.query.get(word_id)
+    if not word_to_edit:
+        flash("Word not found!", "error")
+        return redirect(url_for('words'))
 
-    return render_template("edit_word.html", classs=class_name, unit=unit_name, word=word, perevod=perevod)
+    all_classes = [str(i) for i in range(1, 12)] # Assuming classes are 1-11
+    # Units and modules will be loaded dynamically by JS
+    # The word_to_edit object contains current class, unit, module for pre-selection
+    return render_template("edit_word.html", word=word_to_edit, all_classes=all_classes)
 
 @app.route("/update_word", methods=["POST"])
 def update_word():
-    old_classs = request.form.get("old_class")
-    old_unit = request.form.get("old_unit")
-    old_word = request.form.get("old_word")
+    word_id = request.form.get("word_id")
+    word_to_update = Word.query.get(word_id)
 
-    new_classs = request.form.get("classs")
-    new_unit = request.form.get("unit")
-    new_word = request.form.get("word")
-    new_perevod = request.form.get("perevod")
+    if not word_to_update:
+        flash("Word not found for update!", "error")
+        return redirect(url_for('words'))
 
-    word_obj = Word.query.filter_by(classs=old_classs, unit=old_unit, word=old_word).first()
-    if word_obj:
-        word_obj.classs = new_classs
-        word_obj.unit = new_unit
-        word_obj.word = new_word
-        word_obj.perevod = new_perevod
+    # Get new values, handling 'add_new_...' for unit and module
+    new_class_val = request.form.get('classSelect')
+    new_unit_val = request.form.get('unitSelect')
+    new_module_val = request.form.get('moduleSelect')
+
+    word_to_update.classs = new_class_val # Assuming classSelect directly provides the class
+
+    if new_unit_val == 'add_new_unit':
+        word_to_update.unit = request.form.get('newUnitInput')
+    else:
+        word_to_update.unit = new_unit_val
+
+    if new_module_val == 'add_new_module':
+        word_to_update.module = request.form.get('newModuleInput')
+    else:
+        word_to_update.module = new_module_val
+    
+    word_to_update.word = request.form.get("word")
+    word_to_update.perevod = request.form.get("perevod")
+
+    try:
         db.session.commit()
-    return redirect("/words")
+        flash("Word updated successfully!", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error updating word: {str(e)}", "error")
+
+    return redirect(url_for('words', classs=word_to_update.classs, unit=word_to_update.unit, module=word_to_update.module))
 
 @app.route("/add_unit_to_class")
 def add_unit_to_class_form():
