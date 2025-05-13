@@ -1,107 +1,305 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>Add words</title>
-    <style type="text/css">
-      .back {
-        height: 71%;
-        width: 11%;
-        text-align: center;
-        font-size: 170%;
-        border-radius: 10px;
-        background-color: #d7daee;
-        font-style: Arial;
-        font-family: sans-serif;
-      }
-      .top_menu {
-        margin-top: 1.5%;
-        height: 71%;
-        width: 19%;
-        font-size: 170%;
-        background-color: #d7daee;
-        border-radius: 10px;
-        font-style: Arial;
-        font-family: sans-serif;
-      }
-      .beforeFields1 {
-        margin-top: 3%;
-        height: 36px;
-        width: 30%;
-        font-size: 160%;
-        margin-left: 21%;
-        background-color: #CBCFEF;
-        border-radius: 10px;
-        text-align: center;
-        font-style: Arial;
-        font-family: sans-serif;
-        text-align: center;
-      }
-      .field1 {
-        margin-top: 3%;
-        margin-left:30.5%; 
-        font-size: 160%;
-        height: 32px;
-        width: 40%;
-        font-style: Arial;
-        font-family: sans-serif;
-        text-align: center;
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Word List</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #6c63ff;
+      --primary-light: #a5a1ff;
+      --secondary: #4a4a98;
+      --background: #f8f9fe;
+      --card-bg: #ffffff;
+      --text: #333333;
+      --text-light: #777777;
+      --border: #e0e0e0;
+      --light-bg: #f0f2ff;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-      }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: var(--background);
+      color: var(--text);
+      line-height: 1.6;
+    }
 
-    </style>
-  </head>
-  <body>
-    <div style="margin-left:1%; width: 98%; height: 12%; background-color: #e5e7f6;">
-    <button id="back" class="back" style="margin-left: 1%;">
-        Обратно
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 20px;
+      font-size: 1rem;
+      font-weight: 500;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 10px rgba(108, 99, 255, 0.2);
+    }
+
+    .back-btn:hover {
+      background-color: #5a52e0;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
+    }
+
+    .back-btn i {
+      margin-right: 8px;
+    }
+
+    .page-title {
+      font-size: 2rem;
+      color: var(--secondary);
+      font-weight: 600;
+    }
+
+    .nav-tabs {
+      display: flex;
+      background: white;
+      border-radius: 12px;
+      padding: 8px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .nav-tab {
+      flex: 1;
+      padding: 15px 20px;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: var(--text-light);
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .nav-tab.active {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 2px 8px rgba(108, 99, 255, 0.3);
+    }
+
+    .nav-tab:hover:not(.active) {
+      color: var(--primary);
+      background: rgba(108, 99, 255, 0.1);
+    }
+
+    .form-container {
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 25px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 1rem;
+      font-family: 'Poppins', sans-serif;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: white;
+      transition: all 0.3s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
+    }
+
+    .word-pair-container {
+      background: var(--light-bg);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .word-pair-number {
+      position: absolute;
+      top: -10px;
+      left: 20px;
+      background: var(--primary);
+      color: white;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .word-pair-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      font-size: 1rem;
+      font-weight: 500;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+      box-shadow: 0 2px 10px rgba(108, 99, 255, 0.2);
+    }
+
+    .btn-primary:hover {
+      background-color: #5a52e0;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
+    }
+
+    .btn-secondary {
+      background-color: white;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+    }
+
+    .btn-secondary:hover {
+      background-color: rgba(108, 99, 255, 0.1);
+    }
+
+    @media (max-width: 768px) {
+      .nav-tabs {
+        flex-direction: column;
+      }
+      
+      .nav-tab {
+        margin-bottom: 8px;
+      }
+      
+      .container {
+        padding: 20px 15px;
+      }
+      
+      .form-container {
+        padding: 20px;
+      }
+      
+      .word-pair-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <button id="back" class="back-btn">
+        <i class="fas fa-arrow-left"></i> Back
       </button>
+      <h1 class="page-title">Create Word List</h1>
+    </div>
 
-    <button id="words" class="top_menu" style="background-color: #9fa7f6; margin-left: 0.5%; margin-bottom: 1.5%">
-        Модули
+    <div class="nav-tabs">
+      <button id="words" class="nav-tab active">
+        <i class="fas fa-list-ul"></i> Word Lists
       </button>
-
-    <button id="tests" style="margin-left: 28%;" class="top_menu">
-        Тесты
+      <button id="tests" class="nav-tab">
+        <i class="fas fa-question-circle"></i> Tests
       </button>
-
-    <button id="games" class="top_menu" style="margin-left: 0.5%;">
-        Игры
+      <button id="games" class="nav-tab">
+        <i class="fas fa-gamepad"></i> Games
       </button>
     </div>
-      
-    
-    <h1></h1>
-    <form class="add_word" method="POST" action="">
-      <div>
-      <div style="margin-left: 24%; margin-top: 9%; width: 50%; height: 30%; background-color: #e5e7f6;">
 
-      <div>
-        <label class="beforeFields1" style="margin-top: 2%; margin-left: 2%; height: 20%; margin-bottom: 1%;" for="classSelect">Название папки:</label>
-        <input class="field1" style="margin-top: 2%; margin-left: 0.5%; width: 68%; margin-bottom: 1%;" type="text" id="classSelect" name="classSelect">
-      </div>
-      <div>
-        <label class="beforeFields1" style="margin-top: 2%; margin-left: 2%; margin-bottom: 2%;" for="unitSelect">Название модуля:</label>
-        <input class="field1" style="margin-top: 2%; margin-left: 0.5%; width: 65.4%; margin-bottom: 2%;" type="text" id="unitSelect" name="unitSelect">
-      </div>
-      </div>
-      <div id="wordFields">
-        
-        <div style="margin-left:24%; margin-top: 1.5%; width: 50%; height: 30%; background-color: #e5e7f6;">
-        
-          <label class="beforeFields1" style="margin-left: 3%; margin-top: 2%;" for="word0">Слово:</label>
-          <input class="field1" style="margin-left: 0.5%; margin-top: 2%; width: 82%;" type="text" id="word0" name="word0"><br><br>
-        
-        <div style="font-style: Arial; font-family: sans-serif; font-size: 125%; margin-top: 0%; margin-left: 1%;" >0 </div>
-  
-          <label class="beforeFields1" style="margin-left: 3%; margin-top: 1%;" for="perevod0">Значение:</label>
-          <input class="field1" style="margin-left: 0.5%; margin-top: 1%; width: 77%;" type="text" id="perevod0" name="perevod0"><br><br>
+    <form class="add_word" method="POST" action="">
+      <div class="form-container">
+        <div class="form-group">
+          <label class="form-label" for="classSelect">Folder Name:</label>
+          <input type="text" class="form-input" id="classSelect" name="classSelect" placeholder="Enter folder name">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="unitSelect">Module Name:</label>
+          <input type="text" class="form-input" id="unitSelect" name="unitSelect" placeholder="Enter module name">
         </div>
       </div>
-      <button class="beforeFields1" style="margin-left: 24%; margin-top: 2%; width:20%;" type="button" onclick="addWordField()">Добавить Слово</button>
-      <input class="beforeFields1" style="margin-left: 10%; margin-top: 2%; width:20%;" type="submit" value="Создать список"></input>
+
+      <div id="wordFields">
+        <div class="word-pair-container">
+          <div class="word-pair-number">1</div>
+          <div class="word-pair-grid">
+            <div class="form-group">
+              <label class="form-label" for="word0">Word:</label>
+              <input type="text" class="form-input" id="word0" name="word0" placeholder="Enter word">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="perevod0">Translation:</label>
+              <input type="text" class="form-input" id="perevod0" name="perevod0" placeholder="Enter translation">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" onclick="addWordField()">
+          <i class="fas fa-plus"></i> Add Word Pair
+        </button>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save"></i> Save Word List
+        </button>
+      </div>
     </form>
-  </body>
-  <script type="text/javascript">
+  </div>
+
+  <script>
     document.getElementById("words").onclick = function () {
       location.href = window.location.origin + '/words';
     };
@@ -117,21 +315,29 @@
 
     function addWordField() {
       var wordFieldsDiv = document.getElementById("wordFields");
+      var counter = document.querySelectorAll(".word-pair-container").length;
       var newWordField = document.createElement("div");
-      var counter = document.querySelectorAll("div.word-field").length + 1; // Get the number of existing word fields
-      newWordField.className = "word-field"; // Assign a class name for styling purposes
-      newWordField.innerHTML =
-        '<div style="margin-left:24%; margin-top:1%; width: 50%; height: 30%; background-color: #e5e7f6;">' +
-        
-        '<label class="beforeFields1" style="margin-left: 3%;" for="word' + counter + '">Слово:</label>' +
-        '<input class="field1" style="margin-left: 0.5%; width: 82%;" type="text" id="word' + counter + '" name="word' + counter + '"><br><br>' +
-        
-        '<div style="font-style: Arial; font-family: sans-serif; font-size: 125%; margin-top: 0%; margin-left: 1%;" >'+counter+'</div>' +
-        
-        '<label class="beforeFields1" style="margin-left: 3%;" for="perevod' + counter + '">Значение:</label>' +
-        '<input class="field1" style="margin-left: 0.5%; width: 77%;" type="text" id="perevod' + counter + '" name="perevod' + counter + '"><br><br>';
-        '</div>'
+      
+      newWordField.className = "word-pair-container";
+      newWordField.innerHTML = `
+        <div class="word-pair-number">${counter + 1}</div>
+        <div class="word-pair-grid">
+          <div class="form-group">
+            <label class="form-label" for="word${counter}">Word:</label>
+            <input type="text" class="form-input" id="word${counter}" name="word${counter}" placeholder="Enter word">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="perevod${counter}">Translation:</label>
+            <input type="text" class="form-input" id="perevod${counter}" name="perevod${counter}" placeholder="Enter translation">
+          </div>
+        </div>
+      `;
+      
       wordFieldsDiv.appendChild(newWordField);
+      
+      // Scroll to the newly added field
+      newWordField.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   </script>
+</body>
 </html>

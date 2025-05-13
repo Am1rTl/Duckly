@@ -1,70 +1,210 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>Мой профиль</title>
-    <style type="text/css">
-      .back {
-        border-radius: 10%;
-        height: 100px;
-        width: 8%;
-        text-align: center;
-        font-size: 200%;
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Мой профиль</title>
+
+  <!-- Шрифт Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins :wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Иконки (по желанию) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css ">
+
+  <style>
+    :root {
+      --primary: #6c63ff;
+      --primary-light: #a5a1ff;
+      --secondary: #4a4a98;
+      --background: #f8f9fe;
+      --card-bg: #ffffff;
+      --text: #333333;
+      --border: #e0e0e0;
+      --light-bg: #f0f2ff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background-color: var(--background);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+      padding: 30px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 20px;
+      font-size: 1rem;
+      font-weight: 500;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 10px rgba(108, 99, 255, 0.2);
+    }
+
+    .back-btn:hover {
+      background-color: #5a52e0;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
+    }
+
+    .back-btn i {
+      margin-right: 8px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      color: var(--secondary);
+      margin-bottom: 20px;
+    }
+
+    .profile-pic {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--primary);
+      margin: 0 auto 20px auto;
+      display: block;
+      box-shadow: 0 4px 12px rgba(108, 99, 255, 0.2);
+    }
+
+    ul {
+      list-style: none;
+      padding-left: 0;
+      margin-bottom: 30px;
+    }
+
+    li {
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .action-btn {
+      padding: 12px 20px;
+      font-size: 1rem;
+      font-weight: 500;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+
+    .edit-btn {
+      background-color: #7982DA;
+      color: white;
+    }
+
+    .logout-btn {
+      background-color: #e74c3c;
+      color: white;
+    }
+
+    .edit-btn:hover,
+    .logout-btn:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .nav-tabs {
+      display: flex;
+      justify-content: center;
+      margin-top: 30px;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .nav-tab {
+      padding: 10px 20px;
+      font-size: 1rem;
+      font-weight: 500;
+      background-color: #CBCFEF;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .nav-tab:hover {
+      background-color: #a5a1ff;
+    }
+
+    @media (max-width: 600px) {
+      .nav-tabs {
+        flex-direction: column;
+        align-items: center;
       }
-      .top_menu {
-        height: 100px;
-        width: 30%;
-        font-size: 200%;
-        background-color: #CBCFEF;
-        position: absolute;
-      }
-    </style>
-  </head>
-  <body>
-    <button id="back" class="back">
-      Back
-    </button>
-    <button id="words" class="top_menu" style="right: 61.5%;">
-      Слова
-    </button>
-    <button id="tests" class="top_menu" style="right: 31%;">
-      Тесты
-    </button>
-    <button id="games" class="top_menu" style="right: 0.5%;">
-      Игры
-    </button>
-    <h1>Профиль пользователя</h1>
-    <img src="path/to/profile/image.jpg" alt="Фото пользователя">
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <button class="back-btn" id="back"><i class="fas fa-arrow-left"></i>Назад</button>
+    </div>
+
+    <h1>Мой профиль</h1>
+
+    <img src="path/to/profile/image.jpg" alt="Фото пользователя" class="profile-pic" />
+
     <ul>
-      <li><b>ФИО: </b>{{ fio }}</li>
-      <li><b>Nick: </b>{{ nick }}</li>
+      <li><b>ФИО:</b> {{ fio }}</li>
+      <li><b>Nick:</b> {{ nick }}</li>
     </ul>
 
-    <button id="editProfile" class="top_menu" style="background-color: #7982DA; right: 0.5%;">
-      Редактировать профиль
-    </button>
-    <button id="logout" class="top_menu" style="background-color: #7982DA;">
-      Выйти из профиля
-    </button>
+    <div class="actions">
+      <button class="action-btn edit-btn" id="editProfile">Редактировать профиль</button>
+      <button class="action-btn logout-btn" id="logout">Выйти из профиля</button>
+    </div>
+  </div>
 
-  </body>
-<script type="text/javascript">
-  document.getElementById("back").onclick = function () {
-    location.href = window.location.origin + '/hello';
-  };
-  document.getElementById("words").onclick = function () {
-    location.href = window.location.origin+'/words';
-  };
-  document.getElementById("tests").onclick = function () {
-    location.href = window.location.origin+'/tests';
-  };
-  document.getElementById("games").onclick = function () {
-    location.href = window.location.origin+'/games';
-  };
-  document.getElementById("editProfile").onclick = function () {
-    location.href = window.location.origin + '/edit_profile';
-  };
-  document.getElementById("logout").onclick = function () {
-    location.href = window.location.origin + '/logout';
-  };
-</script>
+  <script>
+    document.getElementById("back").onclick = function () {
+      location.href = window.location.origin + '/hello';
+    };
+
+    document.getElementById("editProfile").onclick = function () {
+      location.href = window.location.origin + '/edit_profile';
+    };
+
+    document.getElementById("logout").onclick = function () {
+      location.href = window.location.origin + '/logout';
+    };
+  </script>
+</body>
 </html>

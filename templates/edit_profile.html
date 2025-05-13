@@ -1,63 +1,198 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>Редактирование профиля</title>
-    <style type="text/css">
-      .back {
-        border-radius: 10%;
-        height: 100px;
-        width: 8%;
-        text-align: center;
-        font-size: 200%;
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Редактирование профиля</title>
+  
+  <!-- Подключение шрифта Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins :wght@300;400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Иконки (по желанию) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css ">
+
+  <style>
+    :root {
+      --primary: #6c63ff;
+      --primary-light: #a5a1ff;
+      --secondary: #4a4a98;
+      --background: #f8f9fe;
+      --card-bg: #ffffff;
+      --text: #333333;
+      --border: #e0e0e0;
+      --light-bg: #f0f2ff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background-color: var(--background);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 20px;
+      font-size: 1rem;
+      font-weight: 500;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 10px rgba(108, 99, 255, 0.2);
+    }
+
+    .back-btn:hover {
+      background-color: #5a52e0;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
+    }
+
+    .back-btn i {
+      margin-right: 8px;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 20px;
+      color: var(--secondary);
+      text-align: center;
+    }
+
+    .nav-tabs {
+      display: flex;
+      background: white;
+      border-radius: 12px;
+      padding: 8px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      justify-content: center;
+    }
+
+    .nav-tab {
+      flex: 1;
+      padding: 12px 16px;
+      text-align: center;
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text-light);
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .nav-tab:hover:not(.active),
+    .nav-tab.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    label {
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: white;
+      transition: all 0.3s ease;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
+    }
+
+    input[type="submit"] {
+      padding: 12px 24px;
+      font-size: 1rem;
+      font-weight: 500;
+      border: none;
+      border-radius: 8px;
+      background-color: var(--primary);
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      align-self: flex-end;
+    }
+
+    input[type="submit"]:hover {
+      background-color: #5a52e0;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
+    }
+
+    @media (max-width: 600px) {
+      .nav-tabs {
+        flex-direction: column;
       }
-      .top_menu {
-        height: 100px;
-        width: 30%;
-        font-size: 200%;
-        background-color: #CBCFEF;
-        position: absolute;
+      .nav-tab {
+        margin-bottom: 8px;
       }
-    </style>
-  </head>
-  <body>
-    <button id="back" class="back">
-      Back
-    </button>
-    <button id="words" class="top_menu" style="right: 61.5%;">
-      Слова
-    </button>
-    <button id="tests" class="top_menu" style="right: 31%;">
-      Тесты
-    </button>
-    <button id="games" class="top_menu" style="right: 0.5%;">
-      Игры
-    </button>
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+  <div class="header">
+      <button id="back" class="back-btn" onclick="location.href='/profile'"><i class="fas fa-arrow-left"></i>Назад</button>
+    </div>
+
     <h1>Редактирование профиля</h1>
+
     <form action="/save_profile" method="POST">
-      <label for="fio">ФИО:</label>
-      <input type="text" id="fio" name="fio" value="{{ fio }}" required>
-      <br>
-      <label for="nick">Nick:</label>
-      <input type="text" id="nick" name="nick" value="{{ nick }}" required>
-      <br>
-      <input type="submit" value="Сохранить">
+      <div>
+        <label for="fio">ФИО:</label>
+        <input type="text" id="fio" name="fio" value="{{ fio }}" required />
+      </div>
+      <div>
+        <label for="nick">Nick:</label>
+        <input type="text" id="nick" name="nick" value="{{ nick }}" required />
+      </div>
+      <input type="submit" value="Сохранить" />
     </form>
-  </body>
-<script type="text/javascript">
-  document.getElementById("back").onclick = function () {
-    location.href = window.location.origin + '/profile';
-  };
-  document.getElementById("words").onclick = function () {
-    location.href = window.location.origin+'/words';
-  };
-  document.getElementById("tests").onclick = function () {
-    location.href = window.location.origin+'/tests';
-  };
-  document.getElementById("games").onclick = function () {
-    location.href = window.location.origin+'/games';
-  };
-  document.getElementById("editProfile").onclick = function () {
-    location.href = window.location.origin + '/edit_profile';
-  };
-</script>
+  </div>
+</body>
 </html>

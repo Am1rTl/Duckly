@@ -1,126 +1,241 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-  <title>Words</title>
-  <style type="text/css">
-    ul ul {
-      display: none;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Слова</title>
+
+  <!-- Шрифт Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins :wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Иконки Font Awesome (по желанию) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css ">
+
+  <style>
+    :root {
+      --primary: #6c63ff;
+      --primary-light: #a5a1ff;
+      --background: #f8f9fe;
+      --card-bg: #ffffff;
+      --text: #333333;
+      --border: #ddd;
+      --button-hover: #5a52e0;
+      --danger-color: #e74c3c;
     }
 
-    ul.collapsible li:hover > ul {
-      display: block;
-    }
-
-    ul.collapsible li.collapsed > ul {
-      display: none;
-    }
-    .back {
-      border-radius: 10%;
-      height: 100px;
-      width: 8%;
-      text-align: center;
-      font-size: 200%;
-    }
-    .top_menu {
-      height: 100px;
-      width: 30%;
-      font-size: 200%;
-      background-color: #CBCFEF;
-      position: absolute;
-    }
     * {
-      font-family: sans-serif;
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
     }
-    li a {
-      color: black;
+
+    body {
+      background-color: var(--background);
+      color: var(--text);
+      padding: 20px;
     }
-    .add {
-      position: absolute;
-      right: 0.5%;
-      top: 115px;
-      height: 7.75%;
-      width: 10%;
-      font-size: 150%;
-      background-color: #e8562a;
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
     }
-    th {
-      height: 50px;
-      width: 0.1%;
-      font-size: 150%;
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 20px;
+      font-size: 1rem;
+      font-weight: 500;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 10px rgba(108, 99, 255, 0.2);
     }
-    td {
-      height: 25px;
+
+    .back-btn:hover {
+      background-color: var(--button-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
+    }
+
+    .back-btn i {
+      margin-right: 8px;
+    }
+
+    .nav-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    .nav-tab {
+      flex: 1;
+      padding: 12px 20px;
+      font-size: 1rem;
+      font-weight: 500;
       text-align: center;
-      font-size: 125%;
+      color: var(--text);
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .nav-tab.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .nav-tab:hover:not(.active) {
+      background: var(--primary-light);
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.8rem;
+      color: var(--primary);
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 40px;
+      background-color: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    th, td {
+      padding: 14px 20px;
+      text-align: center;
+      font-size: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background-color: var(--primary-light);
+      color: white;
+      font-weight: 600;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    button.copy-btn {
+      margin-left: 10px;
+      background: none;
+      border: none;
+      color: var(--primary);
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    button.copy-btn:hover {
+      text-decoration: underline;
+    }
+
+    .add-btn {
+      display: inline-block;
+      padding: 10px 20px;
+      font-size: 1rem;
+      font-weight: 500;
+      background-color: var(--danger-color);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 40px;
+    }
+
+    .add-btn:hover {
+      background-color: #c0392b;
+      transform: translateY(-2px);
+    }
+
+    @media (max-width: 768px) {
+      .nav-tabs {
+        flex-direction: column;
+        align-items: stretch;
+      }
     }
   </style>
 </head>
 <body>
-  <button id="back" class="back">
-    Back
-  </button>
-  <button id="words" class="top_menu" style="right: 61.5%;">
-    Слова
-  </button>
-  <button id="tests" class="top_menu" style="background-color: #7982DA; right: 31%;">
-    Тесты
-  </button>
-  <button id="games" class="top_menu" style="right: 0.5%;">
-    Игры
-  </button>
 
-  <button id="add" class="add"> ADD</button>
+  <div class="header">
+    <button class="back-btn" id="back"><i class="fas fa-arrow-left"></i> Назад</button>
+  </div>
+
+  <div class="nav-tabs">
+    <button id="words" class="nav-tab active">Слова</button>
+    <button id="tests" class="nav-tab">Тесты</button>
+    <button id="games" class="nav-tab">Игры</button>
+  </div>
 
   <h1>Существующие тесты</h1>
-  <table border="1">
-    <tr>
-      <th>Папка</th>
-      <th>Модуль</th>
-      <th>Тип</th>
-      <th>Ссылка</th>
-    </tr>
-    {% for item in tests %}
+  <table>
+    <thead>
       <tr>
-        <td>{{ item[0] }}</td>
-        <td>{{ item[1] }}</td>
-        <td>{{ item[2] }}</td>
-        <td>
-          <a style="color: black;" href="/tests/{{ item[3] }}">{{ item[3] }}</a>
-          <button onclick="copyToClipboard('http://ctf.djambek.com:5000/test/{{ item[3] }}')">Скопировать</button>
-        </td>
+        <th>Папка</th>
+        <th>Модуль</th>
+        <th>Тип</th>
+        <th>Ссылка</th>
       </tr>
-    {% endfor %}
+    </thead>
+    <tbody>
+      {% for item in tests %}
+        <tr>
+          <td>{{ item[0] }}</td>
+          <td>{{ item[1] }}</td>
+          <td>{{ item[2] }}</td>
+          <td>
+            <a href="/tests/{{ item[3] }}">{{ item[3] }}</a>
+            <button class="copy-btn" onclick="copyToClipboard('http://ctf.djambek.com:5000/test/{{ item[3] }}')">Скопировать</button>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
   </table>
-  <h1></h1>
+
+  <button id="add" class="add-btn">Добавить тест</button>
+
   <h1>Scoreboard</h1>
   <ul class="collapsible">
+    <!-- Здесь можно динамически добавлять элементы -->
   </ul>
-</body>
-<script type="text/javascript">
-  function copyToClipboard(text) {
-    navigator.clipboard.writeText(text)
-      .then(function() {
-        console.log('Link copied to clipboard.');
-      })
-      .catch(function(error) {
-        console.error('Failed to copy link: ', error);
-      });
-  }
 
-  document.getElementById("words").onclick = function () {
-    location.href = window.location.origin+'/words';
-  };
-  document.getElementById("tests").onclick = function () {
-    location.href = window.location.origin+'/tests';
-  };
-  document.getElementById("games").onclick = function () {
-    location.href = window.location.origin+'/games';
-  };
-  document.getElementById("back").onclick = function () {
-    location.href = window.location.origin+'/hello';
-  };
-  document.getElementById("add").onclick = function () {
-    location.href = window.location.origin+'/add_tests';
-  };
-</script>
+  <script>
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text)
+        .then(() => alert('Ссылка скопирована в буфер обмена'))
+        .catch(err => console.error('Ошибка копирования:', err));
+    }
+
+    document.getElementById("back").onclick = () => location.href = window.location.origin + '/hello';
+    document.getElementById("words").onclick = () => location.href = window.location.origin + '/words';
+    document.getElementById("tests").onclick = () => location.href = window.location.origin + '/tests';
+    document.getElementById("games").onclick = () => location.href = window.location.origin + '/games';
+    document.getElementById("add").onclick = () => location.href = window.location.origin + '/add_tests';
+  </script>
+</body>
 </html>

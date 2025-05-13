@@ -1,77 +1,219 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<title>About us</title>
-	<style type="text/css">
-		body {
-			font-family: sans-serif;
-		}
-		.back {
-			height: 80px;
-	        width: 100px;
-	        font-size: 200%;
-	        background-color: #CBCFEF;
-	        font-family: strong;
-	        border-radius: 15%;
-		}
-		.ava {
-		  	display: flex;
-		  	align-items: center;
-		  	justify-content: center
-		}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>About Our Team</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #6c63ff;
+      --primary-light: #a5a1ff;
+      --secondary: #4a4a98;
+      --background: #f8f9fe;
+      --card-bg: #ffffff;
+      --text: #333333;
+      --text-light: #777777;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-	</style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: var(--background);
+      color: var(--text);
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 12px 24px;
+      font-size: 1rem;
+      font-weight: 500;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 10px rgba(108, 99, 255, 0.2);
+    }
+
+    .back-btn:hover {
+      background-color: #5a52e0;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
+    }
+
+    .back-btn i {
+      margin-right: 8px;
+    }
+
+    .page-title {
+      text-align: center;
+      font-size: 2.5rem;
+      margin-bottom: 40px;
+      color: var(--secondary);
+      position: relative;
+      padding-bottom: 15px;
+    }
+
+    .page-title::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 4px;
+      background: var(--primary);
+      border-radius: 2px;
+    }
+
+    .team-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 30px;
+    }
+
+    .member-card {
+      background-color: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+      width: 280px;
+      text-align: center;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .member-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+    }
+
+    .member-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 8px;
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
+    }
+
+    .member-card img {
+      width: 100%;
+      height: 240px;
+      object-fit: cover;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .member-info {
+      padding: 24px 20px;
+    }
+
+    .member-name {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    .member-role {
+      font-size: 0.95rem;
+      color: var(--primary);
+      font-weight: 500;
+      padding: 4px 12px;
+      background: rgba(108, 99, 255, 0.1);
+      border-radius: 20px;
+      display: inline-block;
+    }
+
+    @media (max-width: 1000px) {
+      .member-card {
+        width: calc(50% - 20px);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .page-title {
+        font-size: 2rem;
+      }
+      
+      .member-card {
+        width: 100%;
+        max-width: 350px;
+      }
+    }
+  </style>
 </head>
 <body>
-	<button id="back" class="back">
-      Back
+  <div class="container">
+    <button id="back" class="back-btn">
+      <i>←</i> Back
     </button>
-    <h2 style="text-align: center; font-size: 250%;"> About us</h2>
-    <div class="ava">
-    	<span style="display:inline-block; aling: center;">
-    		<img src="{{url_for('static', filename='vika.jpg')}}" width="300" height="300" style="border-radius: 5%;">
-    		<h2 style="text-align: center;">Вика Агранович</h2>
-    		<div style="text-align: center;">Тимлид и дизайнер</div>
-    	</span>
+    <h2 class="page-title">Meet Our Team</h2>
+
+    <div class="team-container">
+      <!-- Вика -->
+      <div class="member-card">
+        <img src="{{url_for('static', filename='vika.jpg')}}" alt="Вика Агранович">
+        <div class="member-info">
+          <div class="member-name">Вика Агранович</div>
+          <div class="member-role">Team Lead & Designer</div>
+        </div>
+      </div>
+
+      <!-- Ксюша -->
+      <div class="member-card">
+        <img src="{{url_for('static', filename='Kseniya.jpg')}}" alt="Ксюша Басацкая">
+        <div class="member-info">
+          <div class="member-name">Ксюша Басацкая</div>
+          <div class="member-role">Designer & Scrum Master</div>
+        </div>
+      </div>
+
+      <!-- Амир -->
+      <div class="member-card">
+        <img src="{{url_for('static', filename='Amir.jpg')}}" alt="Амир Тлепбергенов">
+        <div class="member-info">
+          <div class="member-name">Амир Тлепбергенов</div>
+          <div class="member-role">Lead Developer</div>
+        </div>
+      </div>
+
+      <!-- Сергей -->
+      <div class="member-card">
+        <img src="{{url_for('static', filename='sergey.jpg')}}" alt="Сергей Козлов">
+        <div class="member-info">
+          <div class="member-name">Сергей Козлов</div>
+          <div class="member-role">Backend Developer</div>
+        </div>
+      </div>
 
     </div>
-    <h2></h2>
-	<div class="ava" style="margin-top: 2.5%;">
-	  <span style="display:inline-block; vertical-align: top;">
-	    <img src="{{url_for('static', filename='Kseniya.jpg')}}" width="300" height="300" style="border-radius: 5%;">
-	    <h2 style="text-align: center;">Ксюша Басацкая</h2>
-	    <div style="text-align: center;">Дизайнер и скрам мастер</div>
-	  </span>
-	  <span style="display:inline-block; margin-left: 10%; margin-right: 10%;">
-	    <img src="{{url_for('static', filename='Amir.jpg')}}" width="300" height="300" style="border-radius: 5%;">
-	    <h2 style="text-align: center;">Амир Тлепбергенов</h2>
-	    <div style="text-align: center;">Соло программист</div>
-	  </span>
-	  <span style="display:inline-block; vertical-align: top;">
-	    <img src="{{url_for('static', filename='sergey.jpg')}}" width="300" height="300" style="border-radius: 5%;">
-	    <h2 style="text-align: center;">Сергей Козлов</h2>
-	    <div style="text-align: center;">Бэклокер, прототипист</div>
-	  </span>
-	</div>
+  </div>
 
-    <h2></h2>
-    <div class="ava" style="margin-top: 2.5%;">
-	  <span style="display:inline-block; vertical-align: top;">
-	    <img src="{{url_for('static', filename='')}}" width="300" height="300" style="border-radius: 5%;">
-	    <h2 style="text-align: center; margin-right: 5%;">Даня</h2>
-	    <div style="text-align: center;">Сасат</div>
-	  </span>
-	  <span style="display:inline-block; margin-left: 5%;">
-	    <img src="{{url_for('static', filename='')}}" width="300" height="300" style="border-radius: 5%;">
-	    <h2 style="text-align: center;">Егор</h2>
-	    <div style="text-align: center;">Сасат</div>
-	  </span>
-	</div>
-</body>
-  <script type="text/javascript">
+  <script>
     document.getElementById("back").onclick = function () {
-        location.href = window.location.origin+'/hello';
+      location.href = window.location.origin + '/hello';
     };
   </script>
+</body>
 </html>

@@ -1,88 +1,187 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-  <title>Registration Page</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Регистрация</title>
+
+  <!-- Шрифт Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins :wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Иконки (по желанию) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css ">
+
   <style>
-    body {
-      display: flex;
-      justify-content: center; /* Horizontally center align */
-      align-items: center; /* Vertically center align */
-      height: 90vh; /* Make the body take up the full height of the viewport */
-      font-size: 150%;
-    } 
-    .form-container {
-      margin: 0 auto;
-      width: 50%;
+    :root {
+      --primary: #6c63ff;
+      --primary-light: #a5a1ff;
+      --background: #f4f6ff;
+      --card-bg: #ffffff;
+      --text-color: #333;
+      --border-color: #ddd;
+      --button-hover: #5a52e0;
     }
 
-    .form-container input[type=text], 
-    .form-container input[type=password] {
-      width: 100%;
-      padding: 12px 20px;
-      margin: 8px 0;
-      display: inline-block;
-      border: 1px solid #ccc;
+    * {
       box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
     }
 
-    .form-container input[type=submit] {
+    body {
+      background-color: var(--background);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .form-container {
+      background-color: var(--card-bg);
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
       width: 100%;
-      background-color: #4CAF50;
-      color: white;
-      padding: 14px 20px;
-      margin: 8px 0;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
+      max-width: 500px;
     }
 
-    .form-container input[type=submit]:hover {
-      background-color: #45a049;
+    h2 {
+      text-align: center;
+      color: var(--primary);
+      font-size: 2rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    .form-switch {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 25px;
+    }
+
+    .form-switch button {
+      flex: 1;
+      padding: 12px 0;
+      font-size: 1rem;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      background-color: transparent;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .form-switch button.active {
+      color: white;
+      background-color: var(--primary);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(108, 99, 255, 0.2);
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
     }
 
     label {
-      font-family: sans-serif;
-    }
-    button {
-      font-family: sans-serif;
-    }
-    h2 {
-      font-family: sans-serif;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: var(--text-color);
     }
 
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
+    }
+
+    input[type="submit"] {
+      padding: 14px 20px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: white;
+      background-color: var(--primary);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 10px;
+    }
+
+    input[type="submit"]:hover {
+      background-color: var(--button-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
+    }
+
+    .error-message {
+      text-align: center;
+      color: red;
+      margin-top: -10px;
+      margin-bottom: 15px;
+    }
+
+    @media (max-width: 500px) {
+      .form-switch {
+        flex-direction: column;
+      }
+
+      .form-switch button {
+        margin-bottom: 10px;
+      }
+    }
   </style>
 </head>
 <body>
-  <div>
-    <h2 style="text-align: center;">Registration</h2>
-    <button id="login" class="float-left submit-button" style="width: 49%; height: 35px; font-size: 100%;" >Login</button>/<button id="registration" class="float-left submit-button" style="width: 49%; height: 35px; font-size: 100%;">Registration</button>
-    <h2></h2>
+
+  <div class="form-container">
+    <h2>Регистрация</h2>
+
+    <div class="form-switch">
+      <button id="login">Login</button>
+      <button id="registration" class="active">Registration</button>
+    </div>
+
     {% if error %}
-      <p style="color:red">{{ error }}</p>
+      <p class="error-message">{{ error }}</p>
     {% endif %}
+
     <form action="/registration" method="post">
-      <label for="fio">Введите ФИО:</label><br>
-      <input type="text" id="fio" name="fio" size="50%" style="height: 25px;"><br>
-      <label for="username">Username:</label><br>
-      <input type="text" id="username" minlength="3" name="username" size="50%" style="height: 25px;"><br>
-      <label for="password">Password:</label><br>
-      <input type="password" id="password" name="password" minlength="5" size="50%" style="height: 25px;"><br><br>
-      <input type="submit" value="Зарегистрироваться"  style="width: 100%; height: 35px; font-size: 100%;"></input>
-    </form> 
+      <label for="fio">Введите ФИО:</label>
+      <input type="text" id="fio" name="fio" required />
+
+      <label for="username">Username:</label>
+      <input type="text" id="username" minlength="3" name="username" required />
+
+      <label for="password">Пароль:</label>
+      <input type="password" id="password" name="password" minlength="5" required />
+
+      <input type="submit" value="Зарегистрироваться" />
+    </form>
   </div>
-</body>
 
-<script type="text/javascript">
+  <script>
     document.getElementById("login").onclick = function () {
-        location.href = window.location.origin+'/login';
+      location.href = window.location.origin + '/login';
     };
-</script>
-<script type="text/javascript">
+
     document.getElementById("registration").onclick = function () {
-        location.href = window.location.origin+'/registration';
+      location.href = window.location.origin + '/registration';
     };
-</script>
-
-
-
+  </script>
+</body>
 </html>
