@@ -1,5 +1,5 @@
 from markupsafe import escape
-from flask import Flask, request, render_template, redirect, url_for, flash, make_response
+from flask import Flask, jsonify, request, render_template, redirect, url_for, flash, make_response
 from flask_sqlalchemy import SQLAlchemy
 import base64 as bs64
 import time
@@ -28,6 +28,7 @@ class Word(db.Model):
     perevod = db.Column(db.String, nullable=False)
     classs = db.Column('class', db.String, nullable=False)
     unit = db.Column(db.String, nullable=False)
+    module = db.Column(db.String, nullable=False)
 
 class Test(db.Model):
     __tablename__ = 'tests'
@@ -104,6 +105,18 @@ def tests():
 
     tests = Test.query.all()
     return render_template('tests.html', tests=tests)
+
+@app.route("/words/json")
+def get_words_json():
+    words = Word.query.all()
+    data = {}
+    for w in words:
+        if w.classs not in data:
+            data[w.classs] = {}
+        if w.unit not in data[w.classs]:
+            data[w.classs][w.unit] = []
+        data[w.classs][w.unit].append([w.word, w.perevod])
+    return jsonify(data)
 
 @app.route("/tests/<id>", methods=['GET', 'POST'])
 def test_id(id):
@@ -198,8 +211,25 @@ def save_profile():
 @app.route("/add_words", methods=['POST', 'GET'])
 def add_words():
     if request.method == "POST":
-        classs = request.form['classSelect']
-        unit = request.form['unitSelect']
+        class_val = request.form.get('classSelect')
+        unit_val = request.form.get('unitSelect')
+        module_val = request.form.get('moduleSelect')
+
+        if class_val == 'add_new_class':
+            classs = request.form.get('newClassInput')
+        else:
+            classs = class_val
+
+        if unit_val == 'add_new_unit':
+            unit = request.form.get('newUnitInput')
+        else:
+            unit = unit_val
+
+        if module_val == 'add_new_module':
+            module = request.form.get('newModuleInput')
+        else:
+            module = module_val
+
         words = []
         perevods = []
 
@@ -210,23 +240,33 @@ def add_words():
                 perevods.append(value)
 
         for word, perevod in zip(words, perevods):
-            new_word = Word(word=word, perevod=perevod, classs=classs, unit=unit)
+            new_word = Word(word=word, perevod=perevod, classs=classs, unit=unit, module=module)
             db.session.add(new_word)
         db.session.commit()
         return redirect('/words', 302)
 
-    return render_template("add_words.html")
+    # GET method: query existing classes and modules
+    classes = [str(i) for i in range(1, 12)]
+
+    modules = db.session.query(Word.module).distinct().all()
+    modules = [m[0] for m in modules]
+
+    return render_template("add_words.html", classes=classes, modules=modules)
 
 @app.route('/words')
 def words():
     words = Word.query.order_by(Word.classs).all()
     items = {}
+
+    # Build items by class, unit, module
     for w in words:
         if w.classs not in items:
             items[w.classs] = {}
         if w.unit not in items[w.classs]:
-            items[w.classs][w.unit] = []
-        items[w.classs][w.unit].append([w.word, w.perevod])
+            items[w.classs][w.unit] = {}
+        if w.module not in items[w.classs][w.unit]:
+            items[w.classs][w.unit][w.module] = []
+        items[w.classs][w.unit][w.module].append([w.word, w.perevod])
 
     return render_template("words.html", items=items)
 
@@ -326,6 +366,155 @@ def hello():
 @app.route("/about")
 def about():
     return render_template("about.html")
+
+@app.route("/delete_word", methods=["POST"])
+def delete_word():
+    class_name = request.form.get("class")
+    unit_name = request.form.get("unit")
+    module_name = request.form.get("module")
+    word = request.form.get("word")
+
+    word_obj = Word.query.filter_by(classs=class_name, unit=unit_name, word=word).first()
+    if word_obj:
+        db.session.delete(word_obj)
+        db.session.commit()
+    
+    # Redirect back to words page with the selection parameters
+    redirect_url = f"/words?class={class_name}&unit={unit_name}"
+    if module_name:
+        redirect_url += f"&module={module_name}"
+    
+    return redirect(redirect_url)
+
+@app.route("/edit_word")
+def edit_word_form():
+    class_name = request.args.get("class")
+    unit_name = request.args.get("unit")
+    word = request.args.get("word")
+    perevod = request.args.get("perevod")
+
+    return render_template("edit_word.html", classs=class_name, unit=unit_name, word=word, perevod=perevod)
+
+@app.route("/update_word", methods=["POST"])
+def update_word():
+    old_classs = request.form.get("old_class")
+    old_unit = request.form.get("old_unit")
+    old_word = request.form.get("old_word")
+
+    new_classs = request.form.get("classs")
+    new_unit = request.form.get("unit")
+    new_word = request.form.get("word")
+    new_perevod = request.form.get("perevod")
+
+    word_obj = Word.query.filter_by(classs=old_classs, unit=old_unit, word=old_word).first()
+    if word_obj:
+        word_obj.classs = new_classs
+        word_obj.unit = new_unit
+        word_obj.word = new_word
+        word_obj.perevod = new_perevod
+        db.session.commit()
+    return redirect("/words")
+
+@app.route("/add_unit_to_class")
+def add_unit_to_class_form():
+    class_name = request.args.get("class")
+    return f"""
+    <h2>Добавить юнит в {class_name}</h2>
+    <form action="/save_unit" method="POST">
+        <input type="hidden" name="class" value="{class_name}" />
+        <input type="text" name="unit" placeholder="Название юнита" required />
+        <button type="submit">Сохранить</button>
+    </form>
+    """
+@app.route("/add_module_to_unit")
+def add_module_to_unit_form():
+    class_name = request.args.get("class")
+    unit_name = request.args.get("unit")
+    return f"""
+    <h2>Добавить модуль в {unit_name} ({class_name})</h2>
+    <form action="/save_module" method="POST">
+        <input type="hidden" name="class" value="{class_name}" />
+        <input type="hidden" name="unit" value="{unit_name}" />
+        <input type="text" name="module" placeholder="Название модуля" required />
+        <button type="submit">Сохранить</button>
+    </form>
+    """
+
+@app.route("/save_module", methods=["POST"])
+def save_module():
+    class_name = request.form.get("class")
+    unit_name = request.form.get("unit")
+    module_name = request.form.get("module")
+
+    dummy_word = Word(word="dummy", perevod="заглушка", classs=class_name, unit=unit_name, module=module_name)
+    db.session.add(dummy_word)
+    db.session.commit()
+
+    return redirect("/words")
+
+@app.route("/add_word_to_module")
+def add_word_to_module_form():
+    class_name = request.args.get("class")
+    unit_name = request.args.get("unit")
+    module_name = request.args.get("module")
+    return f"""
+    <h2>Добавить слово в модуль: {module_name} ({unit_name}, {class_name})</h2>
+    <form action="/add_word" method="POST">
+        <input type="hidden" name="class" value="{class_name}" />
+        <input type="hidden" name="unit" value="{unit_name}" />
+        <input type="hidden" name="module" value="{module_name}" />
+        <label>Слово:</label><br/>
+        <input type="text" name="word" required /><br/>
+        <label>Перевод:</label><br/>
+        <input type="text" name="perevod" required /><br/>
+        <button type="submit">Добавить</button>
+    </form>
+    """
+
+@app.route("/save_unit", methods=["POST"])
+def save_unit():
+    class_name = request.form.get("class")
+    unit_name = request.form.get("unit")
+
+    # Просто добавляем любое слово, чтобы создать связь класса и модуля
+    dummy_word = Word(word="dummy", perevod="заглушка", classs=class_name, unit=unit_name)
+    db.session.add(dummy_word)
+    db.session.commit()
+
+    return redirect("/words")
+
+@app.route("/add_word_to_unit")
+def add_word_to_unit_form():
+    class_name = request.args.get("class")
+    unit_name = request.args.get("unit")
+    return f"""
+    <h2>Добавить слово в {unit_name} ({class_name})</h2>
+    <form action="/add_word" method="POST">
+        <input type="hidden" name="class" value="{class_name}" />
+        <input type="hidden" name="unit" value="{unit_name}" />
+        <label>Слово:</label><br/>
+        <input type="text" name="word" required /><br/>
+        <label>Перевод:</label><br/>
+        <input type="text" name="perevod" required /><br/>
+        <button type="submit">Добавить</button>
+    </form>
+    """
+
+@app.route("/add_word", methods=["POST"])
+def add_word():
+    class_name = request.form.get("class")
+    unit_name = request.form.get("unit")
+    module_name = request.form.get("module")
+    word = request.form.get("word")
+    perevod = request.form.get("perevod")
+
+    new_word = Word(word=word, perevod=perevod, classs=class_name, unit=unit_name, module=module_name)
+    db.session.add(new_word)
+    db.session.commit()
+
+    return redirect("/words")
+
+
 
 if __name__ == "__main__":
     with app.app_context():

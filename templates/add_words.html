@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Create Word List</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+  />
   <style>
     :root {
       --primary: #6c63ff;
@@ -18,7 +21,7 @@
       --border: #e0e0e0;
       --light-bg: #f0f2ff;
     }
-    
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -26,7 +29,7 @@
     }
 
     body {
-      font-family: 'Poppins', sans-serif;
+      font-family: "Poppins", sans-serif;
       background-color: var(--background);
       color: var(--text);
       line-height: 1.6;
@@ -134,7 +137,7 @@
       width: 100%;
       padding: 12px 16px;
       font-size: 1rem;
-      font-family: 'Poppins', sans-serif;
+      font-family: "Poppins", sans-serif;
       border: 1px solid var(--border);
       border-radius: 8px;
       background: white;
@@ -219,19 +222,19 @@
       .nav-tabs {
         flex-direction: column;
       }
-      
+
       .nav-tab {
         margin-bottom: 8px;
       }
-      
+
       .container {
         padding: 20px 15px;
       }
-      
+
       .form-container {
         padding: 20px;
       }
-      
+
       .word-pair-grid {
         grid-template-columns: 1fr;
       }
@@ -262,13 +265,46 @@
     <form class="add_word" method="POST" action="">
       <div class="form-container">
         <div class="form-group">
-          <label class="form-label" for="classSelect">Folder Name:</label>
-          <input type="text" class="form-input" id="classSelect" name="classSelect" placeholder="Enter folder name">
+          <label class="form-label" for="classSelect">Class:</label>
+          <select class="form-input" id="classSelect" name="classSelect" required>
+            <option value="" disabled selected>Select a class</option>
+            {% for i in range(1, 12) %}
+            <option value="{{ i }}">{{ i }}</option>
+            {% endfor %}
+            <option value="add_new_class">Add new field</option>
+          </select>
+          <input type="text" class="form-input" id="newClassInput" name="newClassInput" placeholder="Enter new class number" style="margin-top: 10px; display: none;" />
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="unitSelect">Module Name:</label>
-          <input type="text" class="form-input" id="unitSelect" name="unitSelect" placeholder="Enter module name">
+          <label class="form-label" for="unitSelect">Unit Number:</label>
+          <select class="form-input" id="unitSelect" name="unitSelect" required>
+            <option value="" disabled selected>Select a unit</option>
+            {% for i in range(1, 21) %}
+            <option value="{{ i }}">{{ i }}</option>
+            {% endfor %}
+            <option value="add_new_unit">Add new field</option>
+          </select>
+          <input type="text" class="form-input" id="newUnitInput" name="newUnitInput" placeholder="Enter new unit number" style="margin-top: 10px; display: none;" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="moduleSelect">Module:</label>
+          <select class="form-input" id="moduleSelect" name="moduleSelect">
+            <option value="" disabled selected>Select a module</option>
+            {% for module in modules %}
+            <option value="{{ module }}">{{ module }}</option>
+            {% endfor %}
+            <option value="add_new_module">Add new field</option>
+          </select>
+          <input
+            type="text"
+            class="form-input"
+            id="newModuleInput" /* Changed id from newModule to newModuleInput */
+            name="newModuleInput" /* Changed name from newModule to newModuleInput */
+            placeholder="Or enter new module name"
+            style="margin-top: 10px; display: none;" /* Added display:none */
+          />
         </div>
       </div>
 
@@ -278,11 +314,17 @@
           <div class="word-pair-grid">
             <div class="form-group">
               <label class="form-label" for="word0">Word:</label>
-              <input type="text" class="form-input" id="word0" name="word0" placeholder="Enter word">
+              <input type="text" class="form-input" id="word0" name="word0" placeholder="Enter word" />
             </div>
             <div class="form-group">
               <label class="form-label" for="perevod0">Translation:</label>
-              <input type="text" class="form-input" id="perevod0" name="perevod0" placeholder="Enter translation">
+              <input
+                type="text"
+                class="form-input"
+                id="perevod0"
+                name="perevod0"
+                placeholder="Enter translation"
+              />
             </div>
           </div>
         </div>
@@ -300,43 +342,80 @@
   </div>
 
   <script>
+    const classSelect = document.getElementById("classSelect");
+    const newClassInput = document.getElementById("newClassInput");
+    const unitSelect = document.getElementById("unitSelect");
+    const newUnitInput = document.getElementById("newUnitInput");
+    const moduleSelect = document.getElementById("moduleSelect");
+    const newModuleInput = document.getElementById("newModuleInput");
+
+    classSelect.addEventListener("change", function() {
+      if (this.value === "add_new_class") {
+        newClassInput.style.display = "block";
+        newClassInput.required = true;
+      } else {
+        newClassInput.style.display = "none";
+        newClassInput.required = false;
+      }
+    });
+
+    unitSelect.addEventListener("change", function() {
+      if (this.value === "add_new_unit") {
+        newUnitInput.style.display = "block";
+        newUnitInput.required = true;
+      } else {
+        newUnitInput.style.display = "none";
+        newUnitInput.required = false;
+      }
+    });
+
+    moduleSelect.addEventListener("change", function() {
+      if (this.value === "add_new_module") {
+        newModuleInput.style.display = "block";
+        newModuleInput.required = true;
+      } else {
+        newModuleInput.style.display = "none";
+        newModuleInput.required = false;
+      }
+    });
+
     document.getElementById("words").onclick = function () {
-      location.href = window.location.origin + '/words';
+      location.href = window.location.origin + "/words";
     };
     document.getElementById("tests").onclick = function () {
-      location.href = window.location.origin + '/tests';
+      location.href = window.location.origin + "/tests";
     };
     document.getElementById("games").onclick = function () {
-      location.href = window.location.origin + '/games';
+      location.href = window.location.origin + "/games";
     };
     document.getElementById("back").onclick = function () {
-      location.href = window.location.origin + '/words';
+      location.href = window.location.origin + "/words";
     };
 
     function addWordField() {
       var wordFieldsDiv = document.getElementById("wordFields");
       var counter = document.querySelectorAll(".word-pair-container").length;
       var newWordField = document.createElement("div");
-      
+
       newWordField.className = "word-pair-container";
       newWordField.innerHTML = `
         <div class="word-pair-number">${counter + 1}</div>
         <div class="word-pair-grid">
           <div class="form-group">
             <label class="form-label" for="word${counter}">Word:</label>
-            <input type="text" class="form-input" id="word${counter}" name="word${counter}" placeholder="Enter word">
+            <input type="text" class="form-input" id="word${counter}" name="word${counter}" placeholder="Enter word" />
           </div>
           <div class="form-group">
             <label class="form-label" for="perevod${counter}">Translation:</label>
-            <input type="text" class="form-input" id="perevod${counter}" name="perevod${counter}" placeholder="Enter translation">
+            <input type="text" class="form-input" id="perevod${counter}" name="perevod${counter}" placeholder="Enter translation" />
           </div>
         </div>
       `;
-      
+
       wordFieldsDiv.appendChild(newWordField);
-      
+
       // Scroll to the newly added field
-      newWordField.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      newWordField.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
   </script>
 </body>

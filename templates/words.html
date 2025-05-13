@@ -2,25 +2,28 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Слова</title>
 
   <!-- Шрифт Poppins -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins :wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins :wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Иконки Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css ">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css ">
 
   <style>
     :root {
       --primary: #6c63ff;
       --primary-light: #a5a1ff;
+      --primary-dark: #5a52e0;
+      --secondary: #4a4a98;
       --background: #f8f9fe;
       --card-bg: #ffffff;
       --text: #333333;
       --border: #ddd;
-      --button-hover: #5a52e0;
-      --danger-color: #e74c3c;
+      --danger-color: #ff4757;
+      --success-color: #2ed573;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.12);
     }
 
     * {
@@ -34,6 +37,13 @@
       background-color: var(--background);
       color: var(--text);
       padding: 20px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
     }
 
     .header {
@@ -41,27 +51,33 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 30px;
+      flex-wrap: wrap;
+      gap: 20px;
     }
 
-    .back-btn {
+    .btn {
       display: inline-flex;
       align-items: center;
-      padding: 10px 20px;
+      justify-content: center;
+      padding: 12px 24px;
       font-size: 1rem;
       font-weight: 500;
-      background-color: var(--primary);
-      color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
       transition: all 0.3s ease;
-      box-shadow: 0 2px 10px rgba(108, 99, 255, 0.2);
+      box-shadow: var(--shadow);
     }
 
-    .back-btn:hover {
-      background-color: var(--button-hover);
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
+      box-shadow: var(--shadow-hover);
     }
 
     .nav-tabs {
@@ -74,58 +90,105 @@
 
     .nav-tab {
       flex: 1;
-      padding: 12px 20px;
+      min-width: 120px;
+      padding: 14px 20px;
       font-size: 1rem;
       font-weight: 500;
       text-align: center;
       color: var(--text);
       background: white;
-      border: 1px solid var(--border);
-      border-radius: 8px;
+      border: none;
+      border-radius: 10px;
       cursor: pointer;
       transition: all 0.3s ease;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
 
     .nav-tab.active {
       background: var(--primary);
       color: white;
-      border-color: var(--primary);
     }
 
     .nav-tab:hover:not(.active) {
       background: var(--primary-light);
+      color: white;
+      transform: translateY(-2px);
     }
 
-    h1 {
+    .page-title {
       text-align: center;
-      font-size: 1.8rem;
-      color: var(--primary);
-      margin-bottom: 20px;
+      font-size: 2.2rem;
+      color: var(--secondary);
+      margin-bottom: 30px;
+      font-weight: 600;
+      position: relative;
+    }
+
+    .page-title::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 4px;
+      background: var(--primary);
+      border-radius: 2px;
+    }
+
+    /* Фильтры */
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    select, input[type="text"] {
+      padding: 10px 15px;
+      font-size: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      width: 30%;
     }
 
     .view-toggle {
       display: flex;
       justify-content: center;
       gap: 10px;
-      margin-bottom: 20px;
+      margin-bottom: 30px;
     }
 
     .view-toggle button {
-      padding: 8px 16px;
-      border: none;
-      background: var(--primary-light);
-      color: var(--primary);
-      border-radius: 6px;
-      cursor: pointer;
+      padding: 10px 20px;
+      font-size: 1rem;
       font-weight: 500;
+      background-color: white;
+      color: var(--primary);
+      border: 2px solid var(--primary);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
     }
 
     .view-toggle button.active {
-      background: var(--primary);
+      background-color: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .view-toggle button:hover {
+      background-color: var(--primary-light);
       color: white;
     }
 
-    .words-container {
+    /* Карточки слов */
+    .cards-view {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
       gap: 20px;
@@ -150,10 +213,11 @@
     }
 
     .word-card span {
-      color: var(--text-light);
+      color: #777;
       font-size: 0.95rem;
     }
 
+    /* Таблица слов */
     table {
       width: 100%;
       border-collapse: collapse;
@@ -171,109 +235,488 @@
       color: white;
     }
 
-    .add-btn {
-      display: block;
-      width: 100%;
-      padding: 12px 20px;
-      font-size: 1rem;
-      font-weight: 500;
-      background-color: var(--danger-color);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      margin-top: 30px;
+    tr:hover {
+      background-color: rgba(108, 99, 255, 0.05);
     }
 
-    .add-btn:hover {
-      background-color: #c0392b;
-      transform: translateY(-2px);
+    /* Стили дерева */
+    .tree-container {
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: var(--shadow);
+      margin-bottom: 30px;
+    }
+
+    ul.tree {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    ul.tree ul {
+      padding-left: 30px;
+      border-left: 2px dashed var(--primary-light);
+      margin-left: 10px;
+    }
+
+    ul.tree li {
+      margin-bottom: 12px;
+      position: relative;
+      padding-left: 30px;
+    }
+
+    ul.tree li:before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 10px;
+      width: 20px;
+      height: 2px;
+      background: var(--primary);
+    }
+
+    ul.tree li:after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 2px;
+      height: 100%;
+      background: var(--primary);
+    }
+
+    ul.tree li:last-child:after {
+      height: 10px;
+    }
+
+    .tree-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 15px;
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+    }
+
+    .tree-item:hover {
+      background: var(--primary-light);
+      transform: translateX(5px);
+    }
+
+    .tree-item i {
+      margin-right: 10px;
+      color: var(--primary);
+      width: 20px;
+      text-align: center;
+    }
+
+    .tree-item-text {
+      flex: 1;
+      font-weight: 500;
+    }
+
+    .tree-item-actions {
+      display: flex;
+      gap: 8px;
+      margin-left: 15px;
+    }
+
+    .word-item {
+      display: flex;
+      flex-direction: column;
+      padding: 15px;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+      transition: all 0.2s ease;
+    }
+
+    .word-item:hover {
+      box-shadow: var(--shadow-hover);
+    }
+
+    .word-pair {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .word {
+      font-weight: 600;
+      color: var(--secondary);
+    }
+
+    .divider {
+      color: var(--text-light);
+    }
+
+    .translation {
+      color: var(--text);
+    }
+
+    .word-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .action-btn {
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .action-btn i {
+      font-size: 0.8rem;
+    }
+
+    .btn-success {
+      background-color: var(--success-color);
+      color: white;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-danger {
+      background-color: var(--danger-color);
+      color: white;
+    }
+
+    @media (max-width: 768px) {
+      .nav-tabs {
+        flex-direction: column;
+      }
+
+      .nav-tab {
+        width: 100%;
+      }
+
+      .filters select,
+      .filters input[type="text"] {
+        width: 100%;
+      }
+
+      .cards-view {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
-
-  <div class="header">
-    <button class="back-btn" id="back"><i class="fas fa-arrow-left"></i> Назад</button>
-  </div>
-
-  <div class="nav-tabs">
-    <button id="words" class="nav-tab active">Слова</button>
-    <button id="tests" class="nav-tab">Тесты</button>
-    <button id="games" class="nav-tab">Игры</button>
-  </div>
-
   <div class="container">
-    <h1>Список слов</h1>
+    <div class="header">
+      <button class="btn btn-primary" id="back"><i class="fas fa-arrow-left"></i> Назад</button>
+      <h1 class="page-title">Мой словарь</h1>
+    </div>
 
-    <!-- Переключатель вида -->
+    <div class="nav-tabs">
+      <button id="words" class="nav-tab active"><i class="fas fa-book"></i> Слова</button>
+      <button id="tests" class="nav-tab"><i class="fas fa-question-circle"></i> Тесты</button>
+      <button id="games" class="nav-tab"><i class="fas fa-gamepad"></i> Игры</button>
+    </div>
+
+    <div class="filters">
+      <select id="classFilter" onchange="updateUnits()">
+        <option value="">Выберите класс</option>
+        {% for class in items %}
+          <option value="{{ class }}">{{ class }}</option>
+        {% endfor %}
+      </select>
+
+      <select id="unitFilter" onchange="updateModules()">
+        <option value="">Выберите юнит</option>
+      </select>
+
+      <select id="moduleFilter" onchange="updateWords()">
+        <option value="">Выберите модуль</option>
+      </select>
+    </div>
+
     <div class="view-toggle">
       <button onclick="setView('cards')" class="active" id="btn-cards">Плитка</button>
       <button onclick="setView('table')" id="btn-table">Таблица</button>
     </div>
 
-    <!-- Таблица слов -->
+    <!-- Таблица -->
     <table id="tableView" style="display: none;">
       <thead>
         <tr>
           <th>Слово</th>
           <th>Перевод</th>
+          <th>Действия</th>
         </tr>
       </thead>
-      <tbody>
-        {% for class in items.keys() %}
-          {% for unit in items[class] %}
-            {% for item in items[class][unit] %}
-              <tr>
-                <td>{{ item[0] }}</td>
-                <td>{{ item[1] }}</td>
-              </tr>
-            {% endfor %}
-          {% endfor %}
-        {% endfor %}
-      </tbody>
+      <tbody id="table-body"></tbody>
     </table>
 
-    <!-- Карточки слов -->
-    <div id="cardView" class="words-container">
-      {% for class in items.keys() %}
-        {% for unit in items[class] %}
-          {% for item in items[class][unit] %}
-            <div class="word-card">
-              <strong>{{ item[0] }}</strong>
-              <span>{{ item[1] }}</span>
-            </div>
-          {% endfor %}
-        {% endfor %}
-      {% endfor %}
-    </div>
+    <!-- Карточки -->
+    <div id="cardView" class="cards-view"></div>
 
-    <button id="add" class="add-btn">Добавить слова</button>
+    <div class="add-btn-container">
+      <button id="add" class="btn btn-primary"><i class="fas fa-plus-circle"></i> Добавить слова</button>
+    </div>
   </div>
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js "></script>
   <script>
+    // Все слова в виде JSON
+    const wordData = {
+      {% for class in items %}
+        "{{ class }}": {
+          {% for unit in items[class] %}
+            "{{ unit }}": {
+              {% for module in items[class][unit] %}
+                "{{ module }}": [
+                  {% for item in items[class][unit][module] %}
+                    ["{{ item[0]|e }}", "{{ item[1]|e }}"]{% if not loop.last %},{% endif %}
+                  {% endfor %}
+                ]{% if not loop.last %},{% endif %}
+              {% endfor %}
+            }{% if not loop.last %},{% endif %}
+          {% endfor %}
+        }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    };
+
+    const classSelect = document.getElementById("classFilter");
+    const unitSelect = document.getElementById("unitFilter");
+    const moduleSelect = document.getElementById("moduleFilter");
+
+    const cardView = document.getElementById("cardView");
+    const tableView = document.getElementById("tableView");
+    const tableBody = document.getElementById("table-body");
+    const btnCards = document.getElementById("btn-cards");
+    const btnTable = document.getElementById("btn-table");
+
     function setView(view) {
-      if (view === 'cards') {
-        document.getElementById('cardView').style.display = 'grid';
-        document.getElementById('tableView').style.display = 'none';
-        document.getElementById('btn-cards').classList.add('active');
-        document.getElementById('btn-table').classList.remove('active');
+      if (view === "cards") {
+        cardView.style.display = "grid";
+        tableView.style.display = "none";
+        btnCards.classList.add("active");
+        btnTable.classList.remove("active");
       } else {
-        document.getElementById('tableView').style.display = 'table';
-        document.getElementById('cardView').style.display = 'none';
-        document.getElementById('btn-table').classList.add('active');
-        document.getElementById('btn-cards').classList.remove('active');
+        cardView.style.display = "none";
+        tableView.style.display = "table";
+        btnCards.classList.remove("active");
+        btnTable.classList.add("active");
       }
     }
 
+    function updateUnits() {
+      const selectedClass = classSelect.value;
+      unitSelect.innerHTML = '<option value="">Выберите юнит</option>';
+      moduleSelect.innerHTML = '<option value="">Выберите модуль</option>';
+
+      if (selectedClass && wordData[selectedClass]) {
+        Object.keys(wordData[selectedClass]).forEach(unit => {
+          const option = document.createElement("option");
+          option.value = unit;
+          option.textContent = unit;
+          unitSelect.appendChild(option);
+        });
+      }
+      updateWords();
+    }
+
+    function updateModules() {
+      const selectedClass = classSelect.value;
+      const selectedUnit = unitSelect.value;
+      moduleSelect.innerHTML = '<option value="">Выберите модуль</option>';
+
+      if (selectedClass && selectedUnit && wordData[selectedClass]?.[selectedUnit]) {
+        Object.keys(wordData[selectedClass][selectedUnit]).forEach(module => {
+          const option = document.createElement("option");
+          option.value = module;
+          option.textContent = module;
+          moduleSelect.appendChild(option);
+        });
+      }
+      updateWords();
+    }
+
+    function updateWords() {
+      const selectedClass = classSelect.value;
+      const selectedUnit = unitSelect.value;
+      const selectedModule = moduleSelect.value;
+
+      let wordsToShow = [];
+
+      if (selectedClass && selectedUnit && selectedModule) {
+        wordsToShow = wordData[selectedClass][selectedUnit][selectedModule] || [];
+      } else if (selectedClass && selectedUnit) {
+        wordsToShow = Object.values(wordData[selectedClass][selectedUnit]).flat().filter(Array.isArray);
+      } else if (selectedClass) {
+        wordsToShow = Object.values(wordData[selectedClass])
+                          .flatMap(obj => Object.values(obj))
+                          .flat()
+                          .filter(Array.isArray);
+      } else {
+        wordsToShow = Object.values(wordData)
+                          .flatMap(obj => Object.values(obj))
+                          .flatMap(obj => Object.values(obj))
+                          .flat()
+                          .filter(Array.isArray);
+      }
+
+      renderCards(wordsToShow);
+      renderTable(wordsToShow);
+    }
+
+    function renderCards(words) {
+      cardView.innerHTML = "";
+      words.forEach(([word, perevod]) => {
+        const card = document.createElement("div");
+        card.className = "word-card";
+        card.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <strong>${word}</strong>
+              <span>${perevod}</span>
+            </div>
+            <div class="word-actions">
+              <button class="action-btn btn-primary" onclick="editWord('${word}', '${perevod}')">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="action-btn btn-danger" onclick="deleteWord('${word}')">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+        cardView.appendChild(card);
+      });
+    }
+
+    function renderTable(words) {
+      tableBody.innerHTML = "";
+      words.forEach(([word, perevod]) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${word}</td>
+          <td>${perevod}</td>
+          <td style="width: 120px;">
+            <button class="action-btn btn-primary" onclick="editWord('${word}', '${perevod}')">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="action-btn btn-danger" onclick="deleteWord('${word}')">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    function editWord(word, perevod) {
+      const selectedClass = classSelect.value;
+      const selectedUnit = unitSelect.value;
+      const selectedModule = moduleSelect.value;
+      
+      if (!selectedClass || !selectedUnit) {
+        alert('Пожалуйста, выберите класс и юнит для редактирования слова');
+        return;
+      }
+      
+      window.location.href = `/edit_word?class=${selectedClass}&unit=${selectedUnit}&word=${encodeURIComponent(word)}&perevod=${encodeURIComponent(perevod)}`;
+    }
+    
+    function deleteWord(word) {
+      const selectedClass = classSelect.value;
+      const selectedUnit = unitSelect.value;
+      const selectedModule = moduleSelect.value;
+      
+      if (!selectedClass || !selectedUnit) {
+        alert('Пожалуйста, выберите класс и юнит для удаления слова');
+        return;
+      }
+      
+      if (confirm(`Вы уверены, что хотите удалить слово "${word}"?`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/delete_word';
+        
+        const classInput = document.createElement('input');
+        classInput.type = 'hidden';
+        classInput.name = 'class';
+        classInput.value = selectedClass;
+        form.appendChild(classInput);
+        
+        const unitInput = document.createElement('input');
+        unitInput.type = 'hidden';
+        unitInput.name = 'unit';
+        unitInput.value = selectedUnit;
+        form.appendChild(unitInput);
+        
+        if (selectedModule) {
+          const moduleInput = document.createElement('input');
+          moduleInput.type = 'hidden';
+          moduleInput.name = 'module';
+          moduleInput.value = selectedModule;
+          form.appendChild(moduleInput);
+        }
+        
+        const wordInput = document.createElement('input');
+        wordInput.type = 'hidden';
+        wordInput.name = 'word';
+        wordInput.value = word;
+        form.appendChild(wordInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+      }
+    }
+
+    window.onload = () => {
+      // Get URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const classParam = urlParams.get('class');
+      const unitParam = urlParams.get('unit');
+      const moduleParam = urlParams.get('module');
+      
+      if (classParam && Object.keys(wordData).includes(classParam)) {
+        // Set class selection
+        classSelect.value = classParam;
+        updateUnits();
+        
+        if (unitParam && wordData[classParam] && Object.keys(wordData[classParam]).includes(unitParam)) {
+          // Set unit selection
+          unitSelect.value = unitParam;
+          updateModules();
+          
+          if (moduleParam && wordData[classParam][unitParam] && 
+              Object.keys(wordData[classParam][unitParam]).includes(moduleParam)) {
+            // Set module selection
+            moduleSelect.value = moduleParam;
+            updateWords();
+          }
+        }
+      } else if (Object.keys(wordData).length > 0) {
+        // If no valid parameters, select the first class
+        const firstClass = Object.keys(wordData)[0];
+        classSelect.value = firstClass;
+        updateUnits();
+      }
+    };
+  </script>
+
+  <script>
+    // Роуты
     document.getElementById("back").onclick = () => location.href = window.location.origin + '/hello';
     document.getElementById("words").onclick = () => location.href = window.location.origin+'/words';
     document.getElementById("tests").onclick = () => location.href = window.location.origin+'/tests';
     document.getElementById("games").onclick = () => location.href = window.location.origin+'/games';
     document.getElementById("add").onclick = () => location.href = window.location.origin+'/add_words';
   </script>
-
 </body>
 </html>
