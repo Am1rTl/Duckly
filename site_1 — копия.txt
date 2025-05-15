@@ -214,7 +214,7 @@ def add_words():
     if request.method == "POST":
         class_val = request.form.get('classSelect')
         unit_val = request.form.get('unitSelect')
-        module_val = request.form.get('module') # Corrected form field name
+        module_val = request.form.get('moduleSelect')  # Changed from 'module'
 
         if class_val == 'add_new_class':
             classs = request.form.get('newClassInput', '').strip()
@@ -253,8 +253,7 @@ def add_words():
 
     # GET method: query existing classes
     classes = [str(i) for i in range(1, 12)]
-    # Units and Modules will be fetched dynamically by JavaScript
-    return render_template("add_words.html", classes=classes, units=[], modules=[])
+    return render_template("add_words.html", classes=classes)
 
 @app.route("/get_units_for_class")
 def get_units_for_class():
@@ -277,11 +276,6 @@ def get_modules_for_unit():
     modules_list = sorted([m[0] for m in modules if m[0]])
     return jsonify(modules_list)
 
-    # GET method: query existing classes and modules
-    classes = [str(i) for i in range(1, 12)]
-    # Units and Modules will be fetched dynamically by JavaScript based on class selection
-    return render_template("add_words.html", classes=classes, units=[], modules=[])
-
 @app.route('/words')
 def words():
     words = Word.query.order_by(Word.classs).all()
@@ -298,6 +292,52 @@ def words():
         items[w.classs][w.unit][w.module].append([w.word, w.perevod])
 
     return render_template("words.html", items=items)
+
+@app.route('/edit_word/<word>', methods=['GET', 'POST'])
+def edit_word(word):
+    classs = request.args.get('class')
+    unit = request.args.get('unit')
+    module = request.args.get('module')
+    perevod = request.args.get('perevod')
+    
+    # Find the word in the database
+    word_obj = Word.query.filter_by(word=word, classs=classs, unit=unit, module=module).first()
+    
+    if not word_obj:
+        return "Word not found", 404
+    
+    if request.method == 'POST':
+        # Update the word
+        word_obj.word = request.form.get('word')
+        word_obj.perevod = request.form.get('perevod')
+        db.session.commit()
+        return redirect('/words')
+    
+    # Get all classes for the dropdown
+    all_classes = [str(i) for i in range(1, 12)]
+    
+    # GET request - render the edit form
+    return render_template('edit_word.html', word=word_obj, classs=classs, unit=unit, module=module, all_classes=all_classes)
+
+@app.route('/delete_word/<word>', methods=['POST'])
+def delete_word(word):
+    # Get the data from the JSON request
+    data = request.get_json()
+    classs = data.get('class')
+    unit = data.get('unit')
+    module = data.get('module')
+    
+    # Find the word in the database
+    word_obj = Word.query.filter_by(word=word, classs=classs, unit=unit, module=module).first()
+    
+    if not word_obj:
+        return jsonify({'success': False, 'error': 'Word not found'}), 404
+    
+    # Delete the word
+    db.session.delete(word_obj)
+    db.session.commit()
+    
+    return jsonify({'success': True})
 
 @app.route('/login', methods=['POST', 'GET'])
 def login():
@@ -396,24 +436,7 @@ def hello():
 def about():
     return render_template("about.html")
 
-@app.route("/delete_word", methods=["POST"])
-def delete_word():
-    class_name = request.form.get("class")
-    unit_name = request.form.get("unit")
-    module_name = request.form.get("module")
-    word = request.form.get("word")
-
-    word_obj = Word.query.filter_by(classs=class_name, unit=unit_name, word=word).first()
-    if word_obj:
-        db.session.delete(word_obj)
-        db.session.commit()
-    
-    # Redirect back to words page with the selection parameters
-    redirect_url = f"/words?class={class_name}&unit={unit_name}"
-    if module_name:
-        redirect_url += f"&module={module_name}"
-    
-    return redirect(redirect_url)
+# Old delete_word route removed in favor of the new route with more precise word identification
 
 @app.route("/edit_word")
 def edit_word_form():
@@ -570,6 +593,11 @@ def add_word():
     module_name = request.form.get("module")
     word = request.form.get("word")
     perevod = request.form.get("perevod")
+
+    # Validate that all required fields are filled out
+    if not class_name or not unit_name or not module_name:
+        flash("Невозможно добавить слово: необходимо заполнить класс, юнит и модуль", "error")
+        return redirect("/words")
 
     new_word = Word(word=word, perevod=perevod, classs=class_name, unit=unit_name, module=module_name)
     db.session.add(new_word)
