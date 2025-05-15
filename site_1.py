@@ -293,31 +293,111 @@ def words():
 
     return render_template("words.html", items=items)
 
-@app.route('/edit_word/<word>', methods=['GET', 'POST'])
-def edit_word(word):
-    classs = request.args.get('class')
-    unit = request.args.get('unit')
-    module = request.args.get('module')
-    perevod = request.args.get('perevod')
+@app.route('/edit_word/<original_word_text>', methods=['GET', 'POST'])
+def edit_word(original_word_text):
+    # Параметры для идентификации оригинального слова (из URL GET запроса)
+    original_class = request.args.get('class')
+    original_unit = request.args.get('unit')
+    original_module = request.args.get('module')
     
-    # Find the word in the database
-    word_obj = Word.query.filter_by(word=word, classs=classs, unit=unit, module=module).first()
+    # Находим объект слова для редактирования
+    # Важно: Ищем по оригинальным значениям, переданным при открытии формы
+    word_obj = Word.query.filter_by(
+        word=original_word_text, 
+        classs=original_class, 
+        unit=original_unit, 
+        module=original_module
+    ).first()
     
     if not word_obj:
-        return "Word not found", 404
-    
+        flash("Слово для редактирования не найдено!", "error")
+        return redirect(url_for('words'))
+
     if request.method == 'POST':
-        # Update the word
-        word_obj.word = request.form.get('word')
-        word_obj.perevod = request.form.get('perevod')
-        db.session.commit()
-        return redirect('/words')
-    
-    # Get all classes for the dropdown
+        # Получаем данные из формы
+        new_word_text = request.form.get('word')
+        new_perevod = request.form.get('perevod')
+        
+        selected_class = request.form.get('classSelect')
+        selected_unit_option = request.form.get('unitSelect')
+        selected_module_option = request.form.get('moduleSelect')
+
+        new_class = selected_class # Класс всегда выбирается из существующих
+
+        if selected_unit_option == 'add_new_unit':
+            new_unit = request.form.get('newUnitInput', '').strip()
+            if not new_unit: # Если поле нового юнита пустое, но выбрано "добавить"
+                flash("Необходимо указать название нового юнита.", "error")
+                # Перезагружаем форму с уже введенными данными
+                all_classes = [str(i) for i in range(1, 12)]
+                return render_template('edit_word.html', 
+                                   word={'word': new_word_text, 'perevod': new_perevod, 'classs': new_class, 'unit': word_obj.unit, 'module': word_obj.module},
+                                   classs=original_class, 
+                                   unit=original_unit, 
+                                   module=original_module, 
+                                   all_classes=all_classes,
+                                   error="Необходимо указать название нового юнита.")
+        else:
+            new_unit = selected_unit_option
+
+        if selected_module_option == 'add_new_module':
+            new_module = request.form.get('newModuleInput', '').strip()
+            # Если new_module пустой, это означает "нет модуля" или пользователь хочет создать пустой модуль
+        elif selected_module_option == "": # Опция "--- Нет модуля ---"
+             new_module = "" 
+        else:
+            new_module = selected_module_option
+        
+        # Валидация, что класс и юнит не пустые, если они обязательны
+        if not new_class:
+            flash("Класс не может быть пустым.", "error")
+            # Снова рендерим шаблон с ошибкой и данными
+            all_classes = [str(i) for i in range(1, 12)]
+            return render_template('edit_word.html', 
+                               word={'word': new_word_text, 'perevod': new_perevod, 'classs': new_class, 'unit': new_unit, 'module': new_module},
+                               classs=original_class, unit=original_unit, module=original_module, 
+                               all_classes=all_classes, error="Класс не может быть пустым.")
+        if not new_unit:
+            flash("Юнит не может быть пустым.", "error")
+            # Снова рендерим шаблон с ошибкой и данными
+            all_classes = [str(i) for i in range(1, 12)]
+            return render_template('edit_word.html', 
+                               word={'word': new_word_text, 'perevod': new_perevod, 'classs': new_class, 'unit': new_unit, 'module': new_module},
+                               classs=original_class, unit=original_unit, module=original_module, 
+                               all_classes=all_classes, error="Юнит не может быть пустым.")
+
+        # Обновляем объект слова
+        word_obj.word = new_word_text
+        word_obj.perevod = new_perevod
+        word_obj.classs = new_class
+        word_obj.unit = new_unit
+        word_obj.module = new_module if new_module is not None else "" # Гарантируем, что модуль не None
+
+        try:
+            db.session.commit()
+            flash("Слово успешно обновлено!", "success")
+            # Редирект на страницу слов с параметрами, чтобы выделить или отфильтровать измененное слово
+            return redirect(url_for('words', cl=word_obj.classs, un=word_obj.unit, mo=word_obj.module))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Ошибка при обновлении слова: {str(e)}", "error")
+            # Снова рендерим шаблон с ошибкой и данными
+            all_classes = [str(i) for i in range(1, 12)]
+            return render_template('edit_word.html', 
+                               word=word_obj, # Передаем измененный, но не сохраненный word_obj
+                               classs=original_class, unit=original_unit, module=original_module, 
+                               all_classes=all_classes, error=f"Ошибка БД: {str(e)}")
+
+    # GET-запрос: отображение формы
     all_classes = [str(i) for i in range(1, 12)]
     
-    # GET request - render the edit form
-    return render_template('edit_word.html', word=word_obj, classs=classs, unit=unit, module=module, all_classes=all_classes)
+    # Передаем оригинальные значения class, unit, module для корректной работы JS при загрузке
+    return render_template('edit_word.html', 
+                       word=word_obj, 
+                       classs=word_obj.classs,  # Используем актуальные данные из word_obj
+                       unit=word_obj.unit,    # для предзаполнения и JS
+                       module=word_obj.module, 
+                       all_classes=all_classes)
 
 @app.route('/delete_word/<word>', methods=['POST'])
 def delete_word(word):
