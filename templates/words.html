@@ -4,10 +4,8 @@
   <meta charset="UTF-8" />
   <title>Слова</title>
 
-  <!-- Шрифт Poppins -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins :wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Иконки Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css ">
 
   <style>
@@ -79,6 +77,41 @@
       transform: translateY(-2px);
       box-shadow: var(--shadow-hover);
     }
+    
+    .action-btn { /* Ensured .action-btn is defined for general use */
+      display: inline-flex; /* Use inline-flex for proper icon alignment */
+      align-items: center;
+      justify-content: center;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none; /* For <a> tags styled as buttons */
+      gap: 5px;
+      transition: all 0.2s ease;
+    }
+
+    .action-btn i {
+      font-size: 0.8rem; /* Adjusted for consistency */
+    }
+    
+    .action-btn.btn-primary { /* Specific styling for primary action button */
+        background-color: var(--primary);
+        color: white;
+    }
+    .action-btn.btn-primary:hover {
+        background-color: var(--primary-dark);
+    }
+
+    .action-btn.btn-danger { /* Specific styling for danger action button */
+        background-color: var(--danger-color);
+        color: white;
+    }
+    .action-btn.btn-danger:hover {
+        background-color: #d63031; /* Darker red for hover */
+    }
+
 
     .nav-tabs {
       display: flex;
@@ -154,8 +187,11 @@
       font-size: 1rem;
       border: 1px solid var(--border);
       border-radius: 8px;
-      width: 30%;
+      /* width: 30%; */ /* Consider adjusting for responsiveness or removing fixed width */
+      flex-grow: 1; /* Allow selects to grow */
+      min-width: 180px; /* Minimum width for selects */
     }
+    
 
     .view-toggle {
       display: flex;
@@ -190,7 +226,7 @@
     /* Карточки слов */
     .cards-view {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Adjusted minmax */
       gap: 20px;
     }
 
@@ -199,29 +235,49 @@
       padding: 15px 20px;
       border-radius: 10px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      transition: transform 0.2s ease;
+      transition: transform 0.2s ease, box-shadow 0.2s ease; /* Added box-shadow transition */
+      display: flex; /* Using flex for better internal alignment */
+      flex-direction: column; /* Content flows downwards */
+      justify-content: space-between; /* Pushes actions to the bottom if card height varies */
     }
 
     .word-card:hover {
       transform: translateY(-4px);
+      box-shadow: var(--shadow-hover); /* Enhanced hover shadow */
+    }
+    
+    .word-card-content { /* Wrapper for word and translation */
+        margin-bottom: 10px; /* Space before actions */
     }
 
     .word-card strong {
       display: block;
       font-size: 1.1rem;
       margin-bottom: 6px;
+      color: var(--secondary); /* Emphasize word */
     }
 
     .word-card span {
       color: #777;
       font-size: 0.95rem;
     }
+    
+    .word-actions { /* Defined for consistency with table actions */
+      display: flex;
+      gap: 8px; /* Spacing between action buttons */
+      margin-top: auto; /* Pushes actions to the bottom of the card in flex layout */
+    }
+
 
     /* Таблица слов */
     table {
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 30px;
+      background-color: white; /* Added background */
+      border-radius: 10px; /* Rounded corners for table */
+      box-shadow: var(--shadow); /* Shadow for table */
+      overflow: hidden; /* Ensures border-radius clips content */
     }
 
     th, td {
@@ -233,165 +289,21 @@
     th {
       background-color: var(--primary-light);
       color: white;
+      font-weight: 500; /* Adjusted font-weight */
+    }
+     tr:last-child td { /* Remove border from last row */
+        border-bottom: none;
     }
 
     tr:hover {
       background-color: rgba(108, 99, 255, 0.05);
     }
-
-    /* Стили дерева */
-    .tree-container {
-      background: white;
-      border-radius: 16px;
-      padding: 30px;
-      box-shadow: var(--shadow);
-      margin-bottom: 30px;
+    
+    .add-btn-container {
+        text-align: center; /* Center the add button */
+        margin-top: 30px;
     }
 
-    ul.tree {
-      list-style-type: none;
-      padding-left: 0;
-    }
-
-    ul.tree ul {
-      padding-left: 30px;
-      border-left: 2px dashed var(--primary-light);
-      margin-left: 10px;
-    }
-
-    ul.tree li {
-      margin-bottom: 12px;
-      position: relative;
-      padding-left: 30px;
-    }
-
-    ul.tree li:before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 10px;
-      width: 20px;
-      height: 2px;
-      background: var(--primary);
-    }
-
-    ul.tree li:after {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 2px;
-      height: 100%;
-      background: var(--primary);
-    }
-
-    ul.tree li:last-child:after {
-      height: 10px;
-    }
-
-    .tree-item {
-      display: flex;
-      align-items: center;
-      padding: 10px 15px;
-      background: white;
-      border-radius: 8px;
-      cursor: pointer;
-      border: 1px solid var(--border);
-      transition: all 0.3s ease;
-    }
-
-    .tree-item:hover {
-      background: var(--primary-light);
-      transform: translateX(5px);
-    }
-
-    .tree-item i {
-      margin-right: 10px;
-      color: var(--primary);
-      width: 20px;
-      text-align: center;
-    }
-
-    .tree-item-text {
-      flex: 1;
-      font-weight: 500;
-    }
-
-    .tree-item-actions {
-      display: flex;
-      gap: 8px;
-      margin-left: 15px;
-    }
-
-    .word-item {
-      display: flex;
-      flex-direction: column;
-      padding: 15px;
-      background: white;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      margin-bottom: 10px;
-      transition: all 0.2s ease;
-    }
-
-    .word-item:hover {
-      box-shadow: var(--shadow-hover);
-    }
-
-    .word-pair {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .word {
-      font-weight: 600;
-      color: var(--secondary);
-    }
-
-    .divider {
-      color: var(--text-light);
-    }
-
-    .translation {
-      color: var(--text);
-    }
-
-    .word-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    .action-btn {
-      padding: 6px 12px;
-      font-size: 0.85rem;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .action-btn i {
-      font-size: 0.8rem;
-    }
-
-    .btn-success {
-      background-color: var(--success-color);
-      color: white;
-    }
-
-    .btn-primary {
-      background-color: var(--primary);
-      color: white;
-    }
-
-    .btn-danger {
-      background-color: var(--danger-color);
-      color: white;
-    }
 
     @media (max-width: 768px) {
       .nav-tabs {
@@ -402,13 +314,31 @@
         width: 100%;
       }
 
+      .filters {
+          flex-direction: column; /* Stack filters vertically */
+      }
       .filters select,
       .filters input[type="text"] {
-        width: 100%;
+        width: 100%; /* Full width on smaller screens */
       }
 
       .cards-view {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr; /* Single column on smaller screens */
+      }
+      .header {
+          flex-direction: column;
+          align-items: stretch; /* Stretch items like title and button */
+      }
+      .page-title {
+          margin-bottom: 20px; /* Adjust margin */
+      }
+      .btn {
+          width: 100%; /* Make buttons full width if needed */
+          margin-bottom: 10px; /* Add some space below buttons */
+      }
+      .header .btn { /* Specifically target back button in header */
+        width: auto; /* Allow back button to size naturally */
+        align-self: flex-start; /* Align back button to the start */
       }
     }
   </style>
@@ -416,21 +346,21 @@
 <body>
   <div class="container">
     <div class="header">
-      <button class="btn btn-primary" id="back"><i class="fas fa-arrow-left"></i> Назад</button>
+      <button class="btn btn-primary" id="backButton"><i class="fas fa-arrow-left"></i> Назад</button>
       <h1 class="page-title">Мой словарь</h1>
-    </div>
+      </div>
 
     <div class="nav-tabs">
-      <button id="words" class="nav-tab active"><i class="fas fa-book"></i> Слова</button>
-      <button id="tests" class="nav-tab"><i class="fas fa-question-circle"></i> Тесты</button>
-      <button id="games" class="nav-tab"><i class="fas fa-gamepad"></i> Игры</button>
+      <button id="wordsTab" class="nav-tab active"><i class="fas fa-book"></i> Слова</button>
+      <button id="testsTab" class="nav-tab"><i class="fas fa-question-circle"></i> Тесты</button>
+      <button id="gamesTab" class="nav-tab"><i class="fas fa-gamepad"></i> Игры</button>
     </div>
 
     <div class="filters">
       <select id="classFilter" onchange="updateUnits()">
         <option value="">Выберите класс</option>
-        {% for class in items %}
-          <option value="{{ class }}">{{ class }}</option>
+        {% for class_name in items %}
+          <option value="{{ class_name }}">{{ class_name }}</option>
         {% endfor %}
       </select>
 
@@ -438,7 +368,7 @@
         <option value="">Выберите юнит</option>
       </select>
 
-      <select id="moduleFilter" onchange="updateWords()">
+      <select id="moduleFilter" onchange="updateWordsDisplay()">
         <option value="">Выберите модуль</option>
       </select>
     </div>
@@ -448,7 +378,6 @@
       <button onclick="setView('table')" id="btn-table">Таблица</button>
     </div>
 
-    <!-- Таблица -->
     <table id="tableView" style="display: none;">
       <thead>
         <tr>
@@ -460,19 +389,18 @@
       <tbody id="table-body"></tbody>
     </table>
 
-    <!-- Карточки -->
-    <div id="cardView" class="cards-view"></div>
+    <div id="cardView" class="cards-view">
+      </div>
 
     <div class="add-btn-container">
-      <button id="add" class="btn btn-primary"><i class="fas fa-plus-circle"></i> Добавить слова</button>
+      <button id="addWordsButton" class="btn btn-primary"><i class="fas fa-plus-circle"></i> Добавить слова</button>
     </div>
   </div>
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js "></script>
   <script>
-    // Все слова в виде JSON
+    // Все слова в виде JSON, передаются из Flask шаблонизатора
     const wordData = {{ items|tojson|safe }};
-
 
     const classSelect = document.getElementById("classFilter");
     const unitSelect = document.getElementById("unitFilter");
@@ -490,7 +418,7 @@
         tableView.style.display = "none";
         btnCards.classList.add("active");
         btnTable.classList.remove("active");
-      } else {
+      } else { // table view
         cardView.style.display = "none";
         tableView.style.display = "table";
         btnCards.classList.remove("active");
@@ -500,91 +428,110 @@
 
     function updateUnits() {
       const selectedClass = classSelect.value;
-      unitSelect.innerHTML = '<option value="">Выберите юнит</option>';
-      moduleSelect.innerHTML = '<option value="">Выберите модуль</option>';
+      unitSelect.innerHTML = '<option value="">Выберите юнит</option>'; // Reset units
+      moduleSelect.innerHTML = '<option value="">Выберите модуль</option>'; // Reset modules
 
       if (selectedClass && wordData[selectedClass]) {
-        Object.keys(wordData[selectedClass]).forEach(unit => {
+        Object.keys(wordData[selectedClass]).sort().forEach(unit => { // Sort units
           const option = document.createElement("option");
           option.value = unit;
           option.textContent = unit;
           unitSelect.appendChild(option);
         });
       }
-      updateWords();
+      updateWordsDisplay(); // Update word display based on new selections
     }
 
     function updateModules() {
       const selectedClass = classSelect.value;
       const selectedUnit = unitSelect.value;
-      moduleSelect.innerHTML = '<option value="">Выберите модуль</option>';
+      moduleSelect.innerHTML = '<option value="">Выберите модуль</option>'; // Reset modules
 
       if (selectedClass && selectedUnit && wordData[selectedClass]?.[selectedUnit]) {
-        Object.keys(wordData[selectedClass][selectedUnit]).forEach(module => {
+        Object.keys(wordData[selectedClass][selectedUnit]).sort().forEach(module => { // Sort modules
           const option = document.createElement("option");
           option.value = module;
           option.textContent = module;
           moduleSelect.appendChild(option);
         });
       }
-      updateWords();
+      updateWordsDisplay(); // Update word display
     }
 
-    function updateWords() {
+    function getEditUrl(word, classVal, unitVal, moduleVal, perevod) {
+      let baseUrl = `/edit_word/${encodeURIComponent(word)}`;
+      // Ensure all params are properly encoded
+      let params = new URLSearchParams({
+          class: classVal,
+          unit: unitVal,
+          module: moduleVal,
+          perevod: perevod 
+      });
+      return `${baseUrl}?${params.toString()}`;
+    }
+
+    function updateWordsDisplay() {
       const selectedClass = classSelect.value;
       const selectedUnit = unitSelect.value;
       const selectedModule = moduleSelect.value;
 
       let wordsToShow = [];
 
-      if (selectedClass && selectedUnit && selectedModule) {
-        wordsToShow = wordData[selectedClass][selectedUnit][selectedModule] || [];
-      } else if (selectedClass && selectedUnit) {
-        wordsToShow = Object.values(wordData[selectedClass][selectedUnit]).flat().filter(Array.isArray);
-      } else if (selectedClass) {
-        wordsToShow = Object.values(wordData[selectedClass])
-                          .flatMap(obj => Object.values(obj))
-                          .flat()
-                          .filter(Array.isArray);
-      } else {
-        wordsToShow = Object.values(wordData)
-                          .flatMap(obj => Object.values(obj))
-                          .flatMap(obj => Object.values(obj))
-                          .flat()
-                          .filter(Array.isArray);
+      // Iterate through wordData to find words matching the filters,
+      // collecting them with their full class, unit, module context.
+      for (const classKey in wordData) {
+        if (selectedClass && selectedClass !== classKey) continue;
+        for (const unitKey in wordData[classKey]) {
+          if (selectedUnit && selectedUnit !== unitKey) continue;
+          for (const moduleKey in wordData[classKey][unitKey]) {
+            if (selectedModule && selectedModule !== moduleKey) continue;
+            wordData[classKey][unitKey][moduleKey].forEach(wordPair => {
+              if (Array.isArray(wordPair) && wordPair.length === 2) { // Ensure it's a valid word pair
+                wordsToShow.push({
+                  word: wordPair[0],
+                  perevod: wordPair[1],
+                  class: classKey,
+                  unit: unitKey,
+                  module: moduleKey
+                });
+              }
+            });
+          }
+        }
       }
-
+      
       renderCards(wordsToShow);
       renderTable(wordsToShow);
     }
 
     function renderCards(words) {
-      cardView.innerHTML = "";
-      words.forEach(([word, perevod]) => {
+      cardView.innerHTML = ""; // Clear previous cards
+      if (words.length === 0) {
+          cardView.innerHTML = "<p>Слова не найдены для выбранных фильтров.</p>";
+          return;
+      }
+      words.forEach(wordObj => {
         const card = document.createElement("div");
         card.className = "word-card";
+        
+        // Use wordObj.class, wordObj.unit, wordObj.module for URLs
         card.innerHTML = `
-          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-              <strong>${word}</strong>
-              <span>${perevod}</span>
-            </div>
-            <div class="word-actions">
-              <button class="action-btn btn-primary" 
-                      data-class="${classSelect.value}"
-                      data-unit="${unitSelect.value}"
-                      data-module="${moduleSelect.value}"
-                      onclick="editWord(this, '${word}', '${perevod}')">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button class="action-btn btn-danger" 
-                      data-class="${classSelect.value}"
-                      data-unit="${unitSelect.value}"
-                      data-module="${moduleSelect.value}"
-                      onclick="deleteWord(this, '${word}')">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
+          <div class="word-card-content">
+            <strong>${wordObj.word}</strong>
+            <span>${wordObj.perevod}</span>
+          </div>
+          <div class="word-actions">
+            <a href="${getEditUrl(wordObj.word, wordObj.class, wordObj.unit, wordObj.module, wordObj.perevod)}" class="action-btn btn-primary">
+              <i class="fas fa-edit"></i> Изменить
+            </a>
+            <button class="action-btn btn-danger"
+                    data-word="${encodeURIComponent(wordObj.word)}"
+                    data-class="${encodeURIComponent(wordObj.class)}"
+                    data-unit="${encodeURIComponent(wordObj.unit)}"
+                    data-module="${encodeURIComponent(wordObj.module)}"
+                    onclick="handleDeleteWord(this)">
+              <i class="fas fa-trash"></i> Удалить
+            </button>
           </div>
         `;
         cardView.appendChild(card);
@@ -592,123 +539,144 @@
     }
 
     function renderTable(words) {
-      tableBody.innerHTML = "";
-      words.forEach(([word, perevod]) => {
-        const row = document.createElement("tr");
+      tableBody.innerHTML = ""; // Clear previous table rows
+      if (words.length === 0 && tableView.style.display === "table") { // Check if table is active view
+          const row = tableBody.insertRow();
+          const cell = row.insertCell();
+          cell.colSpan = 3; // Span across all columns
+          cell.textContent = "Слова не найдены для выбранных фильтров.";
+          cell.style.textAlign = "center";
+          return;
+      }
+      words.forEach(wordObj => {
+        const row = tableBody.insertRow();
         row.innerHTML = `
-          <td>${word}</td>
-          <td>${perevod}</td>
-          <td style="width: 120px;">
-            <button class="action-btn btn-primary" 
-                    data-class="${classSelect.value}"
-                    data-unit="${unitSelect.value}"
-                    data-module="${moduleSelect.value}"
-                    onclick="editWord(this, '${word}', '${perevod}')">
-              <i class="fas fa-edit"></i>
-            </button>
-            <button class="action-btn btn-danger" 
-                    data-class="${classSelect.value}"
-                    data-unit="${unitSelect.value}"
-                    data-module="${moduleSelect.value}"
-                    onclick="deleteWord(this, '${word}')">
-              <i class="fas fa-trash"></i>
+          <td>${wordObj.word}</td>
+          <td>${wordObj.perevod}</td>
+          <td style="width: 220px;"> <a href="${getEditUrl(wordObj.word, wordObj.class, wordObj.unit, wordObj.module, wordObj.perevod)}" class="action-btn btn-primary">
+              <i class="fas fa-edit"></i> Изменить
+            </a>
+            <button class="action-btn btn-danger"
+                    data-word="${encodeURIComponent(wordObj.word)}"
+                    data-class="${encodeURIComponent(wordObj.class)}"
+                    data-unit="${encodeURIComponent(wordObj.unit)}"
+                    data-module="${encodeURIComponent(wordObj.module)}"
+                    onclick="handleDeleteWord(this)">
+              <i class="fas fa-trash"></i> Удалить
             </button>
           </td>
         `;
-        tableBody.appendChild(row);
       });
     }
-
-    function editWord(button, word, perevod) {
-      const selectedClass = button.dataset.class;
-      const selectedUnit = button.dataset.unit;
-      const selectedModule = button.dataset.module;
-      
-      if (!selectedClass || !selectedUnit) {
-        alert('Пожалуйста, выберите класс и юнит для редактирования слова');
-        return;
-      }
-      
-      window.location.href = `/edit_word/${encodeURIComponent(word)}?class=${selectedClass}&unit=${selectedUnit}&module=${selectedModule}&perevod=${encodeURIComponent(perevod)}`;
-    }
     
-    function deleteWord(button, word) {
-      const selectedClass = button.dataset.class;
-      const selectedUnit = button.dataset.unit;
-      const selectedModule = button.dataset.module;
-      
-      if (!selectedClass || !selectedUnit) {
-        alert('Пожалуйста, выберите класс и юнит для удаления слова');
-        return;
-      }
-      
-      if (confirm(`Вы уверены, что хотите удалить слово "${word}"?`)) {
+    function handleDeleteWord(button) {
+      const word = decodeURIComponent(button.dataset.word);
+      const classVal = decodeURIComponent(button.dataset.class);
+      const unitVal = decodeURIComponent(button.dataset.unit);
+      const moduleVal = decodeURIComponent(button.dataset.module);
+
+      if (confirm(`Вы уверены, что хотите удалить слово "${word}" (Класс: ${classVal}, Юнит: ${unitVal}, Модуль: ${moduleVal})?`)) {
         fetch(`/delete_word/${encodeURIComponent(word)}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            class: selectedClass,
-            unit: selectedUnit,
-            module: selectedModule
-          })
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                class: classVal,
+                unit: unitVal,
+                module: moduleVal
+                // 'perevod' is not strictly needed for deletion if word, class, unit, module are enough
+            })
         })
-        .then(response => {
-          if (response.ok) {
-            // Успешно удалено, обновите страницу
-            window.location.reload();
-          } else {
-            alert('Ошибка при удалении слова.');
-          }
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Слово "${word}" успешно удалено.`);
+                // Update local data and re-render
+                updateWordDataAfterDeletion(classVal, unitVal, moduleVal, word);
+                updateWordsDisplay(); // Refresh the displayed words
+                // Optional: if a filter category becomes empty, update dropdowns
+                if (!wordData[classVal]) { // If class was deleted
+                    // Remove class from dropdown and re-initialize
+                    const classOption = classSelect.querySelector(`option[value="${classVal}"]`);
+                    if(classOption) classOption.remove();
+                    updateUnits(); // This will also trigger module and word updates
+                } else if (!wordData[classVal][unitVal]) { // If unit was deleted
+                    updateUnits(); // Re-populate units for current class
+                } else if (!wordData[classVal][unitVal][moduleVal]) { // If module was deleted
+                    updateModules(); // Re-populate modules for current unit
+                }
+
+            } else {
+                alert('Ошибка при удалении слова: ' + (data.error || 'Неизвестная ошибка на сервере.'));
+            }
         })
         .catch(error => {
-          console.error('Ошибка:', error);
-          alert('Произошла ошибка при удалении слова.');
+            console.error('Fetch Error:', error);
+            alert('Произошла сетевая ошибка при попытке удаления слова.');
         });
       }
     }
 
+    function updateWordDataAfterDeletion(classVal, unitVal, moduleVal, wordToDelete) {
+        if (wordData[classVal]?.[unitVal]?.[moduleVal]) {
+            const wordsInModule = wordData[classVal][unitVal][moduleVal];
+            const index = wordsInModule.findIndex(pair => pair[0] === wordToDelete);
+            if (index > -1) {
+                wordsInModule.splice(index, 1);
+
+                if (wordsInModule.length === 0) {
+                    delete wordData[classVal][unitVal][moduleVal];
+                    if (Object.keys(wordData[classVal][unitVal]).length === 0) {
+                        delete wordData[classVal][unitVal];
+                        if (Object.keys(wordData[classVal]).length === 0) {
+                            delete wordData[classVal];
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
     window.onload = () => {
-      // Get URL parameters
+      // Initial setup based on URL parameters or defaults
       const urlParams = new URLSearchParams(window.location.search);
       const classParam = urlParams.get('class');
       const unitParam = urlParams.get('unit');
       const moduleParam = urlParams.get('module');
       
-      if (classParam && Object.keys(wordData).includes(classParam)) {
-        // Set class selection
+      // Populate class filter first, as it's static from initial data
+      // (The template already does this with 
+
+      if (classParam && wordData[classParam]) {
         classSelect.value = classParam;
-        updateUnits();
+        updateUnits(); // This will populate units and trigger module/word updates
         
-        if (unitParam && wordData[classParam] && Object.keys(wordData[classParam]).includes(unitParam)) {
-          // Set unit selection
+        if (unitParam && wordData[classParam][unitParam]) {
           unitSelect.value = unitParam;
-          updateModules();
+          updateModules(); // This will populate modules and trigger word updates
           
-          if (moduleParam && wordData[classParam][unitParam] && 
-              Object.keys(wordData[classParam][unitParam]).includes(moduleParam)) {
-            // Set module selection
+          if (moduleParam && wordData[classParam][unitParam][moduleParam]) {
             moduleSelect.value = moduleParam;
-            updateWords();
+            // updateWordsDisplay will be called by updateModules if moduleParam is valid
           }
         }
       } else if (Object.keys(wordData).length > 0) {
-        // If no valid parameters, select the first class
-        const firstClass = Object.keys(wordData)[0];
-        classSelect.value = firstClass;
-        updateUnits();
+        // If no valid params, select the first available class if desired, or leave as "Выберите класс"
+        // classSelect.value = Object.keys(wordData).sort()[0]; // Example: select first sorted class
+        // updateUnits();
       }
+      updateWordsDisplay(); // Initial call to display words based on current (or default) filter selections
+      setView('cards'); // Default view
     };
-  </script>
 
-  <script>
-    // Роуты
-    document.getElementById("back").onclick = () => location.href = window.location.origin + '/hello';
-    document.getElementById("words").onclick = () => location.href = window.location.origin+'/words';
-    document.getElementById("tests").onclick = () => location.href = window.location.origin+'/tests';
-    document.getElementById("games").onclick = () => location.href = window.location.origin+'/games';
-    document.getElementById("add").onclick = () => location.href = window.location.origin+'/add_words';
+    // Navigation
+    document.getElementById("backButton").onclick = () => location.href = '/hello'; // Simplified
+    document.getElementById("wordsTab").onclick = () => location.href = '/words';
+    document.getElementById("testsTab").onclick = () => location.href = '/tests';
+    document.getElementById("gamesTab").onclick = () => location.href = '/games'; // Assuming /games route exists
+    document.getElementById("addWordsButton").onclick = () => location.href = '/add_words';
   </script>
 </body>
 </html>
