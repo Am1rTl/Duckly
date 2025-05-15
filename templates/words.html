@@ -471,23 +471,8 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js "></script>
   <script>
     // Все слова в виде JSON
-    const wordData = {
-      {% for class in items %}
-        "{{ class }}": {
-          {% for unit in items[class] %}
-            "{{ unit }}": {
-              {% for module in items[class][unit] %}
-                "{{ module }}": [
-                  {% for item in items[class][unit][module] %}
-                    ["{{ item[0]|e }}", "{{ item[1]|e }}"]{% if not loop.last %},{% endif %}
-                  {% endfor %}
-                ]{% if not loop.last %},{% endif %}
-              {% endfor %}
-            }{% if not loop.last %},{% endif %}
-          {% endfor %}
-        }{% if not loop.last %},{% endif %}
-      {% endfor %}
-    };
+    const wordData = {{ items|tojson|safe }};
+
 
     const classSelect = document.getElementById("classFilter");
     const unitSelect = document.getElementById("unitFilter");
@@ -585,10 +570,18 @@
               <span>${perevod}</span>
             </div>
             <div class="word-actions">
-              <button class="action-btn btn-primary" onclick="editWord('${word}', '${perevod}')">
+              <button class="action-btn btn-primary" 
+                      data-class="${classSelect.value}"
+                      data-unit="${unitSelect.value}"
+                      data-module="${moduleSelect.value}"
+                      onclick="editWord(this, '${word}', '${perevod}')">
                 <i class="fas fa-edit"></i>
               </button>
-              <button class="action-btn btn-danger" onclick="deleteWord('${word}')">
+              <button class="action-btn btn-danger" 
+                      data-class="${classSelect.value}"
+                      data-unit="${unitSelect.value}"
+                      data-module="${moduleSelect.value}"
+                      onclick="deleteWord(this, '${word}')">
                 <i class="fas fa-trash"></i>
               </button>
             </div>
@@ -606,10 +599,18 @@
           <td>${word}</td>
           <td>${perevod}</td>
           <td style="width: 120px;">
-            <button class="action-btn btn-primary" onclick="editWord('${word}', '${perevod}')">
+            <button class="action-btn btn-primary" 
+                    data-class="${classSelect.value}"
+                    data-unit="${unitSelect.value}"
+                    data-module="${moduleSelect.value}"
+                    onclick="editWord(this, '${word}', '${perevod}')">
               <i class="fas fa-edit"></i>
             </button>
-            <button class="action-btn btn-danger" onclick="deleteWord('${word}')">
+            <button class="action-btn btn-danger" 
+                    data-class="${classSelect.value}"
+                    data-unit="${unitSelect.value}"
+                    data-module="${moduleSelect.value}"
+                    onclick="deleteWord(this, '${word}')">
               <i class="fas fa-trash"></i>
             </button>
           </td>
@@ -618,23 +619,23 @@
       });
     }
 
-    function editWord(word, perevod) {
-      const selectedClass = classSelect.value;
-      const selectedUnit = unitSelect.value;
-      const selectedModule = moduleSelect.value;
+    function editWord(button, word, perevod) {
+      const selectedClass = button.dataset.class;
+      const selectedUnit = button.dataset.unit;
+      const selectedModule = button.dataset.module;
       
       if (!selectedClass || !selectedUnit) {
         alert('Пожалуйста, выберите класс и юнит для редактирования слова');
         return;
       }
       
-      window.location.href = `/edit_word?class=${selectedClass}&unit=${selectedUnit}&word=${encodeURIComponent(word)}&perevod=${encodeURIComponent(perevod)}`;
+      window.location.href = `/edit_word/${encodeURIComponent(word)}?class=${selectedClass}&unit=${selectedUnit}&module=${selectedModule}&perevod=${encodeURIComponent(perevod)}`;
     }
     
-    function deleteWord(word) {
-      const selectedClass = classSelect.value;
-      const selectedUnit = unitSelect.value;
-      const selectedModule = moduleSelect.value;
+    function deleteWord(button, word) {
+      const selectedClass = button.dataset.class;
+      const selectedUnit = button.dataset.unit;
+      const selectedModule = button.dataset.module;
       
       if (!selectedClass || !selectedUnit) {
         alert('Пожалуйста, выберите класс и юнит для удаления слова');
@@ -642,38 +643,29 @@
       }
       
       if (confirm(`Вы уверены, что хотите удалить слово "${word}"?`)) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/delete_word';
-        
-        const classInput = document.createElement('input');
-        classInput.type = 'hidden';
-        classInput.name = 'class';
-        classInput.value = selectedClass;
-        form.appendChild(classInput);
-        
-        const unitInput = document.createElement('input');
-        unitInput.type = 'hidden';
-        unitInput.name = 'unit';
-        unitInput.value = selectedUnit;
-        form.appendChild(unitInput);
-        
-        if (selectedModule) {
-          const moduleInput = document.createElement('input');
-          moduleInput.type = 'hidden';
-          moduleInput.name = 'module';
-          moduleInput.value = selectedModule;
-          form.appendChild(moduleInput);
-        }
-        
-        const wordInput = document.createElement('input');
-        wordInput.type = 'hidden';
-        wordInput.name = 'word';
-        wordInput.value = word;
-        form.appendChild(wordInput);
-        
-        document.body.appendChild(form);
-        form.submit();
+        fetch(`/delete_word/${encodeURIComponent(word)}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            class: selectedClass,
+            unit: selectedUnit,
+            module: selectedModule
+          })
+        })
+        .then(response => {
+          if (response.ok) {
+            // Успешно удалено, обновите страницу
+            window.location.reload();
+          } else {
+            alert('Ошибка при удалении слова.');
+          }
+        })
+        .catch(error => {
+          console.error('Ошибка:', error);
+          alert('Произошла ошибка при удалении слова.');
+        });
       }
     }
 

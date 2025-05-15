@@ -255,7 +255,7 @@
         </div>
         <div class="form-group">
           <label class="form-label" for="moduleSelect">Module:</label>
-          <select class="form-input" id="moduleSelect" name="moduleSelect">
+          <select class="form-input" id="moduleSelect" name="moduleSelect" required>
             <option value="" disabled selected>Select a module</option>
             {% for module in modules %}
             <option value="{{ module }}">{{ module }}</option>
@@ -278,7 +278,7 @@
           <div class="word-pair-grid">
             <div class="form-group">
               <label class="form-label" for="word0">Word:</label>
-              <input type="text" class="form-input" id="word0" name="word0" placeholder="Enter word" />
+              <input type="text" class="form-input" id="word0" name="word0" placeholder="Enter word" required />
             </div>
             <div class="form-group">
               <label class="form-label" for="perevod0">Translation:</label>
@@ -288,6 +288,7 @@
                 id="perevod0"
                 name="perevod0"
                 placeholder="Enter translation"
+                required
               />
             </div>
           </div>
@@ -323,6 +324,12 @@
 
     function populateSelect(selectElement, items, addNewValue, addNewText) {
       selectElement.innerHTML = '';
+      const defaultOption = document.createElement('option');
+      defaultOption.value = "";
+      defaultOption.textContent = "--- Выберите ---";
+      defaultOption.disabled = true;
+      defaultOption.selected = true;
+      selectElement.appendChild(defaultOption);
       items.forEach(item => {
         const option = document.createElement('option');
         option.value = item;
@@ -333,7 +340,6 @@
       addNewOption.value = addNewValue;
       addNewOption.textContent = addNewText;
       selectElement.appendChild(addNewOption);
-      selectElement.disabled = false;
     }
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -343,6 +349,7 @@
       newUnitInput.required = false;
       clearSelect(moduleSelect, "--- Сначала выберите юнит ---");
       moduleSelect.disabled = true;
+      moduleSelect.required = false; // Disable required validation when the field is disabled
       newModuleInput.style.display = "none";
       newModuleInput.required = false;
     });
@@ -352,7 +359,7 @@
       newUnitInput.required = false;
       newModuleInput.style.display = "none";
       newModuleInput.required = false;
-      clearSelect(unitSelect, "--- Загрузка юнитов... ---");
+      clearSelect(unitSelect, "--- Выберите юнит ---");
       unitSelect.disabled = true;
       clearSelect(moduleSelect, "--- Сначала выберите юнит ---");
       moduleSelect.disabled = true;
@@ -368,27 +375,24 @@
             .then(response => response.json())
             .then(units => {
               if (units.length === 0) {
-                // Нет юнитов - сразу активируем добавление нового юнита и модуля
-                unitSelect.innerHTML = '';
+                // Нет юнитов - добавляем только опцию добавления нового юнита
+                clearSelect(unitSelect, "--- Нет юнитов ---");
                 const addNewUnitOption = document.createElement("option");
                 addNewUnitOption.value = "add_new_unit";
                 addNewUnitOption.textContent = "Добавить новый юнит...";
                 unitSelect.appendChild(addNewUnitOption);
-                unitSelect.value = "add_new_unit";
-
-                newUnitInput.style.display = "block";
-                newUnitInput.required = true;
-
-                // Автоматически активируем добавление модуля
-                moduleSelect.innerHTML = '';
-                const addNewModuleOption = document.createElement("option");
-                addNewModuleOption.value = "add_new_module";
-                addNewModuleOption.textContent = "Добавить новый модуль...";
-                moduleSelect.appendChild(addNewModuleOption);
-                moduleSelect.value = "add_new_module";
-
-                newModuleInput.style.display = "block";
-                newModuleInput.required = true;
+                
+                // Не выбираем юнит автоматически и не показываем поле ввода
+                newUnitInput.style.display = "none";
+                newUnitInput.required = false;
+                
+                // Не активируем добавление модуля автоматически
+                clearSelect(moduleSelect, "--- Сначала выберите юнит ---");
+                moduleSelect.disabled = true;
+                moduleSelect.required = false; // Disable required validation when the field is disabled
+                
+                newModuleInput.style.display = "none";
+                newModuleInput.required = false;
               } else {
                 clearSelect(unitSelect, "--- Выберите юнит ---");
                 populateSelect(unitSelect, units, "add_new_unit", "Добавить новый юнит...");
@@ -418,17 +422,17 @@
         moduleSelect.appendChild(addNewModuleOption);
         moduleSelect.value = "add_new_module";
         moduleSelect.disabled = false;
+        moduleSelect.required = true; // Enable required validation when the field is enabled
 
         newModuleInput.style.display = "block";
         newModuleInput.required = true;
-        alert(1);
       } else {
-        alert(2);
         newUnitInput.style.display = "none";
         newUnitInput.required = false;
 
         clearSelect(moduleSelect, "--- Загрузка модулей... ---");
         moduleSelect.disabled = true;
+        moduleSelect.required = false; // Disable required validation when the field is disabled
 
         const selectedClass = classSelect.value;
         if (this.value && selectedClass && selectedClass !== 'add_new_class') {
@@ -437,12 +441,24 @@
             .then(modules => {
               clearSelect(moduleSelect, "--- Выберите модуль ---");
               populateSelect(moduleSelect, modules, "add_new_module", "Добавить новый модуль...");
+              moduleSelect.disabled = false; // Enable module select after populating
+              moduleSelect.required = true; // Enable required validation when the field is enabled
             })
             .catch(error => {
               console.error('Error fetching modules:', error);
               clearSelect(moduleSelect, "--- Ошибка загрузки модулей ---");
             });
         }
+      }
+    });
+
+    moduleSelect.addEventListener("change", function() {
+      if (this.value === "add_new_module") {
+        newModuleInput.style.display = "block";
+        newModuleInput.required = true;
+      } else {
+        newModuleInput.style.display = "none";
+        newModuleInput.required = false;
       }
     });
 
