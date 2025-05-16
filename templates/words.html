@@ -235,32 +235,38 @@
       padding: 15px 20px;
       border-radius: 10px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      transition: transform 0.2s ease, box-shadow 0.2s ease; /* Added box-shadow transition */
-      display: flex; /* Using flex for better internal alignment */
-      flex-direction: column; /* Content flows downwards */
-      justify-content: space-between; /* Pushes actions to the bottom if card height varies */
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
     }
 
     .word-card:hover {
-      transform: translateY(-4px);
-      box-shadow: var(--shadow-hover); /* Enhanced hover shadow */
-    }
-    
-    .word-card-content { /* Wrapper for word and translation */
-        margin-bottom: 10px; /* Space before actions */
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
 
-    .word-card strong {
-      display: block;
-      font-size: 1.1rem;
-      margin-bottom: 6px;
-      color: var(--secondary); /* Emphasize word */
+    .word-text {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: var(--primary);
     }
 
-    .word-card span {
-      color: #777;
-      font-size: 0.95rem;
+    .translation {
+      font-size: 1rem;
+      color: var(--text);
+      margin-bottom: 15px;
+      flex-grow: 1;
     }
+
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: auto;
+    }
+
+
     
     .word-actions { /* Defined for consistency with table actions */
       display: flex;
