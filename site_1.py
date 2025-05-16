@@ -698,7 +698,11 @@ def module_words(class_name, unit_name, module_name):
 
 @app.route('/quizlet/<class_name>/<unit_name>/<module_name>')
 def quizlet_cards(class_name, unit_name, module_name):
-    words = Word.query.filter_by(classs=class_name, unit=unit_name, module=module_name).all()
+    word_objects = Word.query.filter_by(classs=class_name, unit=unit_name, module=module_name).all()
+    # Convert Word objects to dictionaries for JSON serialization
+    words = [{'id': word.id, 'word': word.word, 'perevod': word.perevod, 
+              'classs': word.classs, 'unit': word.unit, 'module': word.module} 
+             for word in word_objects]
     return render_template('quizlet_cards.html',
                          words=words,
                          class_name=class_name,
