@@ -109,7 +109,13 @@
       display: flex;
       gap: 10px;
       align-items: center;
+      flex-wrap: wrap;
       box-shadow: var(--shadow);
+    }
+    
+    .link-box .btn {
+      padding: 8px 15px;
+      font-size: 0.9rem;
     }
 
     .link-box input {
@@ -120,19 +126,7 @@
       font-size: 0.9rem;
     }
 
-    .copy-btn {
-      padding: 8px 15px;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
 
-    .copy-btn:hover {
-      background: var(--primary-dark);
-    }
 
     /* View toggle */
     .view-toggle {
@@ -292,7 +286,8 @@
 
     <div class="link-box">
       <input type="text" id="quizletLink" value="{{ url_for('quizlet_cards', class_name=class_name, unit_name=unit_name, module_name=module_name, _external=True) }}" readonly>
-      <button class="copy-btn" onclick="copyLink()"><i class="fas fa-copy"></i> Копировать ссылку</button>
+      <button class="btn btn-primary" onclick="copyLink()"><i class="fas fa-copy"></i> Копировать ссылку</button>
+      <a href="{{ url_for('quizlet_cards', class_name=class_name, unit_name=unit_name, module_name=module_name) }}" class="btn btn-primary"><i class="fas fa-external-link-alt"></i> Перейти к карточкам</a>
     </div>
 
     <div class="view-toggle">
