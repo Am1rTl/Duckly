@@ -352,6 +352,67 @@
       moduleSelect.required = false; // Disable required validation when the field is disabled
       newModuleInput.style.display = "none";
       newModuleInput.required = false;
+      
+      // Parse URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const classParam = urlParams.get('class');
+      const unitParam = urlParams.get('unit');
+      const moduleParam = urlParams.get('module');
+      
+      // If class parameter exists, select it and trigger the change event
+      if (classParam) {
+        // Check if the class exists in the dropdown
+        const classExists = Array.from(classSelect.options).some(option => option.value === classParam);
+        
+        if (classExists) {
+          classSelect.value = classParam;
+          // Trigger the change event to load units
+          const event = new Event('change');
+          classSelect.dispatchEvent(event);
+          
+          // If unit parameter exists, we need to wait for units to load before selecting
+          if (unitParam) {
+            // Function to check if units are loaded and select the unit
+            const checkAndSelectUnit = function() {
+              if (!unitSelect.disabled) {
+                // Check if the unit exists in the dropdown
+                const unitExists = Array.from(unitSelect.options).some(option => option.value === unitParam);
+                
+                if (unitExists) {
+                  unitSelect.value = unitParam;
+                  // Trigger the change event to load modules
+                  const unitEvent = new Event('change');
+                  unitSelect.dispatchEvent(unitEvent);
+                  
+                  // If module parameter exists, we need to wait for modules to load before selecting
+                  if (moduleParam) {
+                    // Function to check if modules are loaded and select the module
+                    const checkAndSelectModule = function() {
+                      if (!moduleSelect.disabled) {
+                        // Check if the module exists in the dropdown
+                        const moduleExists = Array.from(moduleSelect.options).some(option => option.value === moduleParam);
+                        
+                        if (moduleExists) {
+                          moduleSelect.value = moduleParam;
+                        }
+                        clearInterval(moduleInterval);
+                      }
+                    };
+                    
+                    // Check every 100ms if modules are loaded
+                    const moduleInterval = setInterval(checkAndSelectModule, 100);
+                  }
+                  
+                  clearInterval(unitInterval);
+                }
+              }
+            };
+            
+            // Check every 100ms if units are loaded
+            const unitInterval = setInterval(checkAndSelectUnit, 100);
+          }
+        }
+      }
     });
 
     classSelect.addEventListener("change", function() {
@@ -475,7 +536,19 @@
     };
 
     document.getElementById("back").onclick = function () {
-      location.href = window.location.origin + "/words";
+      // Check if we came from a specific module page
+      const urlParams = new URLSearchParams(window.location.search);
+      const classParam = urlParams.get('class');
+      const unitParam = urlParams.get('unit');
+      const moduleParam = urlParams.get('module');
+      
+      // If all parameters exist, go back to the module page
+      if (classParam && unitParam && moduleParam) {
+        location.href = window.location.origin + `/class/${encodeURIComponent(classParam)}/${encodeURIComponent(unitParam)}/${encodeURIComponent(moduleParam)}`;
+      } else {
+        // Otherwise go to the words page
+        location.href = window.location.origin + "/words";
+      }
     };
 
     function addWordField() {
