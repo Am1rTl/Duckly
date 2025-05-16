@@ -1,24 +1,17 @@
-# Use an official Python runtime as a parent image
-FROM python:3.9-slim
+FROM python:3.10-slim
 
-# Set the working directory in the container
+# Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Copy the current directory contents into the container at /app
-COPY . /app
+# Копируем файл зависимостей и устанавливаем их (включая gunicorn)
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
-# Install any needed packages specified in requirements.txt
-# (Create this file if you have more dependencies)
-RUN pip install --no-cache-dir Flask Flask-SQLAlchemy markupsafe PyMySQL psycopg2-binary # Added PyMySQL and psycopg2-binary as common DB drivers, adjust if needed
-RUN pip install --no-cache-dir gunicorn # Gunicorn is a good WSGI server for production
+# Копируем весь код проекта (включая файлы: site_1.py, create_db.py, Dockerfile и папки instance, templates, static и nginx_config)
+COPY . .
 
-# Make port 5000 available to the world outside this container
-# This is the port your Flask app runs on internally in the container
-EXPOSE 5000
+# Открываем порт 1800, на котором будет работать Gunicorn
+EXPOSE 1800
 
-# Define environment variables (if any, e.g., for database connections)
-# ENV FLASK_APP site_1.py # Your main app file
-# ENV FLASK_RUN_HOST 0.0.0.0
-
-# Command to run the application using Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "site_1:app"]
+# Запускаем Gunicorn, указывая имя модуля и объекта приложения (предполагаем site_1.py с объектом app)
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:1800", "site_1:app"]

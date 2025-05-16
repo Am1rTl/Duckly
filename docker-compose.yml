@@ -1,15 +1,13 @@
-version: '3.8'
+version: "3.8"
+
 services:
-  web:
-    build: .
-    command: gunicorn --bind 0.0.0.0:5000 site_1:app
-    volumes:
-      - ./app.db:/app/app.db
-  nginx:
-    image: nginx:latest
+  duckly:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: duckly_container
     ports:
-      - "80:80"
+      - "1800:1800"
     volumes:
-      - ./nginx_config:/etc/nginx/conf.d  # <-- UPDATED PATH
-    depends_on:
-      - web
+      - ./instance:/app/instance
+    restart: unless-stopped
