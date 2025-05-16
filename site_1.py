@@ -687,6 +687,25 @@ def add_word():
 
 
 
+@app.route('/class/<class_name>/<unit_name>/<module_name>')
+def module_words(class_name, unit_name, module_name):
+    words = Word.query.filter_by(classs=class_name, unit=unit_name, module=module_name).all()
+    return render_template('module_words.html', 
+                         words=words,
+                         class_name=class_name,
+                         unit_name=unit_name,
+                         module_name=module_name)
+
+@app.route('/quizlet/<class_name>/<unit_name>/<module_name>')
+def quizlet_cards(class_name, unit_name, module_name):
+    words = Word.query.filter_by(classs=class_name, unit=unit_name, module=module_name).all()
+    return render_template('quizlet_cards.html',
+                         words=words,
+                         class_name=class_name,
+                         unit_name=unit_name,
+                         module_name=module_name)
+
+
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()

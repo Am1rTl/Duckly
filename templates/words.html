@@ -505,25 +505,20 @@
     }
 
     function renderCards(words) {
-      cardView.innerHTML = ""; // Clear previous cards
-      if (words.length === 0) {
-          cardView.innerHTML = "<p>Слова не найдены для выбранных фильтров.</p>";
-          return;
-      }
+      const container = document.getElementById('cardView');
+      container.innerHTML = ''; // Clear existing cards
+      
       words.forEach(wordObj => {
-        const card = document.createElement("div");
-        card.className = "word-card";
+        const card = document.createElement('div');
+        card.className = 'word-card';
         
-        // Use wordObj.class, wordObj.unit, wordObj.module for URLs
         card.innerHTML = `
-          <div class="word-card-content">
-            <strong>${wordObj.word}</strong>
-            <span>${wordObj.perevod}</span>
-          </div>
-          <div class="word-actions">
-            <a href="${getEditUrl(wordObj.word, wordObj.class, wordObj.unit, wordObj.module, wordObj.perevod)}" class="action-btn btn-primary">
-              <i class="fas fa-edit"></i> Изменить
-            </a>
+          <a href="/class/${encodeURIComponent(wordObj.class)}/${encodeURIComponent(wordObj.unit)}/${encodeURIComponent(wordObj.module)}" style="text-decoration: none; color: inherit;">
+            <div class="word-text">${wordObj.word}</div>
+            <div class="translation">${wordObj.perevod}</div>
+          </a>
+          <div class="card-actions">
+            <a href="${getEditUrl(wordObj.word, wordObj.class, wordObj.unit, wordObj.module, wordObj.perevod)}" class="action-btn btn-primary"><i class="fas fa-edit"></i> Изменить</a>
             <button class="action-btn btn-danger"
                     data-word="${encodeURIComponent(wordObj.word)}"
                     data-class="${encodeURIComponent(wordObj.class)}"
@@ -534,28 +529,22 @@
             </button>
           </div>
         `;
-        cardView.appendChild(card);
+        container.appendChild(card);
       });
     }
 
     function renderTable(words) {
-      tableBody.innerHTML = ""; // Clear previous table rows
-      if (words.length === 0 && tableView.style.display === "table") { // Check if table is active view
-          const row = tableBody.insertRow();
-          const cell = row.insertCell();
-          cell.colSpan = 3; // Span across all columns
-          cell.textContent = "Слова не найдены для выбранных фильтров.";
-          cell.style.textAlign = "center";
-          return;
-      }
+      const tableBody = document.getElementById('table-body');
+      tableBody.innerHTML = ''; // Clear existing rows
+      
       words.forEach(wordObj => {
-        const row = tableBody.insertRow();
+        const row = document.createElement('tr');
+        
         row.innerHTML = `
-          <td>${wordObj.word}</td>
+          <td><a href="/class/${encodeURIComponent(wordObj.class)}/${encodeURIComponent(wordObj.unit)}/${encodeURIComponent(wordObj.module)}">${wordObj.word}</a></td>
           <td>${wordObj.perevod}</td>
-          <td style="width: 220px;"> <a href="${getEditUrl(wordObj.word, wordObj.class, wordObj.unit, wordObj.module, wordObj.perevod)}" class="action-btn btn-primary">
-              <i class="fas fa-edit"></i> Изменить
-            </a>
+          <td>
+            <a href="${getEditUrl(wordObj.word, wordObj.class, wordObj.unit, wordObj.module, wordObj.perevod)}" class="action-btn btn-primary"><i class="fas fa-edit"></i> Изменить</a>
             <button class="action-btn btn-danger"
                     data-word="${encodeURIComponent(wordObj.word)}"
                     data-class="${encodeURIComponent(wordObj.class)}"

@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ page_title }} - Изучение модуля</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6c63ff;
+            --primary-light: #a5a1ff;
+            --primary-dark: #5a52e0;
+            --secondary: #4a4a98;
+            --background: #f8f9fe;
+            --card-bg: #ffffff;
+            --text: #333333;
+            --text-light: #777777;
+            --border: #e0e0e0;
+            --danger-color: #ff4757;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.12);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 15px;
+        }
+        
+        .header .back-button {
+            background-color: var(--primary);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+        }
+        .header .back-button:hover {
+            background-color: var(--primary-dark);
+        }
+        .header .back-button i {
+            margin-right: 8px;
+        }
+
+        .page-main-title {
+            font-size: 1.8rem;
+            color: var(--secondary);
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .share-link-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 25px;
+            background-color: #f0f2ff;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .share-link-section input[type="text"] {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background-color: white;
+        }
+
+        .share-link-section button {
+            padding: 10px 15px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+        }
+        .share-link-section button:hover {
+            background-color: var(--primary-dark);
+        }
+        .share-link-section button i {
+            margin-right: 6px;
+        }
+
+        .view-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .view-toggle button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: 500;
+            background-color: white;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .view-toggle button.active {
+            background-color: var(--primary);
+            color: white;
+        }
+        .view-toggle button:hover:not(.active) {
+            background-color: var(--primary-light);
+            color: white;
+            border-color: var(--primary-light);
+        }
+
+        /* Card View Styles */
+        .cards-view-container {
+            perspective: 1000px; /* For 3D flip effect */
+            margin-bottom: 20px;
+            min-height: 250px; /* Ensure container has height */
+            display: flex; /* For centering card content if needed */
+            justify-content: center;
+            align-items: center;
+        }
+        .flashcard {
+            width: 100%;
+            max-width: 500px;
+            height: 250px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            cursor: pointer;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+        }
+        .flashcard.is-flipped {
+            transform: rotateY(180deg);
+        }
+        .flashcard-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            font-size: 1.5rem;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+        .flashcard-front {
+            background-color: var(--card-bg);
+            color: var(--text);
+        }
+        .flashcard-back {
+            background-color: var(--primary-light); /* Different bg for back */
+            color: white;
+            transform: rotateY(180deg);
+        }
+
+        .card-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px; /* Space above navigation */
+            margin-bottom: 20px;
+        }
+        .card-navigation button {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            color: var(--primary);
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+         .card-navigation button:disabled {
+            color: var(--border);
+            cursor: not-allowed;
+        }
+        .card-counter {
+            font-size: 1rem;
+            color: var(--text-light);
+        }
+        
+        .card-actions-bar {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px; /* After card, before navigation */
+            padding: 10px 0;
+            border-top: 1px solid var(--border);
+            margin-bottom: 15px;
+        }
+
+        /* Table View Styles */
+        .table-view-container table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        .table-view-container th, .table-view-container td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .table-view-container th {
+            background-color: var(--primary-light);
+            color: white;
+            font-weight: 500;
+        }
+        .table-view-container tr:last-child td {
+            border-bottom: none;
+        }
+        .table-view-container tr:hover {
+            background-color: rgba(108, 99, 255, 0.05);
+        }
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            gap: 5px;
+            transition: all 0.2s ease;
+            margin-right: 5px;
+        }
+        .action-btn i { font-size: 0.8rem; }
+        .btn-edit { background-color: var(--primary); color: white; }
+        .btn-edit:hover { background-color: var(--primary-dark); }
+        .btn-delete { background-color: var(--danger-color); color: white; }
+        .btn-delete:hover { background-color: #d63031; }
+
+        .no-words-message {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.1rem;
+            color: var(--text-light);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="{{ url_for('words') }}" class="back-button"><i class="fas fa-arrow-left"></i> К словарю</a>
+            <h1 class="page-main-title">{{ page_title }}</h1>
+            <div></div> </div>
+
+        <div class="share-link-section">
+            <input type="text" id="shareableLink" value="{{ current_page_url }}" readonly>
+            <button id="copyLinkBtn"><i class="fas fa-copy"></i> Копировать</button>
+        </div>
+
+        <div class="view-toggle">
+            <button id="viewCardsBtn" class="active"><i class="fas fa-th-large"></i> Карточки</button>
+            <button id="viewTableBtn"><i class="fas fa-list-ul"></i> Таблица</button>
+        </div>
+
+        <div id="cardsView" class="cards-view-container">
+            <div class="flashcard" id="flashcard">
+                <div class="flashcard-face flashcard-front" id="cardFront"></div>
+                <div class="flashcard-face flashcard-back" id="cardBack"></div>
+            </div>
+        </div>
+        <div class="card-actions-bar" id="cardActionsBar" style="display: none;">
+             </div>
+        <div class="card-navigation" id="cardNavigation" style="display: none;">
+            <button id="prevCardBtn"><i class="fas fa-chevron-left"></i></button>
+            <span id="cardCounter"></span>
+            <button id="nextCardBtn"><i class="fas fa-chevron-right"></i></button>
+        </div>
+
+
+        <div id="tableView" class="table-view-container" style="display: none;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Слово (Термин)</th>
+                        <th>Перевод (Определение)</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="wordsTableBody">
+                </tbody>
+            </table>
+        </div>
+         <div id="noWordsMessage" class="no-words-message" style="display: none;">
+            В этом модуле пока нет слов.
+        </div>
+    </div>
+
+    <script>
+        const wordsData = JSON.parse({{ module_words_json|safe }});
+        const className = "{{ class_name }}";
+        const unitName = "{{ unit_name }}";
+        const moduleName = "{{ module_name }}";
+
+        let currentCardIndex = 0;
+        let currentView = 'cards'; // 'cards' or 'table'
+
+        const flashcard = document.getElementById('flashcard');
+        const cardFront = document.getElementById('cardFront');
+        const cardBack = document.getElementById('cardBack');
+        const cardCounter = document.getElementById('cardCounter');
+        const prevCardBtn = document.getElementById('prevCardBtn');
+        const nextCardBtn = document.getElementById('nextCardBtn');
+        const cardActionsBar = document.getElementById('cardActionsBar');
+
+        const wordsTableBody = document.getElementById('wordsTableBody');
+
+        const viewCardsBtn = document.getElementById('viewCardsBtn');
+        const viewTableBtn = document.getElementById('viewTableBtn');
+        const cardsViewContainer = document.getElementById('cardsView');
+        const cardNavigationControls = document.getElementById('cardNavigation');
+        const tableViewContainer = document.getElementById('tableView');
+        const noWordsMessageDiv = document.getElementById('noWordsMessage');
+
+
+        function displayCard(index) {
+            if (!wordsData || wordsData.length === 0) {
+                cardsViewContainer.style.display = 'none';
+                cardNavigationControls.style.display = 'none';
+                cardActionsBar.style.display = 'none';
+                noWordsMessageDiv.style.display = 'block';
+                noWordsMessageDiv.textContent = 'В этом модуле пока нет слов.';
+                return;
+            }
+            
+            noWordsMessageDiv.style.display = 'none';
+            cardsViewContainer.style.display = 'flex'; // or 'block' if you prefer
+            cardNavigationControls.style.display = 'flex';
+            cardActionsBar.style.display = 'flex';
+
+
+            const wordObj = wordsData[index];
+            cardFront.textContent = wordObj.word;
+            cardBack.textContent = wordObj.perevod;
+            flashcard.classList.remove('is-flipped');
+            cardCounter.textContent = `Карточка ${index + 1} из ${wordsData.length}`;
+
+            prevCardBtn.disabled = index === 0;
+            nextCardBtn.disabled = index === wordsData.length - 1;
+            
+            // Update action buttons for current card
+            updateCardActionButtons(wordObj);
+        }
+        
+        function updateCardActionButtons(wordObj) {
+            const editUrl = `/edit_word/${encodeURIComponent(wordObj.word)}?class=${encodeURIComponent(className)}&unit=${encodeURIComponent(unitName)}&module=${encodeURIComponent(moduleName)}&perevod=${encodeURIComponent(wordObj.perevod)}`;
+            cardActionsBar.innerHTML = `
+                <a href="${editUrl}" class="action-btn btn-edit">
+                    <i class="fas fa-edit"></i> Редактировать
+                </a>
+                <button class="action-btn btn-delete" 
+                        data-word="${encodeURIComponent(wordObj.word)}"
+                        data-perevod="${encodeURIComponent(wordObj.perevod)}"
+                        onclick="handleDeleteWord(this.dataset.word, this.dataset.perevod, true)">
+                    <i class="fas fa-trash"></i> Удалить
+                </button>
+            `;
+        }
+
+
+        function populateTable() {
+            wordsTableBody.innerHTML = ''; // Clear existing rows
+            if (!wordsData || wordsData.length === 0) {
+                tableViewContainer.style.display = 'none';
+                 noWordsMessageDiv.style.display = 'block';
+                 noWordsMessageDiv.textContent = 'В этом модуле пока нет слов для отображения в таблице.';
+                return;
+            }
+            noWordsMessageDiv.style.display = 'none';
+            tableViewContainer.style.display = 'block';
+
+
+            wordsData.forEach(wordObj => {
+                const row = wordsTableBody.insertRow();
+                const cellWord = row.insertCell();
+                const cellTranslation = row.insertCell();
+                const cellActions = row.insertCell();
+
+                cellWord.textContent = wordObj.word;
+                cellTranslation.textContent = wordObj.perevod;
+
+                const editUrl = `/edit_word/${encodeURIComponent(wordObj.word)}?class=${encodeURIComponent(className)}&unit=${encodeURIComponent(unitName)}&module=${encodeURIComponent(moduleName)}&perevod=${encodeURIComponent(wordObj.perevod)}`;
+
+                cellActions.innerHTML = `
+                    <a href="${editUrl}" class="action-btn btn-edit">
+                        <i class="fas fa-edit"></i> Редактировать
+                    </a>
+                    <button class="action-btn btn-delete" 
+                            data-word="${encodeURIComponent(wordObj.word)}"
+                            data-perevod="${encodeURIComponent(wordObj.perevod)}"
+                            onclick="handleDeleteWord(this.dataset.word, this.dataset.perevod, false)">
+                        <i class="fas fa-trash"></i> Удалить
+                    </button>
+                `;
+            });
+        }
+        
+        function handleDeleteWord(word, perevod, isCardView) {
+            const decodedWord = decodeURIComponent(word);
+            if (confirm(`Вы уверены, что хотите удалить слово "${decodedWord}"?`)) {
+                fetch(`/delete_word/${word}`, { // word is already URL encoded from dataset
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        class: className,
+                        unit: unitName,
+                        module: moduleName
+                        // 'perevod' might not be needed by backend if word+class+unit+module is unique
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(`Слово "${decodedWord}" успешно удалено.`);
+                        // Remove word from local wordsData and refresh view
+                        const indexToRemove = wordsData.findIndex(w => w.word === decodedWord && w.perevod === decodeURIComponent(perevod));
+                        if (indexToRemove > -1) {
+                            wordsData.splice(indexToRemove, 1);
+                            if (currentView === 'cards') {
+                                if (wordsData.length === 0) {
+                                    currentCardIndex = 0;
+                                    displayCard(currentCardIndex); // Will show "no words"
+                                } else if (currentCardIndex >= wordsData.length) {
+                                    currentCardIndex = wordsData.length - 1;
+                                    displayCard(currentCardIndex);
+                                } else {
+                                    displayCard(currentCardIndex);
+                                }
+                            } else {
+                                populateTable();
+                            }
+                        }
+                    } else {
+                        alert('Ошибка при удалении слова: ' + (data.error || 'Неизвестная ошибка.'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка при удалении:', error);
+                    alert('Произошла сетевая ошибка при попытке удаления слова.');
+                });
+            }
+        }
+
+
+        // Event Listeners
+        if (flashcard) {
+            flashcard.addEventListener('click', () => {
+                flashcard.classList.toggle('is-flipped');
+            });
+        }
+
+        if (prevCardBtn) {
+            prevCardBtn.addEventListener('click', () => {
+                if (currentCardIndex > 0) {
+                    currentCardIndex--;
+                    displayCard(currentCardIndex);
+                }
+            });
+        }
+
+       if (nextCardBtn) {
+            nextCardBtn.addEventListener('click', () => {
+                if (currentCardIndex < wordsData.length - 1) {
+                    currentCardIndex++;
+                    displayCard(currentCardIndex);
+                }
+            });
+        }
+        
+        document.addEventListener('keydown', (event) => {
+            if (currentView === 'cards' && wordsData && wordsData.length > 0) {
+                if (event.key === 'ArrowLeft') {
+                    if (currentCardIndex > 0) {
+                        currentCardIndex--;
+                        displayCard(currentCardIndex);
+                    }
+                } else if (event.key === 'ArrowRight') {
+                    if (currentCardIndex < wordsData.length - 1) {
+                        currentCardIndex++;
+                        displayCard(currentCardIndex);
+                    }
+                } else if (event.key === ' ' || event.key === 'Enter') { // Flip on Space or Enter
+                     if (flashcard) flashcard.classList.toggle('is-flipped');
+                }
+            }
+        });
+
+        document.getElementById('copyLinkBtn').addEventListener('click', () => {
+            const linkInput = document.getElementById('shareableLink');
+            linkInput.select();
+            linkInput.setSelectionRange(0, 99999); // For mobile devices
+            try {
+                navigator.clipboard.writeText(linkInput.value);
+                alert('Ссылка скопирована в буфер обмена!');
+            } catch (err) {
+                alert('Не удалось скопировать ссылку. Пожалуйста, скопируйте вручную.');
+            }
+        });
+
+        viewCardsBtn.addEventListener('click', () => {
+            currentView = 'cards';
+            viewCardsBtn.classList.add('active');
+            viewTableBtn.classList.remove('active');
+            tableViewContainer.style.display = 'none';
+            // Show card elements only if there are words
+            if (wordsData && wordsData.length > 0) {
+                cardsViewContainer.style.display = 'flex';
+                cardNavigationControls.style.display = 'flex';
+                cardActionsBar.style.display = 'flex';
+                noWordsMessageDiv.style.display = 'none';
+                displayCard(currentCardIndex);
+            } else {
+                cardsViewContainer.style.display = 'none';
+                cardNavigationControls.style.display = 'none';
+                cardActionsBar.style.display = 'none';
+                noWordsMessageDiv.style.display = 'block';
+                noWordsMessageDiv.textContent = 'В этом модуле пока нет слов.';
+            }
+        });
+
+        viewTableBtn.addEventListener('click', () => {
+            currentView = 'table';
+            viewTableBtn.classList.add('active');
+            viewCardsBtn.classList.remove('active');
+            cardsViewContainer.style.display = 'none';
+            cardNavigationControls.style.display = 'none';
+            cardActionsBar.style.display = 'none';
+             // Show table only if there are words
+            if (wordsData && wordsData.length > 0) {
+                tableViewContainer.style.display = 'block';
+                noWordsMessageDiv.style.display = 'none';
+                populateTable();
+            } else {
+                tableViewContainer.style.display = 'none';
+                noWordsMessageDiv.style.display = 'block';
+                noWordsMessageDiv.textContent = 'В этом модуле пока нет слов для отображения в таблице.';
+            }
+        });
+
+        // Initial setup
+        if (wordsData && wordsData.length > 0) {
+            displayCard(currentCardIndex); // Default to card view
+            viewCardsBtn.click(); // Programmatically click to set initial view and styles
+        } else {
+            // If no words, show the "no words" message and hide controls
+            cardsViewContainer.style.display = 'none';
+            cardNavigationControls.style.display = 'none';
+            cardActionsBar.style.display = 'none';
+            tableViewContainer.style.display = 'none';
+            noWordsMessageDiv.style.display = 'block';
+            noWordsMessageDiv.textContent = 'В этом модуле пока нет слов.';
+            // Disable view toggle buttons or adjust UI as needed if no words
+            viewCardsBtn.classList.add('active'); // Keep cards view active by default
+        }
+
+    </script>
+</body>
+</html>
