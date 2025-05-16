@@ -1,48 +1,15 @@
 version: '3.8'
-
 services:
-  flask_app:
-    build: . # Looks for Dockerfile in the current directory
-    container_name: my_flask_app
-    restart: unless-stopped
-    expose: # Expose port only to linked services, not to host
-      - "5000"
+  web:
+    build: .
+    command: gunicorn --bind 0.0.0.0:5000 site_1:app
     volumes:
-      - ./app_data:/app/db_data # Persist SQLite database if it's stored in /app/db_data
-      # If your app.db is in the root of /app, then use:
-      # - ./app_db:/app/app.db # Mount a specific file or directory for the SQLite DB
-      # Make sure the path in your app config 'sqlite:///app.db' matches where it's stored in the container.
-      # If app.db is created in /app, then:
-      - ./app_data:/app # This will map the whole app directory, useful for development but ensure app.db is in a subfolder for clean volume mapping in production.
-                       # For sqlite:///app.db, the DB will be at /app/app.db.
-                       # So, to persist just the DB:
-      # - ./app_data/app.db:/app/app.db # More specific mapping for the database file
-
-    # If your Flask app creates the 'app.db' file in the root of the WORKDIR (which is /app),
-    # and your SQLALCHEMY_DATABASE_URI is 'sqlite:///app.db', then the database file is at /app/app.db.
-    # To persist it, you'd mount a volume to that specific file or its containing directory.
-    # For simplicity and to ensure data persistence for app.db:
-    volumes:
-      - ./persistent_data:/app # Mounts the /app directory in the container to ./persistent_data on the host
-                               # This means app.db will be saved in ./persistent_data/app.db on your host.
-
-  nginx_proxy:
+      - ./app.db:/app/app.db
+  nginx:
     image: nginx:latest
-    container_name: duckly_nginx_proxy
-    restart: unless-stopped
     ports:
-      - "8080:80" # Map port 8080 on the host to port 80 in the Nginx container
-                  # Change 8080 to any other available port on your host if needed.
+      - "80:80"
     volumes:
-      - ./nginx_config:/etc/nginx/conf.d # Mount your Nginx config
+      - ./nginx_config:/etc/nginx/conf.d  # <-- UPDATED PATH
     depends_on:
-      - flask_app
-    networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge
-
-volumes: # Define a named volume for better management if you prefer
-  app_data:
+      - web
