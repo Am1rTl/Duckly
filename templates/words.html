@@ -112,6 +112,34 @@
         background-color: #d63031; /* Darker red for hover */
     }
 
+    /* Стиль для контейнера кнопки добавления слов */
+    .add-btn-container {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 1000;
+    }
+    
+    /* Стиль для круглой кнопки с плюсом */
+    .add-btn-circle {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background-color: var(--primary);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        box-shadow: 0 4px 15px rgba(108, 99, 255, 0.4);
+        transition: all 0.3s ease;
+    }
+    
+    .add-btn-circle:hover {
+        background-color: var(--primary-dark);
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(108, 99, 255, 0.5);
+    }
 
     .nav-tabs {
       display: flex;
@@ -399,7 +427,7 @@
       </div>
 
     <div class="add-btn-container">
-      <button id="addWordsButton" class="btn btn-primary"><i class="fas fa-plus-circle"></i> Добавить слова</button>
+      <button id="addWordsButton" class="add-btn-circle"><i class="fas fa-plus"></i></button>
     </div>
   </div>
 
