@@ -1912,9 +1912,16 @@ def test_results(test_id, result_id):
     test = Test.query.get_or_404(test_id)
     result = TestResult.query.get_or_404(result_id)
 
-    # Verify that the result belongs to the current user
-    if result.user_id != user.id:
-        return redirect('/tests', 302)
+    # Verify access to results
+    can_view_results = False
+    if result.user_id == user.id: # Student viewing their own results
+        can_view_results = True
+    elif user.teacher == 'yes' and test.created_by == user.id: # Teacher viewing results of a test they created
+        can_view_results = True
+
+    if not can_view_results:
+        flash("У вас нет доступа для просмотра этих результатов.", "warning")
+        return redirect(url_for('tests'))
 
     show_detailed_results = True
     if test.type == 'dictation' and test.is_active:

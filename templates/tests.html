@@ -343,9 +343,15 @@
             {% else %}
                 {# Student's view of action buttons #}
                 {% if test_item.test.is_active %}
-                    <a href="{{ url_for('take_test', test_link=test_item.test.link) }}" class="btn btn-success btn-sm" style="padding: 6px 10px; font-size: 0.9rem; background-color: var(--success-color); border-color: var(--success-color);">
-                        <i class="fas fa-play"></i> Начать/Продолжить
-                    </a>
+                    {% if test_item.student_completed_result_id %}
+                        <a href="{{ url_for('test_results', test_id=test_item.test.id, result_id=test_item.student_completed_result_id) }}" class="btn btn-info btn-sm" style="padding: 6px 10px; font-size: 0.9rem; background-color: #17a2b8; border-color: #17a2b8;">
+                            <i class="fas fa-check-circle"></i> Пройден
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('take_test', test_link=test_item.test.link) }}" class="btn btn-success btn-sm" style="padding: 6px 10px; font-size: 0.9rem; background-color: var(--success-color); border-color: var(--success-color);">
+                            <i class="fas fa-play"></i> Начать/Продолжить
+                        </a>
+                    {% endif %}
                 {% else %}
                     {# Test is Archived #}
                     {% if test_item.student_completed_result_id %}
@@ -365,7 +371,9 @@
     </tbody>
   </table>
 
+  {% if is_teacher %}
   <a href="{{ url_for('add_tests') }}" class="btn btn-primary" id="addTestBtn" style="margin-bottom: 30px;"><i class="fas fa-plus"></i> Добавить тест</a>
+  {% endif %}
 
   <h1>Scoreboard</h1>
   <ul class="collapsible">

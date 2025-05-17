@@ -449,9 +449,13 @@
 
     const testForm = document.getElementById('test-form');
     if (testForm) {
-        testForm.addEventListener('submit', function() {
+        testForm.addEventListener('submit', function(event) {
             saveCurrentAnswer();
             clearInterval(timerInterval);
+            // Display a confirmation dialog
+            if (!confirm('Вы точно готовы завершить тест?')) {
+                event.preventDefault(); // Prevent form submission if the user cancels
+            }
         });
     }
 

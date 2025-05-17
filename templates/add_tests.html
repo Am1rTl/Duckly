@@ -12,6 +12,8 @@
             --secondary: #4a4a98; --background: #f8f9fe; --card-bg: #ffffff;
             --text: #333333; --border: #ddd; --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             --input-focus-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
+            --danger: #dc3545;
+            --success: #28a745;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
         body { background-color: var(--background); color: var(--text); padding: 20px; line-height: 1.6; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
@@ -38,7 +40,7 @@
         .module-item label { font-weight: normal; font-size: 0.9rem; }
         .custom-word-pair { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
         .custom-word-pair input { flex-grow: 1; }
-        .btn-remove-word { background: var(--danger); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+        .btn-remove-word { background: var(--danger); color: white; border: none; border-radius: 8px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
         .btn-add-field { background: var(--success); font-size:0.9rem; padding: 8px 15px; margin-top:5px;}
     </style>
 </head>
@@ -99,48 +101,14 @@
                 
                 <div class="form-group" id="word_count_general_group">
                     <label for="word_count">Общее макс. количество слов (0 или пусто - без ограничения)</label>
-                    <input type="number" id="word_count" name="word_count" min="0" placeholder="Все выбранные слова">
+                    <input type="number" id="word_count" name="word_count" min="0" placeholder="Все выбранные слова" value="0">
                 </div>
             </div>
             
-            <!-- Conditional Dictation Options -->
-            <div id="dictation_options_group" style="display: none; margin-top: 20px; padding-top:20px; border-top: 1px solid var(--border);">
-                <h3 style="margin-bottom: 15px; color: var(--secondary);">Настройки для диктанта</h3>
-                <div class="form-group">
-                    <label>Источник слов для диктанта:</label>
-                    <div>
-                        <input type="radio" id="dict_src_all" name="dictation_word_source" value="all_module" checked>
-                        <label for="dict_src_all" style="font-weight: normal; margin-right: 15px;">Все слова из выбранных модулей (+ свои)</label>
-                    </div>
-                    <div>
-                        <input type="radio" id="dict_src_random" name="dictation_word_source" value="random_from_module">
-                        <label for="dict_src_random" style="font-weight: normal; margin-right: 15px;">Случайные слова из выбранных модулей (+ свои)</label>
-                    </div>
-                    <div>
-                        <input type="radio" id="dict_src_specific" name="dictation_word_source" value="selected_specific">
-                        <label for="dict_src_specific" style="font-weight: normal;">Выбрать конкретные слова из модулей (+ свои)</label>
-                    </div>
-                </div>
-
-                <div class="form-group" id="dictation_random_word_count_group" style="display: none; margin-top: 10px;">
-                    <label for="dictation_random_word_count">Количество случайных слов из модулей</label>
-                    <input type="number" id="dictation_random_word_count" name="dictation_random_word_count" min="1" class="form-control">
-                </div>
-
-                <div class="form-group" id="dictation_specific_words_group" style="display: none; margin-top: 10px;">
-                    <label>Выберите слова (из добавленных в тест модулей):</label>
-                    <div id="specific_words_checkbox_container" class="module-list-container">
-                        <p>Сначала выберите модули ниже.</p>
-                    </div>
-                </div>
-            </div>
-            <!-- End Conditional Dictation Options -->
-
             <hr style="margin-top: 30px; margin-bottom: 20px; border-color: var(--border); opacity: 0.5;">
 
-            <h2 style="margin-bottom:15px; font-size:1.4rem; color: var(--secondary);">Источники слов: Модули и/или Свои слова</h2>
-            
-            <div class="form-group full-width">
+            <div class="form-group full-width" style="margin-bottom: 25px;">
+                <h2 style="font-size:1.4rem; color: var(--secondary); border-bottom: 2px solid var(--primary-light); padding-bottom: 8px; margin-bottom:15px;">Источники слов для теста</h2>
                 <label for="word_source_type">Выберите, откуда брать слова:</label>
                  <select id="word_source_type" name="word_source_type">
                     <option value="modules_only" selected>Только из выбранных модулей</option>
@@ -149,43 +117,78 @@
                 </select>
             </div>
 
-            <!-- Module Selection Area -->
-            <div id="module_selection_area" class="form-group full-width" style="display: block;">
-                <label>Выберите Юнит и Модуль (для источников "из модулей"):</label>
-                <div class="form-grid">
+            <!-- Module Selection Area (becomes primary container for module related settings) -->
+            <div id="module_selection_area_container" class="form-group full-width" style="display: block; border: 1px solid var(--border); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h3 style="margin-bottom: 15px; color: var(--secondary); font-size: 1.2rem;">Настройка слов из модулей</h3>
+                <div id="module_selection_inputs"> 
+                    <label>Выберите Юнит и Модуль:</label>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="unit_select_main">Юнит:</label>
+                            <select id="unit_select_main" name="unit_select_main" disabled>
+                                <option value="">Сначала выберите класс</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="module_select_main">Модуль:</label>
+                            <select id="module_select_main" name="module_select_main" disabled>
+                                <option value="">Сначала выберите юнит</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="selected_modules_display_container" style="margin-top:10px;">
+                         <label>Выбранные модули для теста:</label>
+                         <div id="selected_modules_list" class="module-list-container" style="min-height:50px; background-color: #f9f9f9;">
+                            <!-- Selected modules will be listed here -->
+                            <p><em>Модули не выбраны.</em></p>
+                         </div>
+                    </div>
+                     <button type="button" id="add_module_to_test_btn" class="btn-add-field" style="background-color: var(--primary-light); color: var(--primary-dark); margin-top:10px;">
+                        <i class="fas fa-plus"></i> Добавить выбранный модуль в тест
+                    </button>
+                </div>
+
+                <!-- Conditional Dictation Options (now inside module area) -->
+                <div id="dictation_options_group" style="display: none; margin-top: 20px; padding-top:20px; border-top: 1px solid var(--border);">
+                    <h4 style="margin-bottom: 15px; color: var(--primary-dark);">Как использовать слова из модулей (для диктанта):</h4>
                     <div class="form-group">
-                        <label for="unit_select_main">Юнит:</label>
-                        <select id="unit_select_main" name="unit_select_main" disabled>
-                            <option value="">Сначала выберите класс</option>
-                        </select>
+                        <label style="font-weight:normal; margin-bottom:10px;">Способ выбора слов из добавленных модулей:</label>
+                        <div>
+                            <input type="radio" id="dict_src_all" name="dictation_word_source" value="all_module" checked>
+                            <label for="dict_src_all" style="font-weight: normal; margin-right: 15px;">Все слова из выбранных модулей</label>
+                        </div>
+                        <div>
+                            <input type="radio" id="dict_src_random" name="dictation_word_source" value="random_from_module">
+                            <label for="dict_src_random" style="font-weight: normal; margin-right: 15px;">Случайные слова из выбранных модулей</label>
+                        </div>
+                        <div>
+                            <input type="radio" id="dict_src_specific" name="dictation_word_source" value="selected_specific">
+                            <label for="dict_src_specific" style="font-weight: normal;">Выбрать конкретные слова из модулей</label>
+                        </div>
                     </div>
-            <div class="form-group">
-                        <label for="module_select_main">Модуль:</label>
-                        <select id="module_select_main" name="module_select_main" disabled>
-                            <option value="">Сначала выберите юнит</option>
-                        </select>
+
+                    <div class="form-group" id="dictation_random_word_count_group" style="display: none; margin-top: 10px;">
+                        <label for="dictation_random_word_count">Количество случайных слов из модулей</label>
+                        <input type="number" id="dictation_random_word_count" name="dictation_random_word_count" min="1" class="form-control">
+                    </div>
+
+                    <div class="form-group" id="dictation_specific_words_group" style="display: none; margin-top: 10px;">
+                        <label>Выберите слова (из добавленных в тест модулей):</label>
+                        <div id="specific_words_checkbox_container" class="module-list-container">
+                            <p>Сначала выберите модули выше.</p>
+                        </div>
                     </div>
                 </div>
-                <div id="selected_modules_display_container" style="margin-top:10px;">
-                     <label>Выбранные модули для теста:</label>
-                     <div id="selected_modules_list" class="module-list-container" style="min-height:50px; background-color: #f9f9f9;">
-                        <!-- Selected modules will be listed here -->
-                        <p><em>Модули не выбраны.</em></p>
-                     </div>
-                </div>
-                 <button type="button" id="add_module_to_test_btn" class="btn-add-field" style="background-color: var(--primary-light); color: var(--primary-dark);">
-                    <i class="fas fa-plus"></i> Добавить выбранный модуль в тест
-                </button>
-                 <!-- Hidden inputs for modules will be managed by JS -->
+                <!-- End Conditional Dictation Options -->
             </div>
 
             <!-- Custom Words Area -->
-            <div id="custom_words_area" class="form-group full-width" style="display: none;">
-                <label>Добавьте свои слова:</label>
+            <div id="custom_words_area_container" class="form-group full-width" style="display: none; border: 1px solid var(--border); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                 <h3 style="margin-bottom: 15px; color: var(--secondary); font-size: 1.2rem;">Собственные слова</h3>
                 <div id="custom_word_pairs_container">
                     <div class="custom-word-pair">
-                        <input type="text" name="custom_words[]" placeholder="Слово (напр. apple)">
-                        <input type="text" name="custom_translations[]" placeholder="Перевод (напр. яблоко)">
+                        <input type="text" name="custom_words[]" placeholder="Слово">
+                        <input type="text" name="custom_translations[]" placeholder="Перевод">
                         <button type="button" class="btn-remove-word" onclick="removeWordPair(this)"><i class="fas fa-times"></i></button>
                     </div>
                 </div>
@@ -227,8 +230,8 @@
             const specificWordsCheckboxContainer = document.getElementById('specific_words_checkbox_container');
             
             const wordSourceTypeSelect = document.getElementById('word_source_type');
-            const moduleSelectionArea = document.getElementById('module_selection_area');
-            const customWordsArea = document.getElementById('custom_words_area');
+            const moduleSelectionArea = document.getElementById('module_selection_area_container');
+            const customWordsArea = document.getElementById('custom_words_area_container');
             const addLetterModeContainer = document.getElementById('add_letter_mode_container');
 
 
@@ -333,8 +336,13 @@
             });
             
             wordSourceTypeSelect.addEventListener('change', function() {
-                moduleSelectionArea.style.display = (this.value === 'modules_only' || this.value === 'modules_and_custom') ? 'block' : 'none';
-                customWordsArea.style.display = (this.value === 'custom_only' || this.value === 'modules_and_custom') ? 'block' : 'none';
+                const involvesModules = (this.value === 'modules_only' || this.value === 'modules_and_custom');
+                const involvesCustom = (this.value === 'custom_only' || this.value === 'modules_and_custom');
+
+                moduleSelectionArea.style.display = involvesModules ? 'block' : 'none';
+                customWordsArea.style.display = involvesCustom ? 'block' : 'none';
+                
+                toggleDictationOptions(); // Call to update dictation options visibility
             });
             
             testTypeSelect.addEventListener('change', function() {
@@ -345,9 +353,14 @@
             // Dictation specific options visibility
             function toggleDictationOptions() {
                 const isDictation = testTypeSelect.value === 'dictation';
-                dictationOptionsGroup.style.display = isDictation ? 'block' : 'none';
-                if (isDictation) updateDictationSubOptions();
-                else { // Hide sub-options if not dictation
+                const usesModules = wordSourceTypeSelect.value === 'modules_only' || wordSourceTypeSelect.value === 'modules_and_custom';
+                
+                if (isDictation && usesModules) {
+                    dictationOptionsGroup.style.display = 'block';
+                    updateDictationSubOptions();
+                } else {
+                    dictationOptionsGroup.style.display = 'none';
+                    // Ensure sub-options are also hidden if the main group is hidden
                     if(randomWordCountGroup) randomWordCountGroup.style.display = 'none';
                     if(specificWordsGroup) specificWordsGroup.style.display = 'none';
                 }
