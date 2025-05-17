@@ -8,6 +8,7 @@ import random
 import string
 from datetime import datetime, timedelta
 import json
+import subprocess # Added to run external scripts
 
 
 
@@ -1990,4 +1991,14 @@ def games():
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
+        print("Database tables created. Running test.py...") # Optional: for logging
+        try:
+            subprocess.run(["python", "test.py"], check=True, capture_output=True, text=True)
+            print("test.py executed successfully.") # Optional: for logging
+        except subprocess.CalledProcessError as e:
+            print(f"Error running test.py: {e}") # Optional: for logging
+            print(f"stdout: {e.stdout}")
+            print(f"stderr: {e.stderr}")
+            # Decide if you want to exit or continue if test.py fails
+            # For now, it will continue to app.run()
     app.run("0.0.0.0", debug=True, port=1800)
