@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест: Выбор ответа</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6c63ff;
+            --primary-light: #a5a1ff;
+            --primary-dark: #5a52e0;
+            --secondary: #4a4a98;
+            --background: #f8f9fe;
+            --card-bg: #ffffff;
+            --text: #333333;
+            --border: #ddd;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .progress-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding: 10px;
+            background: var(--background);
+            border-radius: 10px;
+        }
+
+        .progress-item {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .progress-item.completed {
+            background: var(--success);
+            color: white;
+        }
+        
+        .progress-item.answered { /* New style for answered questions */
+            background: var(--primary-light);
+            color: white;
+        }
+
+        .progress-item.current {
+            border: 2px solid var(--primary);
+        }
+
+        .timer {
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        .word-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .question-text { /* Renamed from .word for clarity */
+            font-size: 1.8rem; /* Adjusted size */
+            font-weight: 600;
+            margin-bottom: 20px; /* Increased margin */
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Responsive grid */
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .option-btn {
+            background-color: var(--card-bg);
+            color: var(--text);
+            border: 2px solid var(--border);
+            padding: 15px;
+            font-size: 1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left; /* Align text to the left for better readability */
+        }
+
+        .option-btn:hover {
+            border-color: var(--primary);
+            background-color: var(--primary-light);
+            color: white;
+        }
+
+        .option-btn.selected {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary-dark);
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 500;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background-color: var(--background);
+            color: var(--text);
+            border: 2px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Тест: Выбор ответа</h1>
+        </div>
+
+        <div class="timer" id="timer">
+            Осталось времени: <span id="time-left">--:--</span>
+        </div>
+
+        <div class="progress-bar" id="progress-bar">
+            {% for item in words %}
+            <div class="progress-item" data-index="{{ loop.index0 }}">
+                {{ loop.index }}
+            </div>
+            {% endfor %}
+        </div>
+
+        <form id="test-form" method="POST">
+            {% for item in words %}
+            <div class="word-container" data-index="{{ loop.index0 }}" style="display: {{ 'block' if loop.index0 == 0 else 'none' }};">
+                <div class="question-text">{{ item.perevod }}</div> {# Display translation as the question #}
+                <input type="hidden" name="answer{{ item.id }}" id="answer-input-{{ item.id }}">
+                <div class="options-grid">
+                    {% for option in item.options %}
+                    <button type="button" class="option-btn" data-word-id="{{ item.id }}" data-value="{{ option }}">
+                        {{ option }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="navigation">
+                <button type="button" class="btn btn-secondary" id="prev-btn" disabled>
+                    <i class="fas fa-arrow-left"></i>
+                    Назад
+                </button>
+                <button type="button" class="btn btn-primary" id="next-btn">
+                    Далее
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+                <button type="submit" class="btn btn-primary" id="submit-btn" style="display: none;">
+                    Завершить тест
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let currentIndex = 0;
+        const wordsData = {{ words|tojson }}; // Renamed to avoid conflict
+        const timeLimit = {{ time_limit|default(0) }};
+        let timeLeft = timeLimit > 0 ? timeLimit * 60 : 0;
+        let timerInterval;
+        
+        let userAnswersArrayLength = 0;
+        if (wordsData && wordsData.length > 0) { // Ensure wordsData itself is not null/undefined before checking length
+            userAnswersArrayLength = wordsData.length;
+        }
+        const userAnswers = new Array(userAnswersArrayLength).fill(null);
+
+        // Early check for valid test data
+        if (!wordsData || wordsData.length === 0) {
+            console.error("Test data (wordsData) is missing or empty. Test cannot proceed.");
+            alert("Ошибка: Данные теста отсутствуют или пусты. Тест не может быть продолжен.");
+            
+            // Attempt to disable buttons - check if they exist first
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const submitBtn = document.getElementById('submit-btn');
+            const progressBar = document.getElementById('progress-bar');
+            const timerDisplay = document.getElementById('timer');
+            const testForm = document.getElementById('test-form');
+
+            if (nextBtn) nextBtn.disabled = true;
+            if (prevBtn) prevBtn.disabled = true;
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.style.display = 'none'; // Hide if it was meant to be shown
+            }
+            // Visually indicate the test cannot run
+            if (progressBar) progressBar.innerHTML = '<p style="text-align:center; color:var(--danger);">Тест не может быть загружен: нет данных.</p>';
+            if (timerDisplay) timerDisplay.style.display = 'none';
+            
+            // Hide all word containers
+            document.querySelectorAll('.word-container').forEach(container => {
+                container.style.display = 'none';
+            });
+
+            // Prevent further script execution for test logic if critical data is missing
+            // This can be done by not calling initialization functions like startTimer() or showWord()
+            // For a more definitive stop, you might throw an error, but for now, just disabling UI and not proceeding.
+        } else {
+            // Only proceed with test initialization if wordsData is valid
+            startTimer();
+            showWord(0); // Initialize first word and progress bar
+        }
+
+        function startTimer() {
+            if (timeLimit > 0) {
+                updateTimerDisplay(); // Initial display
+                timerInterval = setInterval(updateTimer, 1000);
+            } else {
+                document.getElementById('timer').style.display = 'none';
+            }
+        }
+        
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('time-left').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateTimer() {
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                document.getElementById('test-form').submit(); // Auto-submit
+                return;
+            }
+            timeLeft--;
+            updateTimerDisplay();
+        }
+
+        function updateProgressBar() {
+            const items = document.querySelectorAll('.progress-item');
+            items.forEach((item, index) => {
+                item.classList.remove('current', 'completed', 'answered');
+                if (userAnswers[index] !== null) {
+                    item.classList.add('answered');
+                }
+                if (index === currentIndex) {
+                    item.classList.add('current');
+                } else if (index < currentIndex && userAnswers[index] !== null) {
+                     item.classList.add('completed'); // Mark as completed if navigated past and answered
+                }
+            });
+
+            document.getElementById('prev-btn').disabled = currentIndex === 0;
+            if (currentIndex === wordsData.length - 1) {
+                document.getElementById('next-btn').style.display = 'none';
+                document.getElementById('submit-btn').style.display = 'inline-flex';
+            } else {
+                document.getElementById('next-btn').style.display = 'inline-flex';
+                document.getElementById('submit-btn').style.display = 'none';
+            }
+        }
+
+        function showWord(index) {
+            document.querySelectorAll('.word-container').forEach(container => {
+                container.style.display = 'none';
+            });
+            const currentContainer = document.querySelector(`.word-container[data-index="${index}"]`);
+            if (currentContainer) {
+                 currentContainer.style.display = 'block';
+            }
+            currentIndex = index;
+            updateProgressBar();
+            // Highlight selected answer if exists for current question
+            const wordId = wordsData[currentIndex].id;
+            const selectedValue = userAnswers[currentIndex];
+            document.querySelectorAll(`.option-btn[data-word-id="${wordId}"]`).forEach(btn => {
+                btn.classList.remove('selected');
+                if (btn.dataset.value === selectedValue) {
+                    btn.classList.add('selected');
+                }
+            });
+        }
+
+        document.getElementById('prev-btn').addEventListener('click', () => {
+            if (currentIndex > 0) {
+                showWord(currentIndex - 1);
+            }
+        });
+
+        document.getElementById('next-btn').addEventListener('click', () => {
+            // Check if an answer is selected for the current question
+            if (userAnswers[currentIndex] === null) {
+                 alert('Пожалуйста, выберите ответ.');
+                 return;
+            }
+            if (currentIndex < wordsData.length - 1) {
+                showWord(currentIndex + 1);
+            }
+        });
+
+        document.querySelectorAll('.progress-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const index = parseInt(item.dataset.index);
+                // Allow navigation to answered questions or current/next if current is answered
+                if (userAnswers[index] !== null || (index === currentIndex + 1 && userAnswers[currentIndex] !== null) || index === currentIndex ) {
+                     if (userAnswers[currentIndex] !== null || index <= currentIndex) {
+                        showWord(index);
+                     } else {
+                        alert('Пожалуйста, сначала ответьте на текущий вопрос.');
+                     }
+                } else if (index > currentIndex && userAnswers[currentIndex] === null) {
+                     alert('Пожалуйста, сначала ответьте на текущий вопрос.');
+                }
+            });
+        });
+        
+        document.querySelectorAll('.option-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const wordId = btn.dataset.wordId;
+                const value = btn.dataset.value;
+                
+                // Update hidden input for submission
+                const hiddenInput = document.getElementById(`answer-input-${wordId}`);
+                if (hiddenInput) {
+                    hiddenInput.value = value;
+                }
+
+                userAnswers[currentIndex] = value; // Store selected answer
+
+                // Update visual selection
+                document.querySelectorAll(`.option-btn[data-word-id="${wordId}"]`).forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                updateProgressBar(); // Update progress bar to show as answered
+            });
+        });
+
+        document.getElementById('test-form').addEventListener('submit', (e) => {
+            const allAnswered = userAnswers.every(answer => answer !== null);
+            if (!allAnswered) {
+                e.preventDefault();
+                if (!confirm('Вы не ответили на все вопросы. Вы уверены, что хотите завершить тест?')) {
+                    return false;
+                }
+            }
+             // Ensure all hidden inputs are populated before submission
+            wordsData.forEach((word, index) => {
+                const hiddenInput = document.getElementById(`answer-input-${word.id}`);
+                if (hiddenInput && userAnswers[index] !== null) {
+                    hiddenInput.value = userAnswers[index];
+                } else if (hiddenInput) {
+                    hiddenInput.value = ""; // Send empty if not answered
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

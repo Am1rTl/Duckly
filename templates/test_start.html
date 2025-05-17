@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ test.title }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6c63ff;
+            --primary-light: #a5a1ff;
+            --primary-dark: #5a52e0;
+            --secondary: #4a4a98;
+            --background: #f8f9fe;
+            --card-bg: #ffffff;
+            --text: #333333;
+            --border: #ddd;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .test-info {
+            margin-bottom: 30px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: var(--background);
+            border-radius: 10px;
+        }
+
+        .info-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 10px;
+            font-size: 1.2rem;
+        }
+
+        .info-content {
+            flex: 1;
+        }
+
+        .info-label {
+            font-size: 0.9rem;
+            color: var(--text);
+            opacity: 0.8;
+        }
+
+        .info-value {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .instructions {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--background);
+            border-radius: 10px;
+        }
+
+        .instructions h3 {
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+
+        .instructions ul {
+            list-style: none;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .instructions li:before {
+            content: '•';
+            color: var(--primary);
+            font-weight: bold;
+            position: absolute;
+            left: -20px;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 500;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background-color: var(--background);
+            color: var(--text);
+            border: 2px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{{ test.title }}</h1>
+            <p>Подготовьтесь к тесту</p>
+        </div>
+
+        <div class="test-info">
+            <div class="info-item">
+                <div class="info-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="info-content">
+                    <div class="info-label">Время на выполнение</div>
+                    <div class="info-value">{{ test.time_limit }} минут</div>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <div class="info-icon">
+                    <i class="fas fa-list-ol"></i>
+                </div>
+                <div class="info-content">
+                    <div class="info-label">Количество вопросов</div>
+                    <div class="info-value">{{ test.test_words|length }} вопросов</div>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <div class="info-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <div class="info-content">
+                    <div class="info-label">Тип теста</div>
+                    <div class="info-value">
+                        {% if test.type == 'add_letter' %}
+                            Добавь букву
+                        {% elif test.type == 'dictation' %}
+                            Диктант
+                        {% elif test.type == 'true_or_false' %}
+                            Верно/Неверно
+                        {% elif test.type == 'multiple_choice' %}
+                            Выбери правильный ответ
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>Инструкции</h3>
+            <ul>
+                {% if test.type == 'add_letter' %}
+                    <li>Вам нужно будет вставить пропущенные буквы в словах</li>
+                    <li>Внимательно читайте каждое слово</li>
+                    <li>Вводите только пропущенные буквы</li>
+                {% elif test.type == 'dictation' %}
+                    <li>Вам нужно будет написать слова по их переводу</li>
+                    <li>Пишите слова внимательно, соблюдая правильное написание</li>
+                {% elif test.type == 'true_or_false' %}
+                    <li>Вам нужно будет определить, верно ли дано значение слова</li>
+                    <li>Выберите "Верно" или "Неверно" для каждого утверждения</li>
+                {% elif test.type == 'multiple_choice' %}
+                    <li>Вам нужно будет выбрать правильный перевод слова</li>
+                    <li>Выберите один из предложенных вариантов</li>
+                {% endif %}
+                <li>Вы можете вернуться к предыдущим вопросам</li>
+                <li>После завершения теста вы увидите свои результаты</li>
+            </ul>
+        </div>
+
+        <div class="buttons">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Назад
+            </a>
+            <button onclick="startTest()" class="btn btn-primary">
+                <i class="fas fa-play"></i>
+                Начать тест
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function startTest() {
+            fetch(window.location.href, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                }
+            });
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ test.title }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6c63ff;
+            --primary-light: #a5a1ff;
+            --primary-dark: #5a52e0;
+            --secondary: #4a4a98;
+            --background: #f8f9fe;
+            --card-bg: #ffffff;
+            --text: #333333;
+            --border: #ddd;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .timer {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: var(--primary);
+        }
+
+        .progress-bar {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .progress-item {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--background);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .progress-item.current {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            color: white;
+        }
+
+        .progress-item.completed {
+            border-color: var(--success);
+            background: var(--success);
+            color: white;
+        }
+
+        .question-container {
+            margin-bottom: 30px;
+        }
+
+        .word-display {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .answer-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2rem;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .answer-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .letter-input {
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
+            text-align: center;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            margin: 0 5px;
+        }
+
+        .letter-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .options-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .option-btn {
+            padding: 15px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: var(--background);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .option-btn:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            color: white;
+        }
+
+        .option-btn.selected {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: white;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 500;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background-color: var(--background);
+            color: var(--text);
+            border: 2px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+        }
+
+        .translation {
+            font-size: 1.2rem;
+            color: var(--text-light);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{{ test.title }}</h1>
+            <div class="timer" id="timer">00:00</div>
+        </div>
+
+        <div class="progress-bar" id="progressBar">
+            {% for word in test.test_words %}
+            <div class="progress-item" data-index="{{ loop.index0 }}">{{ loop.index }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="question-container">
+            <div class="word-display" id="wordDisplay"></div>
+            <div class="translation" id="translation"></div>
+            <div id="answerContainer"></div>
+        </div>
+
+        <div class="navigation-buttons">
+            <button class="btn btn-secondary" id="prevBtn" disabled>
+                <i class="fas fa-arrow-left"></i> Назад
+            </button>
+            <button class="btn btn-primary" id="nextBtn">
+                Далее <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const testData = {
+            id: {{ test.id }},
+            type: "{{ test.type }}",
+            timeLimit: {{ test.time_limit or 0 }},
+            words: {{ test.test_words|tojson|safe }},
+            currentIndex: 0
+        };
+
+        let answers = new Array(testData.words.length).fill(null);
+        let timer = null;
+        let timeLeft = testData.timeLimit * 60;
+
+        function updateTimer() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                submitTest();
+            }
+            timeLeft--;
+        }
+
+        function updateProgressBar() {
+            const items = document.querySelectorAll('.progress-item');
+            items.forEach((item, index) => {
+                item.classList.remove('current', 'completed');
+                if (index === testData.currentIndex) {
+                    item.classList.add('current');
+                } else if (index < testData.currentIndex) {
+                    item.classList.add('completed');
+                }
+            });
+        }
+
+        function createAnswerInput(word) {
+            const container = document.getElementById('answerContainer');
+            container.innerHTML = '';
+
+            if (testData.type === 'add_letter') {
+                const missingLetters = word.missing_letters || '';
+                const wordWithGaps = word.word;
+                const letterInputs = document.createElement('div');
+                letterInputs.style.textAlign = 'center';
+
+                for (let i = 0; i < missingLetters.length; i++) {
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.maxLength = 1;
+                    input.className = 'letter-input';
+                    input.dataset.index = i;
+                    input.addEventListener('input', function() {
+                        this.value = this.value.toUpperCase();
+                        if (this.value && this.nextElementSibling) {
+                            this.nextElementSibling.focus();
+                        }
+                    });
+                    letterInputs.appendChild(input);
+                }
+
+                container.appendChild(letterInputs);
+            } else if (testData.type === 'multiple_choice') {
+                const options = word.options.split('|');
+                const optionsContainer = document.createElement('div');
+                optionsContainer.className = 'options-container';
+
+                options.forEach(option => {
+                    const button = document.createElement('button');
+                    button.className = 'option-btn';
+                    button.textContent = option;
+                    button.addEventListener('click', function() {
+                        document.querySelectorAll('.option-btn').forEach(btn => 
+                            btn.classList.remove('selected'));
+                        this.classList.add('selected');
+                        answers[testData.currentIndex] = option;
+                    });
+                    optionsContainer.appendChild(button);
+                });
+
+                container.appendChild(optionsContainer);
+            } else {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'answer-input';
+                input.placeholder = 'Введите ответ';
+                input.addEventListener('input', function() {
+                    answers[testData.currentIndex] = this.value;
+                });
+                container.appendChild(input);
+            }
+        }
+
+        function showQuestion() {
+            const word = testData.words[testData.currentIndex];
+            document.getElementById('wordDisplay').textContent = word.word;
+            document.getElementById('translation').textContent = word.perevod;
+            createAnswerInput(word);
+            updateProgressBar();
+
+            document.getElementById('prevBtn').disabled = testData.currentIndex === 0;
+            document.getElementById('nextBtn').textContent = 
+                testData.currentIndex === testData.words.length - 1 ? 'Завершить' : 'Далее';
+        }
+
+        function submitTest() {
+            fetch(`/submit_test/${testData.id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    answers: answers
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = data.redirect;
+                }
+            });
+        }
+
+        document.getElementById('prevBtn').addEventListener('click', () => {
+            if (testData.currentIndex > 0) {
+                testData.currentIndex--;
+                showQuestion();
+            }
+        });
+
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            if (testData.currentIndex < testData.words.length - 1) {
+                testData.currentIndex++;
+                showQuestion();
+            } else {
+                submitTest();
+            }
+        });
+
+        document.querySelectorAll('.progress-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const index = parseInt(item.dataset.index);
+                if (index <= testData.currentIndex || answers[index] !== null) {
+                    testData.currentIndex = index;
+                    showQuestion();
+                }
+            });
+        });
+
+        // Start timer if time limit is set
+        if (testData.timeLimit > 0) {
+            timer = setInterval(updateTimer, 1000);
+        }
+
+        // Show first question
+        showQuestion();
+    </script>
+</body>
+</html> 

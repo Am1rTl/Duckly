@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Редактирование теста - {{ test.title }}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #6c63ff;
+      --primary-light: #a5a1ff;
+      --secondary: #4a4a98;
+      --background: #f8f9fe;
+      --card-bg: #ffffff;
+      --text: #333333;
+      --text-light: #777777;
+      --border: #e0e0e0;
+      --success: #4caf50;
+      --warning: #ff9800;
+      --danger: #f44336;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: var(--background);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 30px 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 20px;
+      font-size: 1rem;
+      font-weight: 500;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #5a52e0;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-secondary {
+      background-color: #6c757d;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background-color: #5a6268;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .form-container {
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+      margin-bottom: 30px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.95rem;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 1rem;
+      font-family: 'Poppins', sans-serif;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
+    }
+
+    .form-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 16px;
+    }
+
+    .test-link {
+      display: flex;
+      align-items: center;
+      background: #f8f9fa;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin: 15px 0;
+      font-family: monospace;
+      word-break: break-all;
+    }
+
+    .copy-btn {
+      margin-left: auto;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    .copy-btn:hover {
+      background: #5a52e0;
+    }
+
+    .test-type-config {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .status-active {
+      background-color: #e6f7e6;
+      color: var(--success);
+    }
+
+    .status-archived {
+      background-color: #fff3e6;
+      color: var(--warning);
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px 15px;
+      }
+      
+      .form-container {
+        padding: 20px;
+      }
+      
+      .header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <a href="{{ url_for('tests') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Назад к списку тестов
+      </a>
+      <h1>Редактирование теста: {{ test.title }}</h1>
+    </div>
+
+    <div class="form-container">
+      <form method="POST" action="">
+        <div class="form-group">
+          <label class="form-label" for="title">Название теста</label>
+          <input type="text" class="form-control" id="title" name="title" value="{{ test.title }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Статус</label>
+          <div style="display: flex; gap: 10px;">
+            <label style="display: flex; align-items: center; gap: 5px;">
+              <input type="radio" name="status" value="active" {% if test.status == 'active' %}checked{% endif %}>
+              <span>Активен</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 5px;">
+              <input type="radio" name="status" value="archived" {% if test.status == 'archived' %}checked{% endif %}>
+              <span>В архиве</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="duration">Длительность (в минутах, необязательно)</label>
+          <input type="number" class="form-control" id="duration" name="duration" 
+                 min="1" value="{{ test.duration // 60 if test.duration else '' }}">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="word_order">Порядок слов</label>
+          <select class="form-control form-select" id="word_order" name="word_order">
+            <option value="sequential" {% if test.word_order == 'sequential' %}selected{% endif %}>По порядку</option>
+            <option value="random" {% if test.word_order == 'random' %}selected{% endif %}>Случайный</option>
+          </select>
+        </div>
+
+        {% if test.word_order == 'random' %}
+        <div class="form-group" id="word_count_group">
+          <label class="form-label" for="word_count">Количество слов</label>
+          <input type="number" class="form-control" id="word_count" name="word_count" 
+                 min="1" value="{{ test.word_count or '' }}">
+        </div>
+        {% endif %}
+
+        {% if test.test_type == 'add_letter' %}
+        <div class="test-type-config">
+          <h3>Настройки теста "Пропущенные буквы"</h3>
+          <div class="form-group">
+            <label class="form-label" for="missing_letters_mode">Режим пропущенных букв</label>
+            <select class="form-control form-select" id="missing_letters_mode" name="missing_letters_mode">
+              <option value="random" {% if test.missing_letters_config and test.missing_letters_config.get('mode') == 'random' %}selected{% endif %}>
+                Случайные буквы
+              </option>
+              <option value="specific" {% if test.missing_letters_config and test.missing_letters_config.get('mode') == 'specific' %}selected{% endif %}>
+                Определенные буквы (настраивается вручную)
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="letters_to_remove">Количество пропущенных букв</label>
+            <input type="number" class="form-control" id="letters_to_remove" name="letters_to_remove" 
+                   min="1" max="5" value="{{ test.missing_letters_config.letters_to_remove if test.missing_letters_config else 1 }}">
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="form-group" style="margin-top: 30px;">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> Сохранить изменения
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="form-container">
+      <h3>Ссылка на тест</h3>
+      <p>Поделитесь этой ссылкой с учениками, чтобы они могли пройти тест:</p>
+      <div class="test-link">
+        {{ request.url_root }}test/{{ test.link }}
+        <button class="copy-btn" onclick="copyToClipboard('{{ request.url_root }}test/{{ test.link }}')">
+          <i class="far fa-copy"></i> Копировать
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Toggle word count field based on word order selection
+    document.getElementById('word_order').addEventListener('change', function() {
+      const wordCountGroup = document.getElementById('word_count_group');
+      if (this.value === 'random') {
+        wordCountGroup.style.display = 'block';
+      } else {
+        wordCountGroup.style.display = 'none';
+      }
+    });
+
+    // Copy to clipboard function
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> Скопировано!';
+        btn.style.backgroundColor = '#4caf50';
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+          btn.style.backgroundColor = '';
+        }, 2000);
+      }).catch(err => {
+        console.error('Ошибка копирования: ', err);
+        alert('Не удалось скопировать ссылку. Пожалуйста, скопируйте её вручную.');
+      });
+    }
+  </script>
+</body>
+</html>

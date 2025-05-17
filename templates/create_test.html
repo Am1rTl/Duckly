@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Создание нового теста</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6c63ff;
+            --primary-light: #a5a1ff;
+            --primary-dark: #5a52e0;
+            --secondary: #4a4a98;
+            --background: #f8f9fe;
+            --card-bg: #ffffff;
+            --text: #333333;
+            --border: #ddd;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --input-focus-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            padding: 20px;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .top-nav {
+            width: 100%;
+            max-width: 900px; 
+            display: flex;
+            justify-content: flex-start; 
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .btn-back {
+            background-color: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-back:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .form-container {
+            background-color: var(--card-bg);
+            padding: 30px 40px;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .form-header h1 {
+            color: var(--secondary);
+            font-size: 2rem;
+            font-weight: 600;
+            position: relative;
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+        .form-header h1::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 4px;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr 1fr; /* Two columns on larger screens */
+                gap: 25px;
+            }
+            .form-group.full-width {
+                grid-column: 1 / -1; /* Span across both columns */
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            color: var(--text);
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background-color: #fff;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group input[type="number"]:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: var(--input-focus-shadow);
+        }
+        
+        .form-group input[type="number"]::-webkit-outer-spin-button,
+        .form-group input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .form-group input[type="number"] {
+            -moz-appearance: textfield; /* Firefox */
+        }
+
+        .form-actions {
+            margin-top: 30px;
+            text-align: right; /* Align button to the right */
+        }
+
+        .btn-submit {
+            background-color: var(--primary);
+            color: white;
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-weight: 500;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-submit:hover {
+            background-color: var(--primary-dark);
+        }
+    </style>
+</head>
+<body>
+    <div class="top-nav">
+        <a href="{{ url_for('tests') }}" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Назад к тестам
+        </a>
+    </div>
+
+    <div class="form-container">
+        <div class="form-header">
+            <h1>Создание нового теста</h1>
+        </div>
+
+        <form method="POST" action="{{ url_for('create_test') }}">
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="title">Название теста</label>
+                    <input type="text" id="title" name="title" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="class_number">Для какого класса</label>
+                    <select id="class_number" name="class_number" required>
+                        {% for i in range(1, 12) %}
+                        <option value="{{ i }}">{{ i }} класс</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="test_type">Тип теста</label>
+                    <select id="test_type" name="test_type" required>
+                        <option value="dictation">Диктант (написать слово)</option>
+                        <option value="add_letter">Вставить букву</option>
+                        <option value="true_false">Верно/Неверно</option>
+                        <option value="multiple_choice_single">Выбор ответа (один правильный)</option>
+                        <option value="multiple_choice_multiple">Выбор ответа (несколько правильных)</option>
+                        <option value="fill_word">Вписать слово (по переводу)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="time_limit">Лимит времени (минуты, 0 - нет лимита)</label>
+                    <input type="number" id="time_limit" name="time_limit" min="0" value="0">
+                </div>
+
+                <div class="form-group">
+                    <label for="word_order">Порядок слов</label>
+                    <select id="word_order" name="word_order" required>
+                        <option value="sequential">Последовательно</option>
+                        <option value="random">Случайно</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="word_count_group" style="display: none;">
+                    <label for="word_count">Количество слов (если случайно)</label>
+                    <input type="number" id="word_count" name="word_count" min="1">
+                </div>
+            </div>
+            
+            <hr style="margin-top: 30px; margin-bottom: 20px; border-color: var(--border); opacity: 0.5;">
+
+            <!-- Step 2: Word Selection and Type-Specific Settings -->
+            <div class="form-step" id="step2WordSelection">
+                <h2 class="step-title">Шаг 2: Выбор слов и Настройки</h2>
+
+                <div class="form-group full-width">
+                    <label for="word_source">Источник слов</label>
+                    <select id="word_source" name="word_source">
+                        <option value="modules">Из существующих модулей</option>
+                        <option value="custom">Только свои слова</option>
+                        <option value="combined">Комбинировать: модули и свои слова</option>
+                    </select>
+                </div>
+
+                <!-- Module Selection Area -->
+                <div id="moduleSelectionContainer" class="form-group full-width" style="display: block;">
+                    <label>Выберите модули (если источник "Из модулей" или "Комбинировать")</label>
+                    <div id="moduleList" class="module-list-container">
+                        <p><em>Пожалуйста, сначала выберите класс выше, чтобы загрузить доступные модули.</em></p>
+                        <!-- Modules will be loaded here by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Custom Words Area -->
+                <div id="customWordsContainer" class="form-group full-width" style="display: none;">
+                    <label>Добавьте свои слова (если источник "Свои слова" или "Комбинировать")</label>
+                    <div id="customWordPairs">
+                        <!-- Initial word pair -->
+                        <div class="custom-word-pair">
+                            <input type="text" name="custom_words[]" placeholder="Слово (напр. apple)">
+                            <input type="text" name="custom_translations[]" placeholder="Перевод (напр. яблоко)">
+                            <button type="button" class="btn-remove-word" onclick="removeWordPair(this)"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                    <button type="button" id="addCustomWordPair" class="btn-add-field">
+                        <i class="fas fa-plus"></i> Добавить еще слово
+                    </button>
+                </div>
+                
+                <!-- Test Mode for "Add Letter" -->
+                <div id="addLetterModeContainer" class="form-group full-width" style="display: none;">
+                    <label for="test_mode">Режим для теста "Вставить букву"</label>
+                    <select id="test_mode" name="test_mode">
+                        <option value="random_letters">Пропустить случайные буквы</option>
+                        <option value="manual_letters">Указать пропускаемые буквы вручную (на следующем шаге)</option>
+                    </select>
+                </div>
+
+            </div>
+            <!-- End of Step 2 -->
+
+            <div class="form-actions">
+                <button type="submit" class="btn-submit">
+                    Создать тест и настроить слова <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // JavaScript for Word Order and Word Count visibility
+        document.getElementById('word_order').addEventListener('change', function() {
+            const wordCountGroup = document.getElementById('word_count_group');
+            const wordCountInput = document.getElementById('word_count');
+            if (this.value === 'random') {
+                wordCountGroup.style.display = 'block';
+                wordCountInput.required = true;
+            } else {
+                wordCountGroup.style.display = 'none';
+                wordCountInput.required = false;
+                wordCountInput.value = ''; // Clear value when hidden
+            }
+        });
+
+        const classNumberSelect = document.getElementById('class_number');
+        const moduleListDiv = document.getElementById('moduleList');
+        const wordSourceSelect = document.getElementById('word_source');
+        const moduleSelectionContainer = document.getElementById('moduleSelectionContainer');
+        const customWordsContainer = document.getElementById('customWordsContainer');
+        const testTypeSelect = document.getElementById('test_type');
+        const addLetterModeContainer = document.getElementById('addLetterModeContainer');
+
+        // Function to fetch and display modules
+        function loadModules() {
+            const selectedClass = classNumberSelect.value;
+            moduleListDiv.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Загрузка модулей...</p>';
+
+            if (!selectedClass) {
+                moduleListDiv.innerHTML = '<p><em>Пожалуйста, сначала выберите класс выше, чтобы загрузить доступные модули.</em></p>';
+                return;
+            }
+
+            fetch(`/get_units_for_class?class_name=${selectedClass}`)
+                .then(response => response.json())
+                .then(units => {
+                    if (units.length === 0) {
+                        moduleListDiv.innerHTML = '<p><em>Для выбранного класса нет юнитов с модулями.</em></p>';
+                        return;
+                    }
+                    
+                    let moduleCount = 0;
+                    moduleListDiv.innerHTML = ''; // Clear before adding new modules
+
+                    units.forEach(unit => {
+                        fetch(`/get_modules_for_unit?class_name=${selectedClass}&unit_name=${unit}`)
+                            .then(response => response.json())
+                            .then(modules => {
+                                if (modules.length > 0) moduleCount += modules.length;
+
+                                modules.forEach(module => {
+                                    const checkboxId = `module-${selectedClass}-${unit}-${module}`.replace(/[^a-zA-Z0-9\-]/g, ''); // Sanitize ID
+                                    const item = document.createElement('div');
+                                    item.classList.add('module-item');
+                                    item.innerHTML = `
+                                        <input type="checkbox" id="${checkboxId}" name="modules[]" value="${selectedClass}|${unit}|${module}">
+                                        <label for="${checkboxId}">${selectedClass} класс - ${unit} - ${module}</label>
+                                    `;
+                                    moduleListDiv.appendChild(item);
+                                });
+                                if (moduleCount === 0 && units.indexOf(unit) === units.length -1) { // Check after last unit processed
+                                   moduleListDiv.innerHTML = '<p><em>Для выбранного класса и его юнитов не найдено модулей.</em></p>';
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error fetching modules:', error);
+                                moduleListDiv.innerHTML = '<p><em>Ошибка при загрузке модулей.</em></p>';
+                            });
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching units:', error);
+                    moduleListDiv.innerHTML = '<p><em>Ошибка при загрузке юнитов.</em></p>';
+                });
+        }
+        
+        // Function to manage visibility of word source sections
+        function toggleWordSourceSections() {
+            const source = wordSourceSelect.value;
+            moduleSelectionContainer.style.display = (source === 'modules' || source === 'combined') ? 'block' : 'none';
+            customWordsContainer.style.display = (source === 'custom' || source === 'combined') ? 'block' : 'none';
+            
+            // If 'modules' or 'combined' is selected and modules haven't been loaded yet for the current class, load them.
+            if ((source === 'modules' || source === 'combined') && moduleListDiv.innerHTML.includes('Пожалуйста, сначала выберите класс')) {
+                loadModules();
+            }
+        }
+
+        // Function to manage visibility of "Add Letter" mode section
+        function toggleAddLetterModeSection() {
+            addLetterModeContainer.style.display = (testTypeSelect.value === 'add_letter') ? 'block' : 'none';
+        }
+
+        // Event Listeners
+        classNumberSelect.addEventListener('change', loadModules);
+        wordSourceSelect.addEventListener('change', toggleWordSourceSections);
+        testTypeSelect.addEventListener('change', toggleAddLetterModeSection);
+        
+        // Function to add new custom word pair
+        document.getElementById('addCustomWordPair').addEventListener('click', function() {
+            const pairContainer = document.getElementById('customWordPairs');
+            const newPair = document.createElement('div');
+            newPair.classList.add('custom-word-pair');
+            newPair.innerHTML = `
+                <input type="text" name="custom_words[]" placeholder="Слово">
+                <input type="text" name="custom_translations[]" placeholder="Перевод">
+                <button type="button" class="btn-remove-word" onclick="removeWordPair(this)"><i class="fas fa-times"></i></button>
+            `;
+            pairContainer.appendChild(newPair);
+        });
+
+        // Function to remove a custom word pair
+        function removeWordPair(button) {
+            button.closest('.custom-word-pair').remove();
+        }
+
+        // Initial calls to set correct visibility on page load
+        toggleWordSourceSections(); 
+        toggleAddLetterModeSection();
+        // loadModules(); // Optionally load modules if a class is pre-selected on page load
+
+    </script>
+</body>
+</html> 

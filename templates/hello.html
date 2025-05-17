@@ -167,21 +167,27 @@
 
   <!-- JS скрипты -->
   <script>
-    document.getElementById("words").onclick = function () {
-      location.href = window.location.origin + '/words';
-    };
-    document.getElementById("tests").onclick = function () {
-      location.href = window.location.origin + '/tests';
-    };
-    document.getElementById("games").onclick = function () {
-      location.href = window.location.origin + '/games';
-    };
-    document.getElementById("about").onclick = function () {
-      location.href = window.location.origin + '/about';
-    };
-    document.getElementById("profile").onclick = function () {
-      location.href = window.location.origin + '/profile';
-    };
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('words').addEventListener('click', function() {
+            window.location.href = '/words';
+        });
+        
+        document.getElementById('tests').addEventListener('click', function() {
+            window.location.href = '/tests';
+        });
+        
+        document.getElementById('games').addEventListener('click', function() {
+            window.location.href = '/games';
+        });
+
+        document.getElementById('profile').addEventListener('click', function() {
+            window.location.href = '/profile';
+        });
+
+        document.getElementById('about').addEventListener('click', function() {
+            window.location.href = '/about';
+        });
+    });
   </script>
 
 </body>

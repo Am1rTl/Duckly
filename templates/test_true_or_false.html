@@ -3,23 +3,30 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>True or False Тест</title>
+  <title>Тест: Верно/Неверно</title>
 
   <!-- Шрифт Poppins -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins :wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Иконки (по желанию) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css ">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
     :root {
       --primary: #6c63ff;
       --primary-light: #a5a1ff;
+      --primary-dark: #5a52e0;
+      --secondary: #4a4a98;
       --background: #f8f9fe;
       --card-bg: #ffffff;
       --text: #333333;
       --border: #ddd;
-      --button-hover: #5a5fc7;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --success: #28a745;
+      --warning: #ffc107;
+      --danger: #dc3545;
+      --true-green: #28a745;
+      --false-red: #dc3545;
     }
 
     * {
@@ -32,81 +39,185 @@
     body {
       background-color: var(--background);
       color: var(--text);
-      padding: 40px 20px;
-      display: flex;
-      justify-content: center;
+      padding: 20px;
+      line-height: 1.6;
     }
 
     .container {
-      background-color: var(--card-bg);
-      max-width: 600px;
-      width: 100%;
-      padding: 40px;
-      border-radius: 16px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      max-width: 700px; /* Slightly smaller container */
+      margin: 0 auto;
+      padding: 20px;
+      background: var(--card-bg);
+      border-radius: 15px;
+      box-shadow: var(--shadow);
     }
 
-    h1 {
+    .header {
       text-align: center;
-      font-size: 2rem;
-      color: var(--primary);
       margin-bottom: 30px;
-      font-weight: 600;
     }
 
-    .word-item {
-      margin-bottom: 25px;
-    }
-
-    label {
-      display: block;
-      font-weight: 600;
-      margin-bottom: 8px;
-      font-size: 1.1rem;
-      color: var(--text);
-    }
-
-    .options {
+    .progress-bar {
       display: flex;
-      gap: 20px;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      padding: 10px;
+      background: var(--background);
+      border-radius: 10px;
     }
 
-    .options label {
+    .progress-item {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--border);
       display: flex;
       align-items: center;
-      font-weight: normal;
-      cursor: pointer;
-    }
-
-    input[type="radio"] {
-      margin-right: 8px;
-    }
-
-    button {
-      display: inline-block;
-      width: 100%;
-      padding: 14px 20px;
-      font-size: 1rem;
-      font-weight: 600;
-      color: white;
-      background-color: var(--primary);
-      border: none;
-      border-radius: 8px;
+      justify-content: center;
       cursor: pointer;
       transition: all 0.3s ease;
-      margin-top: 20px;
+    }
+    
+    .progress-item.answered {
+      background: var(--primary-light);
+      color: white;
     }
 
-    button:hover {
-      background-color: var(--button-hover);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
+    .progress-item.current {
+      border: 2px solid var(--primary);
+    }
+
+    .timer {
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 500;
+      margin-bottom: 20px;
+      color: var(--primary);
+    }
+
+    .word-container {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background-color: #fff; /* White background for the card itself */
+    }
+
+    .statement {
+      font-size: 1.5rem; 
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+
+    .translation-context { /* Context for the translation */
+      font-size: 1.1rem;
+      color: var(--text);
+      opacity: 0.7;
+      margin-bottom: 25px;
+    }
+    
+    .true-false-buttons {
+      display: flex;
+      justify-content: center; /* Center buttons */
+      gap: 20px; /* Increased gap */
+      margin-bottom: 30px;
+    }
+
+    .choice-btn {
+      padding: 15px 30px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+      min-width: 120px; /* Minimum width for buttons */
+    }
+
+    .choice-btn.true {
+      background-color: var(--true-green);
+      color: white;
+      border-color: var(--true-green);
+    }
+    .choice-btn.true:hover {
+      background-color: #218838;
+    }
+    .choice-btn.true.selected {
+      box-shadow: 0 0 0 3px var(--primary-dark); 
+    }
+
+    .choice-btn.false {
+      background-color: var(--false-red);
+      color: white;
+      border-color: var(--false-red);
+    }
+    .choice-btn.false:hover {
+      background-color: #c82333;
+    }
+    .choice-btn.false.selected {
+      box-shadow: 0 0 0 3px var(--primary-dark); 
+    }
+
+    .navigation {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      font-size: 1rem;
+      font-weight: 500;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
+    }
+
+    .btn-secondary {
+      background-color: var(--background);
+      color: var(--text);
+      border: 2px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
   </style>
 </head>
 <body>
 
   <div class="container">
+    <div class="header">
+      <h1>Тест: Верно/Неверно</h1>
+    </div>
+
+    <div class="timer" id="timer">
+      Осталось времени: <span id="time-left">--:--</span>
+    </div>
+
     <h1>True or False Тест</h1>
     <form method="POST" action="/tests/{{ test_id }}">
       {% for idx, (word, perevod) in enumerate(words) %}

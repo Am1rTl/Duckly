@@ -11,6 +11,8 @@
   <!-- Иконки (по желанию) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css ">
 
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
   <style>
     :root {
       --primary: #6c63ff;
@@ -30,7 +32,7 @@
     }
 
     body {
-      background-color: var(--background);
+      background-color: #f8f9fa;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -55,31 +57,6 @@
       margin-bottom: 20px;
     }
 
-    .form-switch {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 25px;
-    }
-
-    .form-switch button {
-      flex: 1;
-      padding: 12px 0;
-      font-size: 1rem;
-      font-weight: 500;
-      border: none;
-      cursor: pointer;
-      background-color: transparent;
-      transition: all 0.3s ease;
-      position: relative;
-    }
-
-    .form-switch button.active {
-      color: white;
-      background-color: var(--primary);
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(108, 99, 255, 0.2);
-    }
-
     form {
       display: flex;
       flex-direction: column;
@@ -93,7 +70,8 @@
     }
 
     input[type="text"],
-    input[type="password"] {
+    input[type="password"],
+    select {
       width: 100%;
       padding: 12px 16px;
       font-size: 1rem;
@@ -104,7 +82,8 @@
     }
 
     input[type="text"]:focus,
-    input[type="password"]:focus {
+    input[type="password"]:focus,
+    select:focus {
       border-color: var(--primary);
       box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
     }
@@ -135,53 +114,55 @@
       margin-bottom: 15px;
     }
 
-    @media (max-width: 500px) {
-      .form-switch {
-        flex-direction: column;
-      }
+    .registration-form {
+      max-width: 500px;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
 
-      .form-switch button {
-        margin-bottom: 10px;
-      }
+    .form-group {
+      margin-bottom: 20px;
     }
   </style>
 </head>
 <body>
-
-  <div class="form-container">
-    <h2>Регистрация</h2>
-
-    <div class="form-switch">
-      <button id="login">Login</button>
-      <button id="registration" class="active">Registration</button>
+  <div class="container">
+    <div class="registration-form">
+      <h2 class="text-center mb-4">Регистрация ученика</h2>
+      {% if error %}
+      <div class="error-message">{{ error }}</div>
+      {% endif %}
+      <form method="POST">
+        <div class="form-group">
+          <label for="fio">ФИО (три слова через пробел)</label>
+          <input type="text" class="form-control" id="fio" name="fio" required>
+        </div>
+        <div class="form-group">
+          <label for="username">Имя пользователя</label>
+          <input type="text" class="form-control" id="username" name="username" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Пароль</label>
+          <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+        <div class="form-group">
+          <label for="class_number">Класс</label>
+          <select class="form-control" id="class_number" name="class_number" required>
+            <option value="">Выберите класс</option>
+            {% for class_num in classes %}
+            <option value="{{ class_num }}">{{ class_num }} класс</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Зарегистрироваться</button>
+      </form>
+      <div class="text-center mt-3">
+        <a href="/login">Уже есть аккаунт? Войти</a>
+      </div>
     </div>
-
-    {% if error %}
-      <p class="error-message">{{ error }}</p>
-    {% endif %}
-
-    <form action="/registration" method="post">
-      <label for="fio">Введите ФИО:</label>
-      <input type="text" id="fio" name="fio" required />
-
-      <label for="username">Username:</label>
-      <input type="text" id="username" minlength="3" name="username" required />
-
-      <label for="password">Пароль:</label>
-      <input type="password" id="password" name="password" minlength="5" required />
-
-      <input type="submit" value="Зарегистрироваться" />
-    </form>
   </div>
-
-  <script>
-    document.getElementById("login").onclick = function () {
-      location.href = window.location.origin + '/login';
-    };
-
-    document.getElementById("registration").onclick = function () {
-      location.href = window.location.origin + '/registration';
-    };
-  </script>
 </body>
 </html>

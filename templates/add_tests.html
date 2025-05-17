@@ -1,274 +1,232 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Create New Test</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --primary: #6c63ff;
-      --primary-light: #a5a1ff;
-      --secondary: #4a4a98;
-      --background: #f8f9fe;
-      --card-bg: #ffffff;
-      --text: #333333;
-      --text-light: #777777;
-      --border: #e0e0e0;
-    }
-    
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Добавить тест</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6c63ff;
+            --primary-light: #a5a1ff;
+            --primary-dark: #5a52e0;
+            --secondary: #4a4a98;
+            --background: #f8f9fe;
+            --card-bg: #ffffff;
+            --text: #333333;
+            --border: #ddd;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
 
-    body {
-      font-family: 'Poppins', sans-serif;
-      background-color: var(--background);
-      color: var(--text);
-      line-height: 1.6;
-      padding: 0;
-    }
+        body {
+            font-family: 'Poppins', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: var(--background);
+        }
 
-    .container {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 30px 20px;
-    }
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background-color: var(--card-bg);
+            color: var(--text);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
 
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 40px;
-    }
+        .back-button:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
 
-    .back-btn {
-      display: inline-flex;
-      align-items: center;
-      padding: 10px 20px;
-      font-size: 1rem;
-      font-weight: 500;
-      background-color: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 2px 10px rgba(108, 99, 255, 0.2);
-    }
+        .container {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+        }
 
-    .back-btn:hover {
-      background-color: #5a52e0;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
-    }
+        .form-group {
+            margin-bottom: 20px;
+        }
 
-    .back-btn i {
-      margin-right: 8px;
-    }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--text);
+        }
 
-    .page-title {
-      font-size: 2rem;
-      color: var(--secondary);
-      font-weight: 600;
-    }
+        select, input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
 
-    .nav-tabs {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 30px;
-      background: white;
-      border-radius: 12px;
-      padding: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    }
+        select:focus, input:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
 
-    .nav-tab {
-      flex: 1;
-      padding: 15px 20px;
-      text-align: center;
-      font-size: 1.1rem;
-      font-weight: 500;
-      color: var(--text-light);
-      background: transparent;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
+        button {
+            background-color: var(--primary);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-    .nav-tab.active {
-      background: var(--primary);
-      color: white;
-      box-shadow: 0 2px 8px rgba(108, 99, 255, 0.3);
-    }
+        button:hover {
+            background-color: var(--primary-dark);
+        }
 
-    .nav-tab:hover:not(.active) {
-      color: var(--primary);
-      background: rgba(108, 99, 255, 0.1);
-    }
+        .btn-secondary {
+            background-color: var(--background);
+            color: var(--text);
+            border: 2px solid var(--border);
+        }
 
-    .form-container {
-      background: white;
-      border-radius: 16px;
-      padding: 30px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
-    }
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
 
-    .form-group {
-      margin-bottom: 25px;
-    }
+        .buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
 
-    .form-label {
-      display: block;
-      font-size: 1rem;
-      font-weight: 500;
-      margin-bottom: 10px;
-      color: var(--text);
-    }
-
-    .form-select, .form-submit {
-      width: 100%;
-      padding: 12px 16px;
-      font-size: 1rem;
-      font-family: 'Poppins', sans-serif;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: white;
-      transition: all 0.3s ease;
-    }
-
-    .form-select {
-      appearance: none;
-      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-      background-repeat: no-repeat;
-      background-position: right 12px center;
-      background-size: 16px;
-    }
-
-    .form-select:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
-    }
-
-    .form-submit {
-      background-color: var(--primary);
-      color: white;
-      font-weight: 500;
-      border: none;
-      cursor: pointer;
-      margin-top: 20px;
-      box-shadow: 0 2px 10px rgba(108, 99, 255, 0.2);
-    }
-
-    .form-submit:hover {
-      background-color: #5a52e0;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
-    }
-
-    @media (max-width: 768px) {
-      .nav-tabs {
-        flex-direction: column;
-      }
-      
-      .nav-tab {
-        margin-bottom: 8px;
-      }
-      
-      .container {
-        padding: 20px 15px;
-      }
-      
-      .form-container {
-        padding: 20px;
-      }
-    }
-  </style>
+        h1 {
+            color: var(--text);
+            margin-bottom: 30px;
+            font-size: 1.8rem;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <button id="back" class="back-btn">
-        <i>←</i> Back
-      </button>
-      <h1 class="page-title">Create New Test</h1>
+    <a href="{{ url_for('tests') }}" class="back-button">
+        <i class="fas fa-arrow-left"></i>
+        Назад
+    </a>
+    <div class="container">
+        <h1>Добавить новый тест</h1>
+        <form method="POST">
+            <div class="form-group">
+                <label for="title">Название теста:</label>
+                <input type="text" id="title" name="title" placeholder="Введите название теста">
+            </div>
+            <div class="form-group">
+                <label for="classSelect">Класс:</label>
+                <select id="classSelect" name="classSelect" required>
+                    <option value="">Выберите класс</option>
+                    {% for class in classes %}
+                    <option value="{{ class }}">{{ class }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="unit">Юнит:</label>
+                <select id="unit" name="unit" required disabled>
+                    <option value="">Сначала выберите класс</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="module">Модуль:</label>
+                <select id="module" name="module" required disabled>
+                    <option value="">Сначала выберите юнит</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="type">Тип теста:</label>
+                <select id="type" name="type" required>
+                    <option value="">Выберите тип теста</option>
+                    <option value="dictation">Диктант</option>
+                    <option value="true_or_false">Верно/Неверно</option>
+                    <option value="add_letter">Добавить букву</option>
+                    <option value="multiple_choice">Множественный выбор</option>
+                </select>
+            </div>
+
+            <div class="buttons">
+                <button type="submit">Создать тест</button>
+            </div>
+        </form>
     </div>
 
-    <div class="nav-tabs">
-      <button id="words" class="nav-tab">Words</button>
-      <button id="tests" class="nav-tab active">Tests</button>
-      <button id="games" class="nav-tab">Games</button>
-    </div>
+    <script>
+        document.getElementById('classSelect').addEventListener('change', function() {
+            const classValue = this.value;
+            const unitSelect = document.getElementById('unit');
+            const moduleSelect = document.getElementById('module');
+            
+            if (classValue) {
+                // Enable unit select
+                unitSelect.disabled = false;
+                
+                // Fetch units for selected class
+                fetch(`/get_units_for_class?class_name=${classValue}`)
+                    .then(response => response.json())
+                    .then(units => {
+                        unitSelect.innerHTML = '<option value="">Выберите юнит</option>';
+                        units.forEach(unit => {
+                            unitSelect.innerHTML += `<option value="${unit}">${unit}</option>`;
+                        });
+                    });
+            } else {
+                unitSelect.disabled = true;
+                unitSelect.innerHTML = '<option value="">Сначала выберите класс</option>';
+                moduleSelect.disabled = true;
+                moduleSelect.innerHTML = '<option value="">Сначала выберите юнит</option>';
+            }
+        });
 
-    <div class="form-container">
-      <form class="add_word" method="POST" action="">
-        <div class="form-group">
-          <label class="form-label" for="classSelect">Folder:</label>
-          <select class="form-select" id="classSelect" name="classSelect">
-            <option value="" disabled selected>Select a folder</option>
-            <option value="1">Class 1</option>
-            <option value="2">Class 2</option>
-            <option value="3">Class 3</option>
-            <option value="4">Class 4</option>
-            <option value="5">Class 5</option>
-            <option value="6">Class 6</option>
-            <option value="7">Class 7</option>
-            <option value="8">Class 8</option>
-            <option value="9">Class 9</option>
-            <option value="10">Class 10</option>
-            <option value="11">Class 11</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="unitSelect">Module:</label>
-          <select class="form-select" id="unitSelect" name="unit">
-            <option value="" disabled selected>Select a module</option>
-            <option value="1">Unit 1</option>
-            <option value="2">Unit 2</option>
-            <option value="3">Unit 3</option>
-            <option value="4">Unit 4</option>
-            <option value="5">Unit 5</option>
-            <option value="6">Unit 6</option>
-            <option value="7">Unit 7</option>
-            <option value="8">Unit 8</option>
-            <option value="9">Unit 9</option>
-            <option value="10">Unit 10</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="type">Test Type:</label>
-          <select class="form-select" id="type" name="type">
-            <option value="" disabled selected>Select test type</option>
-            <option value="dictation">Dictation</option>
-            <option value="true_or_false">True or False</option>
-            <option value="add_letter">Missing Letters</option>
-          </select>
-        </div>
-
-        <input type="submit" class="form-submit" value="Create Test">
-      </form>
-    </div>
-  </div>
-
-  <script>
-    document.getElementById("words").onclick = function () {
-      location.href = window.location.origin + '/words';
-    };
-    document.getElementById("tests").onclick = function () {
-      location.href = window.location.origin + '/tests';
-    };
-    document.getElementById("games").onclick = function () {
-      location.href = window.location.origin + '/games';
-    };
-    document.getElementById("back").onclick = function () {
-      location.href = window.location.origin + '/tests';
-    };
-  </script>
+        document.getElementById('unit').addEventListener('change', function() {
+            const classValue = document.getElementById('classSelect').value;
+            const unitValue = this.value;
+            const moduleSelect = document.getElementById('module');
+            
+            if (unitValue) {
+                // Enable module select
+                moduleSelect.disabled = false;
+                
+                // Fetch modules for selected class and unit
+                fetch(`/get_modules_for_unit?class_name=${classValue}&unit_name=${unitValue}`)
+                    .then(response => response.json())
+                    .then(modules => {
+                        moduleSelect.innerHTML = '<option value="">Выберите модуль</option>';
+                        modules.forEach(module => {
+                            moduleSelect.innerHTML += `<option value="${module}">${module}</option>`;
+                        });
+                    });
+            } else {
+                moduleSelect.disabled = true;
+                moduleSelect.innerHTML = '<option value="">Сначала выберите юнит</option>';
+            }
+        });
+    </script>
 </body>
 </html>
