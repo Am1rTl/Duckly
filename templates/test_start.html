@@ -234,9 +234,9 @@
         </div>
 
         <div class="buttons">
-            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+            <a href="{{ url_for('tests') }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i>
-                Назад
+                Назад к тестам
             </a>
             <button onclick="startTest()" class="btn btn-primary">
                 <i class="fas fa-play"></i>
@@ -255,9 +255,17 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    window.location.reload();
+                if (data.success && data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                } else {
+                    // Handle error or unexpected response if necessary
+                    console.error('Test start failed or redirect URL missing', data);
+                    alert('Не удалось начать тест. Пожалуйста, попробуйте снова.');
                 }
+            })
+            .catch(error => {
+                console.error('Error starting test:', error);
+                alert('Произошла ошибка при попытке начать тест.');
             });
         }
     </script>

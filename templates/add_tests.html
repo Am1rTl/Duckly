@@ -3,230 +3,420 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Добавить тест</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <title>Добавить тест (Расширенный)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary: #6c63ff;
-            --primary-light: #a5a1ff;
-            --primary-dark: #5a52e0;
-            --secondary: #4a4a98;
-            --background: #f8f9fe;
-            --card-bg: #ffffff;
-            --text: #333333;
-            --border: #ddd;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --primary: #6c63ff; --primary-light: #a5a1ff; --primary-dark: #5a52e0;
+            --secondary: #4a4a98; --background: #f8f9fe; --card-bg: #ffffff;
+            --text: #333333; --border: #ddd; --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --input-focus-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
         }
-
-        body {
-            font-family: 'Poppins', sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: var(--background);
-        }
-
-        .back-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            background-color: var(--card-bg);
-            color: var(--text);
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 500;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-        }
-
-        .back-button:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-
-        .container {
-            background: var(--card-bg);
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: var(--shadow);
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-            color: var(--text);
-        }
-
-        select, input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 10px;
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        select:focus, input:focus {
-            border-color: var(--primary);
-            outline: none;
-        }
-
-        button {
-            background-color: var(--primary);
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        button:hover {
-            background-color: var(--primary-dark);
-        }
-
-        .btn-secondary {
-            background-color: var(--background);
-            color: var(--text);
-            border: 2px solid var(--border);
-        }
-
-        .btn-secondary:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-
-        .buttons {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        h1 {
-            color: var(--text);
-            margin-bottom: 30px;
-            font-size: 1.8rem;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        body { background-color: var(--background); color: var(--text); padding: 20px; line-height: 1.6; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .top-nav { width: 100%; max-width: 900px; display: flex; justify-content: flex-start; align-items: center; margin-bottom: 25px; }
+        .btn-back { background-color: transparent; color: var(--primary); border: 2px solid var(--primary); padding: 10px 20px; font-size: 0.9rem; font-weight: 500; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-back:hover { background-color: var(--primary); color: white; }
+        .form-container { background-color: var(--card-bg); padding: 30px 40px; border-radius: 15px; box-shadow: var(--shadow); width: 100%; max-width: 900px; }
+        .form-header { text-align: center; margin-bottom: 30px; }
+        .form-header h1 { color: var(--secondary); font-size: 2rem; font-weight: 600; position: relative; display: inline-block; padding-bottom: 10px; }
+        .form-header h1::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 70px; height: 4px; background: var(--primary); border-radius: 2px; }
+        .form-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media (min-width: 768px) { .form-grid { grid-template-columns: 1fr 1fr; gap: 25px; } .form-group.full-width { grid-column: 1 / -1; } }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { font-weight: 500; margin-bottom: 8px; font-size: 0.95rem; color: var(--text); }
+        .form-group input[type="text"], .form-group input[type="number"], .form-group select { width: 100%; padding: 12px 15px; font-size: 1rem; border: 1px solid var(--border); border-radius: 8px; background-color: #fff; transition: border-color 0.3s ease, box-shadow 0.3s ease; }
+        .form-group input[type="text"]:focus, .form-group input[type="number"]:focus, .form-group select:focus { outline: none; border-color: var(--primary); box-shadow: var(--input-focus-shadow); }
+        .form-group input[type="number"]::-webkit-outer-spin-button, .form-group input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .form-group input[type="number"] { -moz-appearance: textfield; }
+        .form-actions { margin-top: 30px; text-align: right; }
+        .btn-submit { background-color: var(--primary); color: white; padding: 12px 30px; font-size: 1rem; font-weight: 500; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s ease; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-submit:hover { background-color: var(--primary-dark); }
+        .module-list-container { max-height: 200px; overflow-y: auto; border: 1px solid var(--border); padding: 10px; border-radius: 8px; margin-top: 5px; }
+        .module-item { margin-bottom: 5px; }
+        .module-item label { font-weight: normal; font-size: 0.9rem; }
+        .custom-word-pair { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+        .custom-word-pair input { flex-grow: 1; }
+        .btn-remove-word { background: var(--danger); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+        .btn-add-field { background: var(--success); font-size:0.9rem; padding: 8px 15px; margin-top:5px;}
     </style>
 </head>
 <body>
-    <a href="{{ url_for('tests') }}" class="back-button">
-        <i class="fas fa-arrow-left"></i>
-        Назад
-    </a>
-    <div class="container">
+    <div class="top-nav">
+        <a href="{{ url_for('tests') }}" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Назад к тестам
+        </a>
+    </div>
+
+    <div class="form-container">
+        <div class="form-header">
         <h1>Добавить новый тест</h1>
-        <form method="POST">
-            <div class="form-group">
-                <label for="title">Название теста:</label>
-                <input type="text" id="title" name="title" placeholder="Введите название теста">
+        </div>
+
+        <form method="POST" action="{{ url_for('add_tests') }}">
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="title">Название теста</label>
+                    <input type="text" id="title" name="title" placeholder="Введите название теста" required>
             </div>
+
             <div class="form-group">
-                <label for="classSelect">Класс:</label>
-                <select id="classSelect" name="classSelect" required>
+                    <label for="class_number">Для какого класса</label>
+                    <select id="class_number" name="class_number" required>
                     <option value="">Выберите класс</option>
-                    {% for class in classes %}
-                    <option value="{{ class }}">{{ class }}</option>
+                        {% for class_val in classes %}
+                        <option value="{{ class_val }}">{{ class_val }} класс</option>
                     {% endfor %}
                 </select>
             </div>
 
             <div class="form-group">
-                <label for="unit">Юнит:</label>
-                <select id="unit" name="unit" required disabled>
-                    <option value="">Сначала выберите класс</option>
+                    <label for="test_type">Тип теста</label>
+                    <select id="test_type" name="test_type" required>
+                        <option value="">Выберите тип теста</option>
+                        <option value="dictation">Диктант</option>
+                        <option value="add_letter">Вставить букву</option>
+                        <option value="true_false">Верно/Неверно</option>
+                        <option value="multiple_choice_single">Выбор ответа (один правильный)</option>
+                        <option value="multiple_choice_multiple">Выбор ответа (несколько правильных)</option>
+                        <option value="fill_word">Вписать слово (по переводу)</option>
                 </select>
             </div>
 
             <div class="form-group">
-                <label for="module">Модуль:</label>
-                <select id="module" name="module" required disabled>
-                    <option value="">Сначала выберите юнит</option>
+                    <label for="time_limit">Лимит времени (минуты, 0 - нет лимита)</label>
+                    <input type="number" id="time_limit" name="time_limit" min="0" value="0">
+                </div>
+
+                <div class="form-group">
+                    <label for="word_order">Порядок слов</label>
+                    <select id="word_order" name="word_order" required>
+                        <option value="sequential">Последовательно</option>
+                        <option value="random">Случайно</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" id="word_count_general_group">
+                    <label for="word_count">Общее макс. количество слов (0 или пусто - без ограничения)</label>
+                    <input type="number" id="word_count" name="word_count" min="0" placeholder="Все выбранные слова">
+                </div>
+            </div>
+            
+            <!-- Conditional Dictation Options -->
+            <div id="dictation_options_group" style="display: none; margin-top: 20px; padding-top:20px; border-top: 1px solid var(--border);">
+                <h3 style="margin-bottom: 15px; color: var(--secondary);">Настройки для диктанта</h3>
+                <div class="form-group">
+                    <label>Источник слов для диктанта:</label>
+                    <div>
+                        <input type="radio" id="dict_src_all" name="dictation_word_source" value="all_module" checked>
+                        <label for="dict_src_all" style="font-weight: normal; margin-right: 15px;">Все слова из выбранных модулей (+ свои)</label>
+                    </div>
+                    <div>
+                        <input type="radio" id="dict_src_random" name="dictation_word_source" value="random_from_module">
+                        <label for="dict_src_random" style="font-weight: normal; margin-right: 15px;">Случайные слова из выбранных модулей (+ свои)</label>
+                    </div>
+                    <div>
+                        <input type="radio" id="dict_src_specific" name="dictation_word_source" value="selected_specific">
+                        <label for="dict_src_specific" style="font-weight: normal;">Выбрать конкретные слова из модулей (+ свои)</label>
+                    </div>
+                </div>
+
+                <div class="form-group" id="dictation_random_word_count_group" style="display: none; margin-top: 10px;">
+                    <label for="dictation_random_word_count">Количество случайных слов из модулей</label>
+                    <input type="number" id="dictation_random_word_count" name="dictation_random_word_count" min="1" class="form-control">
+                </div>
+
+                <div class="form-group" id="dictation_specific_words_group" style="display: none; margin-top: 10px;">
+                    <label>Выберите слова (из добавленных в тест модулей):</label>
+                    <div id="specific_words_checkbox_container" class="module-list-container">
+                        <p>Сначала выберите модули ниже.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- End Conditional Dictation Options -->
+
+            <hr style="margin-top: 30px; margin-bottom: 20px; border-color: var(--border); opacity: 0.5;">
+
+            <h2 style="margin-bottom:15px; font-size:1.4rem; color: var(--secondary);">Источники слов: Модули и/или Свои слова</h2>
+            
+            <div class="form-group full-width">
+                <label for="word_source_type">Выберите, откуда брать слова:</label>
+                 <select id="word_source_type" name="word_source_type">
+                    <option value="modules_only" selected>Только из выбранных модулей</option>
+                    <option value="custom_only">Только свои слова (ввести ниже)</option>
+                    <option value="modules_and_custom">Из модулей И свои слова</option>
                 </select>
             </div>
 
+            <!-- Module Selection Area -->
+            <div id="module_selection_area" class="form-group full-width" style="display: block;">
+                <label>Выберите Юнит и Модуль (для источников "из модулей"):</label>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="unit_select_main">Юнит:</label>
+                        <select id="unit_select_main" name="unit_select_main" disabled>
+                            <option value="">Сначала выберите класс</option>
+                        </select>
+                    </div>
             <div class="form-group">
-                <label for="type">Тип теста:</label>
-                <select id="type" name="type" required>
-                    <option value="">Выберите тип теста</option>
-                    <option value="dictation">Диктант</option>
-                    <option value="true_or_false">Верно/Неверно</option>
-                    <option value="add_letter">Добавить букву</option>
-                    <option value="multiple_choice">Множественный выбор</option>
+                        <label for="module_select_main">Модуль:</label>
+                        <select id="module_select_main" name="module_select_main" disabled>
+                            <option value="">Сначала выберите юнит</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="selected_modules_display_container" style="margin-top:10px;">
+                     <label>Выбранные модули для теста:</label>
+                     <div id="selected_modules_list" class="module-list-container" style="min-height:50px; background-color: #f9f9f9;">
+                        <!-- Selected modules will be listed here -->
+                        <p><em>Модули не выбраны.</em></p>
+                     </div>
+                </div>
+                 <button type="button" id="add_module_to_test_btn" class="btn-add-field" style="background-color: var(--primary-light); color: var(--primary-dark);">
+                    <i class="fas fa-plus"></i> Добавить выбранный модуль в тест
+                </button>
+                 <!-- Hidden inputs for modules will be managed by JS -->
+            </div>
+
+            <!-- Custom Words Area -->
+            <div id="custom_words_area" class="form-group full-width" style="display: none;">
+                <label>Добавьте свои слова:</label>
+                <div id="custom_word_pairs_container">
+                    <div class="custom-word-pair">
+                        <input type="text" name="custom_words[]" placeholder="Слово (напр. apple)">
+                        <input type="text" name="custom_translations[]" placeholder="Перевод (напр. яблоко)">
+                        <button type="button" class="btn-remove-word" onclick="removeWordPair(this)"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+                <button type="button" id="add_custom_word_pair_btn" class="btn-add-field">
+                    <i class="fas fa-plus"></i> Добавить еще слово
+                </button>
+            </div>
+            
+            <div id="add_letter_mode_container" class="form-group full-width" style="display:none; margin-top:15px; padding-top:15px; border-top:1px solid #eee;">
+                <label for="test_mode">Режим для теста "Вставить букву"</label>
+                <select id="test_mode" name="test_mode">
+                    <option value="random_letters">Пропустить случайные буквы</option>
+                    <option value="manual_letters">Указать пропускаемые буквы вручную (на следующем шаге)</option>
                 </select>
             </div>
 
-            <div class="buttons">
-                <button type="submit">Создать тест</button>
+            <div class="form-actions">
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-plus-circle"></i> Создать тест
+                </button>
             </div>
         </form>
     </div>
 
     <script>
-        document.getElementById('classSelect').addEventListener('change', function() {
-            const classValue = this.value;
-            const unitSelect = document.getElementById('unit');
-            const moduleSelect = document.getElementById('module');
-            
-            if (classValue) {
-                // Enable unit select
-                unitSelect.disabled = false;
-                
-                // Fetch units for selected class
-                fetch(`/get_units_for_class?class_name=${classValue}`)
-                    .then(response => response.json())
-                    .then(units => {
-                        unitSelect.innerHTML = '<option value="">Выберите юнит</option>';
-                        units.forEach(unit => {
-                            unitSelect.innerHTML += `<option value="${unit}">${unit}</option>`;
-                        });
-                    });
-            } else {
-                unitSelect.disabled = true;
-                unitSelect.innerHTML = '<option value="">Сначала выберите класс</option>';
-                moduleSelect.disabled = true;
-                moduleSelect.innerHTML = '<option value="">Сначала выберите юнит</option>';
-            }
-        });
+        document.addEventListener('DOMContentLoaded', function() {
+            const classSelect = document.getElementById('class_number');
+            const unitSelectMain = document.getElementById('unit_select_main');
+            const moduleSelectMain = document.getElementById('module_select_main');
+            const addModuleToTestBtn = document.getElementById('add_module_to_test_btn');
+            const selectedModulesListDiv = document.getElementById('selected_modules_list');
+            const form = document.querySelector('form');
 
-        document.getElementById('unit').addEventListener('change', function() {
-            const classValue = document.getElementById('classSelect').value;
-            const unitValue = this.value;
-            const moduleSelect = document.getElementById('module');
+            const testTypeSelect = document.getElementById('test_type');
+            const dictationOptionsGroup = document.getElementById('dictation_options_group');
+            const dictationWordSourceRadios = document.querySelectorAll('input[name="dictation_word_source"]');
+            const randomWordCountGroup = document.getElementById('dictation_random_word_count_group');
+            const specificWordsGroup = document.getElementById('dictation_specific_words_group');
+            const specificWordsCheckboxContainer = document.getElementById('specific_words_checkbox_container');
             
-            if (unitValue) {
-                // Enable module select
-                moduleSelect.disabled = false;
-                
-                // Fetch modules for selected class and unit
-                fetch(`/get_modules_for_unit?class_name=${classValue}&unit_name=${unitValue}`)
-                    .then(response => response.json())
-                    .then(modules => {
-                        moduleSelect.innerHTML = '<option value="">Выберите модуль</option>';
-                        modules.forEach(module => {
-                            moduleSelect.innerHTML += `<option value="${module}">${module}</option>`;
-                        });
-                    });
-            } else {
-                moduleSelect.disabled = true;
-                moduleSelect.innerHTML = '<option value="">Сначала выберите юнит</option>';
+            const wordSourceTypeSelect = document.getElementById('word_source_type');
+            const moduleSelectionArea = document.getElementById('module_selection_area');
+            const customWordsArea = document.getElementById('custom_words_area');
+            const addLetterModeContainer = document.getElementById('add_letter_mode_container');
+
+
+            function updateUnitOptions(units) {
+                unitSelectMain.innerHTML = '<option value="">Выберите юнит</option>';
+                        units.forEach(unit => {
+                    unitSelectMain.innerHTML += `<option value="${unit}">${unit}</option>`;
+                });
+                unitSelectMain.disabled = units.length === 0;
+                moduleSelectMain.innerHTML = '<option value="">Сначала выберите юнит</option>';
+                moduleSelectMain.disabled = true;
             }
+
+            function updateModuleOptions(modules) {
+                moduleSelectMain.innerHTML = '<option value="">Выберите модуль</option>';
+                modules.forEach(module => {
+                    moduleSelectMain.innerHTML += `<option value="${module}">${module}</option>`;
+                });
+                moduleSelectMain.disabled = modules.length === 0;
+            }
+
+            classSelect.addEventListener('change', function() {
+                const classValue = this.value;
+                if (classValue) {
+                    fetch(`/get_units_for_class?class_name=${classValue}`)
+                        .then(response => response.json()).then(updateUnitOptions);
+                } else {
+                    updateUnitOptions([]);
+                }
+                // Clear selected modules when class changes
+                selectedModulesListDiv.innerHTML = '<p><em>Модули не выбраны.</em></p>';
+                document.querySelectorAll('input[name="modules[]"]').forEach(inp => inp.remove());
+                if (testTypeSelect.value === 'dictation') fetchWordsForSpecificSelection(); // Re-fetch/clear words
+            });
+
+            unitSelectMain.addEventListener('change', function() {
+                const classValue = classSelect.value;
+            const unitValue = this.value;
+                if (unitValue && classValue) {
+                    fetch(`/get_modules_for_unit?class_name=${classValue}&unit_name=${unitValue}`)
+                        .then(response => response.json()).then(updateModuleOptions);
+                } else {
+                    updateModuleOptions([]);
+                }
+            });
+
+            let selectedModulesForTest = [];
+
+            addModuleToTestBtn.addEventListener('click', function() {
+                const classVal = classSelect.value;
+                const unitVal = unitSelectMain.value;
+                const moduleVal = moduleSelectMain.value;
+
+                if (classVal && unitVal && moduleVal) {
+                    const moduleIdentifier = `${classVal}|${unitVal}|${moduleVal}`;
+                    if (!selectedModulesForTest.includes(moduleIdentifier)) {
+                        selectedModulesForTest.push(moduleIdentifier);
+                        
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = 'modules[]';
+                        hiddenInput.value = moduleIdentifier;
+                        hiddenInput.id = `hidden-module-${moduleIdentifier.replace(/[^a-zA-Z0-9]/g, '-')}`;
+                        form.appendChild(hiddenInput);
+
+                        if (selectedModulesListDiv.querySelector('p')) {
+                            selectedModulesListDiv.innerHTML = ''; // Clear "Модули не выбраны"
+                        }
+                        const itemDiv = document.createElement('div');
+                        itemDiv.classList.add('module-item-display');
+                        itemDiv.textContent = `${classVal} класс - ${unitVal} - ${moduleVal}`;
+                        itemDiv.dataset.identifier = moduleIdentifier;
+                        
+                        const removeBtn = document.createElement('button');
+                        removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                        removeBtn.type = 'button';
+                        removeBtn.style.marginLeft = '10px';
+                        removeBtn.style.background = 'var(--danger)';
+                        removeBtn.style.color = 'white';
+                        removeBtn.style.border = 'none';
+                        removeBtn.style.padding = '3px 6px';
+                        removeBtn.style.fontSize = '0.7rem';
+                        removeBtn.style.cursor = 'pointer';
+                        removeBtn.onclick = function() {
+                            selectedModulesForTest = selectedModulesForTest.filter(id => id !== moduleIdentifier);
+                            document.getElementById(`hidden-module-${moduleIdentifier.replace(/[^a-zA-Z0-9]/g, '-')}`).remove();
+                            itemDiv.remove();
+                            if (selectedModulesForTest.length === 0) {
+                                selectedModulesListDiv.innerHTML = '<p><em>Модули не выбраны.</em></p>';
+                            }
+                            if (testTypeSelect.value === 'dictation') fetchWordsForSpecificSelection(); // Re-fetch
+                        };
+                        itemDiv.appendChild(removeBtn);
+                        selectedModulesListDiv.appendChild(itemDiv);
+                        if (testTypeSelect.value === 'dictation') fetchWordsForSpecificSelection(); // Re-fetch
+                    } else {
+                        alert('Этот модуль уже добавлен.');
+                    }
+                } else {
+                    alert('Пожалуйста, выберите класс, юнит и модуль.');
+                }
+            });
+            
+            wordSourceTypeSelect.addEventListener('change', function() {
+                moduleSelectionArea.style.display = (this.value === 'modules_only' || this.value === 'modules_and_custom') ? 'block' : 'none';
+                customWordsArea.style.display = (this.value === 'custom_only' || this.value === 'modules_and_custom') ? 'block' : 'none';
+            });
+            
+            testTypeSelect.addEventListener('change', function() {
+                addLetterModeContainer.style.display = this.value === 'add_letter' ? 'block' : 'none';
+                toggleDictationOptions();
+            });
+
+            // Dictation specific options visibility
+            function toggleDictationOptions() {
+                const isDictation = testTypeSelect.value === 'dictation';
+                dictationOptionsGroup.style.display = isDictation ? 'block' : 'none';
+                if (isDictation) updateDictationSubOptions();
+                else { // Hide sub-options if not dictation
+                    if(randomWordCountGroup) randomWordCountGroup.style.display = 'none';
+                    if(specificWordsGroup) specificWordsGroup.style.display = 'none';
+                }
+            }
+
+            function updateDictationSubOptions() {
+                let selectedSource = document.querySelector('input[name="dictation_word_source"]:checked').value;
+                if(randomWordCountGroup) randomWordCountGroup.style.display = (selectedSource === 'random_from_module') ? 'block' : 'none';
+                if(specificWordsGroup) {
+                    specificWordsGroup.style.display = (selectedSource === 'selected_specific') ? 'block' : 'none';
+                    if (selectedSource === 'selected_specific') fetchWordsForSpecificSelection();
+                }
+            }
+            
+            dictationWordSourceRadios.forEach(radio => radio.addEventListener('change', updateDictationSubOptions));
+            
+            function fetchWordsForSpecificSelection() {
+                const currentSelectedModuleIdentifiers = Array.from(document.querySelectorAll('input[name="modules[]"]')).map(cb => cb.value);
+                specificWordsCheckboxContainer.innerHTML = '<p>Загрузка слов...</p>';
+
+                if (currentSelectedModuleIdentifiers.length === 0 && document.querySelector('input[name="dictation_word_source"]:checked').value === 'selected_specific') {
+                    specificWordsCheckboxContainer.innerHTML = '<p>Сначала добавьте модули в тест выше, чтобы увидеть слова для выбора.</p>'; return;
+                }
+                
+                if (currentSelectedModuleIdentifiers.length > 0) {
+                    fetch(`/get_words_for_module_selection?modules=${currentSelectedModuleIdentifiers.join(',')}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        specificWordsCheckboxContainer.innerHTML = ''; 
+                        if (data.words && data.words.length > 0) {
+                            data.words.forEach(word => {
+                                const div = document.createElement('div'); div.classList.add('module-item');
+                                const checkbox = document.createElement('input');
+                                checkbox.type = 'checkbox'; checkbox.name = 'dictation_specific_word_ids[]';
+                                checkbox.value = word.id; checkbox.id = 'dict_word_sel_' + word.id;
+                                const label = document.createElement('label');
+                                label.htmlFor = 'dict_word_sel_' + word.id; label.textContent = word.text;
+                                div.appendChild(checkbox); div.appendChild(label);
+                                specificWordsCheckboxContainer.appendChild(div);
+                            });
+                        } else { specificWordsCheckboxContainer.innerHTML = '<p>Нет слов в выбранных модулях.</p>'; }
+                    })
+                    .catch(error => { console.error('Error fetching words for dictation:', error); specificWordsCheckboxContainer.innerHTML = '<p>Ошибка при загрузке слов.</p>'; });
+                } else if (document.querySelector('input[name="dictation_word_source"]:checked').value === 'selected_specific') {
+                     specificWordsCheckboxContainer.innerHTML = '<p>Сначала добавьте модули в тест выше.</p>';
+                }
+            }
+            
+            // Initial state setup
+            toggleDictationOptions();
+            wordSourceTypeSelect.dispatchEvent(new Event('change')); // Trigger initial visibility for module/custom areas
+            testTypeSelect.dispatchEvent(new Event('change')); // Trigger for add_letter and dictation options
+            
+            // Custom word pair logic
+            document.getElementById('add_custom_word_pair_btn').addEventListener('click', function() {
+                const container = document.getElementById('custom_word_pairs_container');
+                const newPair = document.createElement('div');
+                newPair.classList.add('custom-word-pair');
+                newPair.innerHTML = `
+                    <input type="text" name="custom_words[]" placeholder="Слово">
+                    <input type="text" name="custom_translations[]" placeholder="Перевод">
+                    <button type="button" class="btn-remove-word" onclick="removeWordPair(this)"><i class="fas fa-times"></i></button>
+                `;
+                container.appendChild(newPair);
+            });
         });
+        function removeWordPair(button) { // Global scope for inline onclick
+            button.closest('.custom-word-pair').remove();
+        }
     </script>
 </body>
 </html>

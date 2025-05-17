@@ -24,6 +24,7 @@
             --warning-color: #ffa500; /* Added for in-progress status */
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             --shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.12);
+            --navbar-text-color: #ffffff; /* Explicit navbar text color */
         }
 
         * {
@@ -42,21 +43,49 @@
         /* Navbar from previous test_details, adapted to Poppins and --primary */
         .navbar {
             background-color: var(--primary);
-            padding: 1rem 2rem;
-            color: white;
+            padding: 0.8rem 1.5rem; /* Adjusted padding */
+            color: var(--navbar-text-color);
             display: flex;
-            justify-content: space-between;
+            justify-content: space-between; /* This will be managed by children */
             align-items: center;
             box-shadow: var(--shadow); /* Use theme shadow */
         }
-        .navbar a {
-            color: white;
-            text-decoration: none;
-            font-size: 1.1rem; /* Poppins looks good at this size */
-            font-weight: 500;
+        .navbar-start,
+        .navbar-center,
+        .navbar-end {
+            flex: 1;
+            display: flex;
+            align-items: center; /* Vertically align items within each section */
         }
-        .navbar a:hover {
-            color: var(--primary-light);
+        .navbar-start {
+            justify-content: flex-start;
+        }
+        .navbar-center {
+            justify-content: center;
+        }
+        .navbar-end {
+            justify-content: flex-end;
+        }
+
+        .navbar a,
+        .navbar .nav-link {
+            color: var(--navbar-text-color);
+            text-decoration: none;
+            font-size: 1rem; /* Adjusted font size */
+            font-weight: 500;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px; /* Add mild rounding to resemble a button */
+            transition: background-color 0.2s ease;
+        }
+        .navbar a:hover,
+        .navbar .nav-link:hover {
+            background-color: var(--primary-dark); /* Darken on hover for button feel */
+            color: var(--navbar-text-color); /* Keep text color consistent on hover */
+        }
+        .navbar .navbar-brand {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--navbar-text-color);
         }
 
         .container {
@@ -364,8 +393,15 @@
 </head>
 <body>
     <nav class="navbar">
-        <a href="{{ url_for('hello') }}">Dashboard</a>
-        <a href="{{ url_for('logout') }}">Logout</a>
+        <div class="navbar-start">
+            <a href="{{ url_for('tests') }}" class="nav-link"><i class="fas fa-arrow-left"></i> Back to Tests</a>
+        </div>
+        <div class="navbar-center">
+            <span class="navbar-brand">Test Details</span> 
+        </div>
+        <div class="navbar-end">
+             <!-- Empty div for balance or future right-aligned items like user icon/logout -->
+        </div>
     </nav>
 
     <div class="container">
@@ -431,7 +467,14 @@
                                     <span class="student-name">{{ item.user.fio }} ({{ item.user.nick }})</span><br>
                                     <span class="student-meta">Started: {{ item.result.started_at.strftime('%d %b %Y, %H:%M') }}</span>
                                 </div>
-                                <span class="student-meta">Test Started</span>
+                                <span class="student-meta student-timer"
+                                      id="timer-result-{{ item.result.id }}"
+                                      data-has-time-limit="{{ 'true' if item.has_time_limit else 'false' }}"
+                                      {% if item.has_time_limit and item.end_time_utc_iso %}
+                                      data-end-time-iso="{{ item.end_time_utc_iso }}"
+                                      {% endif %}>
+                                    {{ item.remaining_time_display }}
+                                </span>
                             </li>
                         {% endfor %}
                     </ul>
@@ -490,6 +533,59 @@
         }
         // The progress bar width is set via inline style with Jinja.
         // No additional JS needed for its initial rendering.
+    </script>
+
+    <script>
+    // New script block for countdown timers
+    document.addEventListener('DOMContentLoaded', function() {
+        const timers = document.querySelectorAll('.student-timer');
+
+        timers.forEach(timerSpan => {
+            const hasTimeLimit = timerSpan.dataset.hasTimeLimit === 'true';
+            
+            if (!hasTimeLimit) {
+                timerSpan.textContent = 'Без ограничений';
+                return; // No countdown needed
+            }
+
+            const endTimeIso = timerSpan.dataset.endTimeIso;
+            if (!endTimeIso) {
+                // This case should ideally not be reached if hasTimeLimit is true and backend is correct
+                timerSpan.textContent = 'Время не определено'; 
+                return;
+            }
+
+            const endTime = new Date(endTimeIso);
+
+            function updateTimer() {
+                const now = new Date();
+                const remainingMilliseconds = endTime - now;
+
+                if (remainingMilliseconds <= 0) {
+                    timerSpan.textContent = 'Время вышло';
+                    if (timerSpan.intervalId) { // Check if intervalId was set
+                        clearInterval(timerSpan.intervalId);
+                    }
+                    return;
+                }
+
+                const totalSeconds = Math.floor(remainingMilliseconds / 1000);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+
+                if (hours > 0) {
+                    timerSpan.textContent = `${hours}h ${minutes}m ${seconds}s left`;
+                } else {
+                    timerSpan.textContent = `${minutes}m ${seconds}s left`;
+                }
+            }
+
+            // Store intervalId on the element itself to manage it if needed, e.g., for cleanup
+            timerSpan.intervalId = setInterval(updateTimer, 1000);
+            updateTimer(); // Initial call to display time immediately without 1s delay
+        });
+    });
     </script>
 </body>
 </html> 

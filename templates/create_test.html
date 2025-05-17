@@ -237,17 +237,51 @@
                     </select>
                 </div>
 
-                <div class="form-group" id="word_count_group" style="display: none;">
-                    <label for="word_count">Количество слов (если случайно)</label>
-                    <input type="number" id="word_count" name="word_count" min="1">
+                <div class="form-group" id="word_count_group">
+                    <label for="word_count">Общее макс. количество слов (0 или пусто - без ограничения)</label>
+                    <input type="number" id="word_count" name="word_count" min="0" placeholder="Все выбранные слова">
                 </div>
             </div>
             
+            <!-- Conditional Dictation Options -->
+            <div id="dictation_options_group" style="display: none; margin-top: 20px; padding-top:20px; border-top: 1px solid var(--border);">
+                <h3 style="margin-bottom: 15px; color: var(--secondary);">Настройки для диктанта</h3>
+                <div class="form-group">
+                    <label>Источник слов для диктанта:</label>
+                    <div>
+                        <input type="radio" id="dict_src_all" name="dictation_word_source" value="all_module" checked>
+                        <label for="dict_src_all" style="font-weight: normal; margin-right: 15px;">Все слова из выбранных модулей (+ свои)</label>
+                    </div>
+                    <div>
+                        <input type="radio" id="dict_src_random" name="dictation_word_source" value="random_from_module">
+                        <label for="dict_src_random" style="font-weight: normal; margin-right: 15px;">Случайные слова из выбранных модулей (+ свои)</label>
+                    </div>
+                    <div>
+                        <input type="radio" id="dict_src_specific" name="dictation_word_source" value="selected_specific">
+                        <label for="dict_src_specific" style="font-weight: normal;">Выбрать конкретные слова из модулей (+ свои)</label>
+                    </div>
+                </div>
+
+                <div class="form-group" id="dictation_random_word_count_group" style="display: none; margin-top: 10px;">
+                    <label for="dictation_random_word_count">Количество случайных слов из модулей</label>
+                    <input type="number" id="dictation_random_word_count" name="dictation_random_word_count" min="1" class="form-control">
+                </div>
+
+                <div class="form-group" id="dictation_specific_words_group" style="display: none; margin-top: 10px;">
+                    <label>Выберите слова (из выбранных модулей):</label>
+                    <div id="specific_words_checkbox_container" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border); padding: 10px; border-radius: 8px;">
+                        <!-- Checkboxes will be populated by JavaScript -->
+                        <p>Сначала выберите модули выше.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- End Conditional Dictation Options -->
+
             <hr style="margin-top: 30px; margin-bottom: 20px; border-color: var(--border); opacity: 0.5;">
 
-            <!-- Step 2: Word Selection and Type-Specific Settings -->
+            <!-- Step 2: Word Selection (Modules & Custom Words) - This section should remain -->
             <div class="form-step" id="step2WordSelection">
-                <h2 class="step-title">Шаг 2: Выбор слов и Настройки</h2>
+                <h2 class="step-title" style="margin-bottom:15px;">Источники слов: Модули и Свои слова</h2>
 
                 <div class="form-group full-width">
                     <label for="word_source">Источник слов</label>
@@ -424,6 +458,128 @@
         toggleAddLetterModeSection();
         // loadModules(); // Optionally load modules if a class is pre-selected on page load
 
+        document.addEventListener('DOMContentLoaded', function() {
+            const testTypeSelect = document.getElementById('test_type');
+            const dictationOptionsGroup = document.getElementById('dictation_options_group');
+            
+            const dictationWordSourceRadios = document.querySelectorAll('input[name="dictation_word_source"]');
+            const randomWordCountGroup = document.getElementById('dictation_random_word_count_group');
+            const specificWordsGroup = document.getElementById('dictation_specific_words_group');
+            const specificWordsCheckboxContainer = document.getElementById('specific_words_checkbox_container');
+
+            // Controls for existing general word_order and word_count
+            const wordOrderSelect = document.getElementById('word_order');
+            const wordCountGroup = document.getElementById('word_count_group'); // The general one
+
+            function toggleDictationOptions() {
+                if (testTypeSelect.value === 'dictation') {
+                    dictationOptionsGroup.style.display = 'block';
+                    // When dictation is selected, also trigger update for sub-options
+                    updateDictationSubOptions();
+                } else {
+                    dictationOptionsGroup.style.display = 'none';
+                    // Hide sub-options when dictation is not selected
+                    if(randomWordCountGroup) randomWordCountGroup.style.display = 'none';
+                    if(specificWordsGroup) specificWordsGroup.style.display = 'none';
+                }
+            }
+
+            function updateDictationSubOptions() {
+                let selectedSource = document.querySelector('input[name="dictation_word_source"]:checked').value;
+                
+                if (randomWordCountGroup) {
+                    randomWordCountGroup.style.display = (selectedSource === 'random_from_module') ? 'block' : 'none';
+                }
+                if (specificWordsGroup) {
+                    specificWordsGroup.style.display = (selectedSource === 'selected_specific') ? 'block' : 'none';
+                    if (selectedSource === 'selected_specific') {
+                        fetchWordsForSpecificSelection(); // Fetch words when this option becomes visible
+                    }
+                }
+            }
+
+            // Initial state based on test_type
+            toggleDictationOptions();
+            testTypeSelect.addEventListener('change', toggleDictationOptions);
+
+            dictationWordSourceRadios.forEach(radio => {
+                radio.addEventListener('change', updateDictationSubOptions);
+            });
+
+            // Function to fetch words when 'selected_specific' is chosen and modules change
+            // This needs to be connected to the module selection part of your form.
+            // For now, it's called when the specific section becomes visible.
+            // You'll need a new route like '/get_words_for_modules' in Flask.
+            function fetchWordsForSpecificSelection() {
+                const selectedModules = Array.from(document.querySelectorAll('input[name="modules[]"]:checked'))
+                                          .map(cb => cb.value);
+                
+                specificWordsCheckboxContainer.innerHTML = '<p>Загрузка слов...</p>';
+
+                if (selectedModules.length === 0 && document.querySelector('input[name="dictation_word_source"]:checked').value === 'selected_specific') {
+                    specificWordsCheckboxContainer.innerHTML = '<p>Сначала выберите модули из списка выше, чтобы увидеть слова для выбора.</p>';
+                    return;
+                }
+                
+                // Assuming you have a way to get selected class, unit, module values
+                // For now, this is a placeholder. You need to get the actual module identifiers.
+                if (selectedModules.length > 0) {
+                    fetch(`/get_words_for_module_selection?modules=${selectedModules.join(',')}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        specificWordsCheckboxContainer.innerHTML = ''; // Clear current
+                        if (data.words && data.words.length > 0) {
+                            data.words.forEach(word => {
+                                const div = document.createElement('div');
+                                div.classList.add('checkbox-item');
+                                const checkbox = document.createElement('input');
+                                checkbox.type = 'checkbox';
+                                checkbox.name = 'dictation_specific_word_ids[]';
+                                checkbox.value = word.id;
+                                checkbox.id = 'word_' + word.id;
+                                
+                                const label = document.createElement('label');
+                                label.htmlFor = 'word_' + word.id;
+                                label.textContent = word.text; // e.g., "Apple - Яблоко"
+                                label.style.fontWeight = 'normal';
+
+                                div.appendChild(checkbox);
+                                div.appendChild(label);
+                                specificWordsCheckboxContainer.appendChild(div);
+                            });
+                        } else {
+                            specificWordsCheckboxContainer.innerHTML = '<p>Нет слов в выбранных модулях или слова не найдены.</p>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching words:', error);
+                        specificWordsCheckboxContainer.innerHTML = '<p>Ошибка при загрузке слов. Попробуйте еще раз.</p>';
+                    });
+                } else if (document.querySelector('input[name="dictation_word_source"]:checked').value === 'selected_specific') {
+                     specificWordsCheckboxContainer.innerHTML = '<p>Выберите модули, чтобы увидеть слова для выбора.</p>';
+                }
+            }
+
+            // Attach listener to module checkboxes if they exist (you might need to adjust selectors)
+            const moduleCheckboxes = document.querySelectorAll('input[name="modules[]"]'); // Adjust selector as needed
+            moduleCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    if (document.getElementById('test_type').value === 'dictation' && 
+                        document.querySelector('input[name="dictation_word_source"]:checked').value === 'selected_specific') {
+                        fetchWordsForSpecificSelection();
+                    }
+                });
+            });
+
+            // Initial call if creating a dictation test and specific is pre-selected (e.g. on edit page)
+            // For create_test.html, this ensures it tries to load if specific is default checked and modules are pre-selected
+             if (testTypeSelect.value === 'dictation' && 
+                 document.querySelector('input[name="dictation_word_source"]:checked') && // Ensure it's checked
+                 document.querySelector('input[name="dictation_word_source"]:checked').value === 'selected_specific') {
+                 fetchWordsForSpecificSelection(); 
+             }
+
+        });
     </script>
 </body>
 </html> 

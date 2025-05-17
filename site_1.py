@@ -6,7 +6,7 @@ import time
 import sqlite3
 import random
 import string
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 
 
@@ -51,6 +51,11 @@ class Test(db.Model):
     word_order = db.Column(db.String, nullable=False)  # 'random' or 'sequential'
     word_count = db.Column(db.Integer, nullable=True)  # For random order
     test_mode = db.Column(db.String, nullable=True)  # 'random_letters' or 'manual_letters' for add_letter type
+    
+    # New fields for dictation test options
+    dictation_word_source = db.Column(db.String, nullable=True) # e.g., "all_module", "selected_specific", "random_from_module"
+    dictation_selected_words = db.Column(db.Text, nullable=True) # JSON list of word IDs for "selected_specific"
+
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     test_words = db.relationship('TestWord', backref='test', lazy=True)
 
@@ -126,30 +131,251 @@ def profile():
 
 @app.route("/add_tests", methods=['POST', 'GET'])
 def add_tests():
+    user = None
+    # Authentication check (copied from create_test)
+    for cookie_name in request.cookies:
+        user_obj = User.query.filter_by(nick=cookie_name).first()
+        if user_obj:
+            secret_key_expected = bs64.b64encode(str.encode(user_obj.nick + user_obj.password[:2])).decode("utf-8")
+            if request.cookies.get(cookie_name) == secret_key_expected:
+                user = user_obj
+                break
+    
+    if user is None or user.teacher != 'yes':
+        flash("Доступ запрещен. Пожалуйста, войдите как учитель.", "warning")
+        return redirect(url_for('login'))
+
     if request.method == "POST":
-        classs = request.form['classSelect']
-        unit = request.form['unit']
-        module = request.form['module']
-        types = request.form['type']
-        title = request.form.get('title', f'Тест {unit} - {module}')  # Добавляем заголовок
-        times = str(time.time()).split(".")
-        link = times[0]+times[1]
-        new_test = Test(
-            title=title,
-            classs=classs,
-            unit=unit,
-            module=module,
-            type=types,
-            link=link,
-            created_by=1,  # Временно используем ID 1 для тестового учителя
-            is_active=True,
-            word_order='random'
-        )
+        test_type = request.form.get('test_type')
+        class_number = request.form.get('class_number') # from class_number select
+        title = request.form.get('title')
+        
+        time_limit_str = request.form.get('time_limit')
+        time_limit = int(time_limit_str) if time_limit_str and time_limit_str.isdigit() and int(time_limit_str) > 0 else None
+        
+        word_order_form = request.form.get('word_order', 'sequential') 
+        
+        word_count_form_str = request.form.get('word_count') # General word count
+        word_count_form = int(word_count_form_str) if word_count_form_str and word_count_form_str.isdigit() and int(word_count_form_str) > 0 else None
+
+        test_mode = request.form.get('test_mode', 'random_letters') if test_type == 'add_letter' else None
+        
+        new_test_params = {
+            'title': title,
+            'classs': class_number,
+            'type': test_type,
+            'link': generate_test_link(), # Assumes generate_test_link() is defined
+            'created_by': user.id, # Use authenticated user's ID
+            'time_limit': time_limit,
+            'word_order': word_order_form,
+            'test_mode': test_mode,
+            'is_active': True # Default to active
+        }
+
+        words_data_source = [] # Holds {'id': ..., 'word': ..., 'perevod': ..., 'source': ...}
+
+        word_source_type = request.form.get('word_source_type', 'modules_only')
+        
+        selected_module_identifiers = []
+        if word_source_type in ['modules_only', 'modules_and_custom']:
+            selected_module_identifiers = request.form.getlist('modules[]')
+
+        custom_words_text = []
+        custom_translations_text = []
+        if word_source_type in ['custom_only', 'modules_and_custom']:
+            custom_words_text = request.form.getlist('custom_words[]')
+            custom_translations_text = request.form.getlist('custom_translations[]')
+
+        module_words_list = []
+        if selected_module_identifiers:
+            for module_identifier in selected_module_identifiers:
+                try:
+                    class_num, unit, module_name = module_identifier.split('|')
+                    module_words_db = Word.query.filter_by(
+                        classs=class_num,
+                        unit=unit,
+                        module=module_name
+                    ).all()
+                    for mw in module_words_db:
+                        module_words_list.append({'id': mw.id, 'word': mw.word, 'perevod': mw.perevod, 'source': 'module'})
+                except ValueError:
+                    flash(f"Некорректный идентификатор модуля: {module_identifier}", "warning")
+
+        if test_type == 'dictation':
+            dictation_word_source = request.form.get('dictation_word_source')
+            new_test_params['dictation_word_source'] = dictation_word_source
+
+            if dictation_word_source == 'all_module':
+                words_data_source.extend(module_words_list)
+                new_test_params['word_count'] = word_count_form
+            
+            elif dictation_word_source == 'random_from_module':
+                dictation_num_random_words_str = request.form.get('dictation_random_word_count')
+                dictation_num_random_words = int(dictation_num_random_words_str) if dictation_num_random_words_str and dictation_num_random_words_str.isdigit() and int(dictation_num_random_words_str) > 0 else 0
+                new_test_params['word_count'] = dictation_num_random_words if dictation_num_random_words > 0 else None
+                if module_words_list and dictation_num_random_words > 0:
+                    random.shuffle(module_words_list)
+                    words_data_source.extend(module_words_list[:dictation_num_random_words])
+
+            elif dictation_word_source == 'selected_specific':
+                specific_word_ids_str = request.form.getlist('dictation_specific_word_ids[]')
+                specific_word_ids = [int(id_str) for id_str in specific_word_ids_str if id_str.isdigit()]
+                new_test_params['dictation_selected_words'] = json.dumps(specific_word_ids)
+                if specific_word_ids:
+                    selected_db_words = Word.query.filter(Word.id.in_(specific_word_ids)).all()
+                    for sw in selected_db_words:
+                        words_data_source.append({'id': sw.id, 'word': sw.word, 'perevod': sw.perevod, 'source': 'module_specific'})
+                new_test_params['word_count'] = word_count_form
+
+            for cw_text, ct_text in zip(custom_words_text, custom_translations_text):
+                if cw_text and ct_text:
+                    words_data_source.append({'word': cw_text, 'perevod': ct_text, 'source': 'custom'})
+        
+        else: # For other test types (non-dictation)
+            new_test_params['word_count'] = word_count_form
+            words_data_source.extend(module_words_list)
+            for cw_text, ct_text in zip(custom_words_text, custom_translations_text):
+                if cw_text and ct_text:
+                    words_data_source.append({'word': cw_text, 'perevod': ct_text, 'source': 'custom'})
+        
+        if len(selected_module_identifiers) == 1:
+            try:
+                _, unit_single, module_single = selected_module_identifiers[0].split('|')
+                new_test_params['unit'] = unit_single
+                new_test_params['module'] = module_single
+            except ValueError:
+                new_test_params['unit'] = "N/A"
+                new_test_params['module'] = "N/A"
+        elif len(selected_module_identifiers) > 1:
+            new_test_params['unit'] = "Multiple"
+            new_test_params['module'] = "Multiple"
+        else:
+            new_test_params['unit'] = "N/A"
+            new_test_params['module'] = "N/A"
+
+        new_test = Test(**new_test_params)
         db.session.add(new_test)
-        db.session.commit()
-        return redirect('/tests', 302)
-    else:
-        # Get all available classes
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Ошибка при создании основной записи теста: {str(e)}", "error")
+            classes_get = [str(i) for i in range(1, 12)]
+            return render_template("add_tests.html", classes=classes_get, error_message=str(e))
+
+        if new_test.word_order == 'random':
+            random.shuffle(words_data_source)
+        
+        final_word_count_to_use = new_test.word_count
+        if final_word_count_to_use is not None and final_word_count_to_use > 0:
+            words_data_source = words_data_source[:final_word_count_to_use]
+        elif final_word_count_to_use == 0:
+            words_data_source = []
+
+        for idx, word_entry in enumerate(words_data_source):
+            original_word_text = word_entry['word']
+            original_translation = word_entry['perevod']
+            
+            current_word_for_test_word_model = original_word_text 
+            prompt_for_test_word_model = original_translation   
+            options_db = None
+            missing_letters_positions_db = None
+            correct_answer_for_db = original_word_text
+
+            if test_type == 'add_letter':
+                prompt_for_test_word_model = original_translation
+                if test_mode == 'random_letters':
+                    if len(original_word_text) > 0:
+                        num_letters_to_remove = random.randint(1, min(2, len(original_word_text)))
+                        positions_zero_indexed = sorted(random.sample(range(len(original_word_text)), num_letters_to_remove))
+                        actual_missing_letters_list = [original_word_text[pos] for pos in positions_zero_indexed]
+                        correct_answer_for_db = "".join(actual_missing_letters_list)
+                        word_with_gaps_list = list(original_word_text)
+                        for pos in positions_zero_indexed: word_with_gaps_list[pos] = '_'
+                        current_word_for_test_word_model = "".join(word_with_gaps_list)
+                        missing_letters_positions_db = ','.join(str(pos + 1) for pos in positions_zero_indexed)
+                    else:
+                        current_word_for_test_word_model = ""; correct_answer_for_db = ""; missing_letters_positions_db = ""
+                else: # manual_letters
+                    if len(original_word_text) > 0:
+                        positions_zero_indexed = [0]
+                        actual_missing_letters_list = [original_word_text[pos] for pos in positions_zero_indexed]
+                        correct_answer_for_db = "".join(actual_missing_letters_list)
+                        word_with_gaps_list = list(original_word_text); word_with_gaps_list[0] = '_'
+                        current_word_for_test_word_model = "".join(word_with_gaps_list)
+                        missing_letters_positions_db = '1'
+                    else:
+                        current_word_for_test_word_model = ""; correct_answer_for_db = ""; missing_letters_positions_db = ""
+                        
+            elif test_type == 'multiple_choice_single':
+                current_word_for_test_word_model = original_translation 
+                prompt_for_test_word_model = "Выберите правильный перевод:" 
+                correct_answer_for_db = original_word_text
+                all_other_words = [w.word for w in Word.query.filter(Word.classs == class_number, Word.word != original_word_text).limit(20).all()]
+                num_wrong_options = 3
+                wrong_options_list = random.sample(all_other_words, min(num_wrong_options, len(all_other_words)))
+                current_options_list_for_db = wrong_options_list + [original_word_text]
+                random.shuffle(current_options_list_for_db)
+                options_db = '|'.join(current_options_list_for_db)
+
+            elif test_type == 'dictation':
+                current_word_for_test_word_model = ''.join(['_'] * len(original_word_text))
+                prompt_for_test_word_model = original_translation 
+                correct_answer_for_db = original_word_text
+
+            elif test_type == 'true_false':
+                if word_entry['source'] == 'custom':
+                    current_word_for_test_word_model = original_word_text
+                    correct_answer_for_db = original_translation if original_translation.lower() in ['true', 'false'] else "True"
+                else:
+                    current_word_for_test_word_model = f"{original_word_text} - {original_translation}"
+                    correct_answer_for_db = "True"
+                prompt_for_test_word_model = "Верно или неверно?"
+                options_db = "True|False"
+                
+            elif test_type == 'fill_word':
+                current_word_for_test_word_model = original_translation
+                prompt_for_test_word_model = "Впишите соответствующее слово (оригинал):"
+                correct_answer_for_db = original_word_text
+
+            elif test_type == 'multiple_choice_multiple':
+                current_word_for_test_word_model = original_translation
+                prompt_for_test_word_model = "Выберите все подходящие варианты:"
+                correct_answer_for_db = original_word_text # Placeholder
+                all_other_words = [w.word for w in Word.query.filter(Word.classs == class_number, Word.word != original_word_text).limit(20).all()]
+                num_options_total = 4
+                num_wrong_options_needed = num_options_total - 1
+                wrong_options_list = random.sample(all_other_words, min(num_wrong_options_needed, len(all_other_words)))
+                current_options_list_for_db = wrong_options_list + [original_word_text]
+                while len(current_options_list_for_db) < num_options_total:
+                    current_options_list_for_db.append(f"Вариант {len(current_options_list_for_db)+1}")
+                random.shuffle(current_options_list_for_db)
+                options_db = '|'.join(current_options_list_for_db[:num_options_total])
+
+            test_word_entry = TestWord(
+                test_id=new_test.id,
+                word=current_word_for_test_word_model,
+                perevod=prompt_for_test_word_model,
+                correct_answer=correct_answer_for_db,
+                options=options_db,
+                missing_letters=missing_letters_positions_db,
+                word_order=idx
+            )
+            db.session.add(test_word_entry)
+        
+        try:
+            db.session.commit()
+            flash("Тест успешно создан!", "success")
+            return redirect(url_for('tests'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Ошибка при сохранении слов теста: {str(e)}", "error")
+            Test.query.filter_by(id=new_test.id).delete() # Rollback Test creation if words fail
+            db.session.commit()
+            classes_get = [str(i) for i in range(1, 12)]
+            return render_template("add_tests.html", classes=classes_get, error_message=str(e))
+
+    else: # GET request
         classes = [str(i) for i in range(1, 12)]
         return render_template("add_tests.html", classes=classes)
 
@@ -178,12 +404,12 @@ def tests():
         tests_query = Test.query.filter_by(created_by=user.id, is_active=not show_archived).order_by(Test.created_at.desc()).all()
         for test_item in tests_query:
             students_in_class = User.query.filter_by(class_number=test_item.classs, teacher='no').count()
-            completed_results = TestResult.query.filter_by(test_id=test_item.id, completed_at=None).count() # This should be completed_at IS NOT None
             
-            # Corrected logic for completed_results
-            completed_count = TestResult.query.filter(
+            # Corrected logic for completed_results: count only student completions
+            completed_count = db.session.query(TestResult.id).join(User, TestResult.user_id == User.id).filter(
                 TestResult.test_id == test_item.id,
-                TestResult.completed_at.isnot(None) # Check that completed_at is not NULL
+                TestResult.completed_at.isnot(None),
+                User.teacher == 'no'  # Ensure only student results are counted
             ).count()
 
             progress = 0
@@ -199,13 +425,19 @@ def tests():
     else:
         # Students see only tests for their class
         tests_query = Test.query.filter_by(classs=user.class_number, is_active=not show_archived).order_by(Test.created_at.desc()).all()
-        # For students, we don't typically show progress bars of other students on the main list
+        # For students, we need to check if they completed the test to link to results, especially for archived.
         for test_item in tests_query:
+            student_result = TestResult.query.filter_by(
+                test_id=test_item.id,
+                user_id=user.id,
+            ).filter(TestResult.completed_at.isnot(None)).first()
+
             tests_data.append({
                 'test': test_item,
                 'students_in_class': 0, # Not relevant for student's direct view here
                 'completed_count': 0, # Not relevant
-                'progress': 0 # Not relevant
+                'progress': 0, # Not relevant
+                'student_completed_result_id': student_result.id if student_result else None
             })
 
 
@@ -222,6 +454,46 @@ def get_words_json():
             data[w.classs][w.unit] = []
         data[w.classs][w.unit].append([w.word, w.perevod])
     return jsonify(data)
+
+@app.route("/get_words_for_module_selection")
+def get_words_for_module_selection():
+    module_identifiers_str = request.args.get('modules', '')
+    if not module_identifiers_str:
+        return jsonify({"words": [], "error": "No modules provided"})
+
+    module_identifiers = module_identifiers_str.split(',')
+    words_list = []
+    seen_word_ids = set()
+
+    for module_identifier in module_identifiers:
+        parts = module_identifier.split('|')
+        if len(parts) == 3:
+            class_num, unit_name, module_name = parts
+            try:
+                module_words_db = Word.query.filter_by(
+                    classs=class_num,
+                    unit=unit_name,
+                    module=module_name
+                ).order_by(Word.word).all()
+                
+                for mw in module_words_db:
+                    if mw.id not in seen_word_ids:
+                        words_list.append({
+                            "id": mw.id,
+                            "text": f"{mw.word} - {mw.perevod}" # Format for display
+                        })
+                        seen_word_ids.add(mw.id)
+            except Exception as e:
+                # Log error or handle it as needed
+                print(f"Error fetching words for module {module_identifier}: {e}") # Basic logging
+                # Optionally, you could add an error message to the response for this module
+                pass # Continue to next module identifier
+        else:
+            # Log invalid module identifier
+            print(f"Invalid module identifier format: {module_identifier}")
+            pass # Continue to next module identifier
+            
+    return jsonify({"words": words_list})
 
 @app.route("/tests/<id>", methods=['GET', 'POST'])
 def test_id(id):
@@ -266,38 +538,73 @@ def test_id(id):
                 test_id=test.id,
                 user_id=user.id,
                 total_questions=len(test.test_words),
-                started_at=datetime.utcnow()
+                started_at=datetime.utcnow() # Explicitly set started_at
             )
             db.session.add(test_result)
             db.session.commit()
 
         # Process answers
-        answers = {}
+        answers_dict_for_json = {} # To store in TestResult.answers (JSON)
         score = 0
+        processed_answers_for_db = [] # To store TestAnswer objects
+
         for word in test.test_words:
-            answer = request.form.get(f'answer{word.id}', '').strip().lower()
-            answers[str(word.id)] = answer
+            user_input_answer = request.form.get(f'answer{word.id}', '').strip()
+            # Storing raw user input for TestAnswer, lowercasing for comparison
+            user_answer_for_comparison = user_input_answer.lower()
+            
+            answers_dict_for_json[str(word.id)] = user_input_answer # Store original case for JSON
+
+            is_this_answer_correct = False
+            actual_correct_answer_for_comparison = word.correct_answer.lower()
 
             if test.type == 'add_letter':
-                # For add_letter type, check if the missing letters are correct
-                missing_letters = word.missing_letters.split(',')
-                correct_answer = ''.join(word.word[int(pos)-1] for pos in missing_letters)
-                if answer == correct_answer.lower():
-                    score += 1
-            elif test.type == 'multiple_choice':
-                # For multiple choice, check if the selected option matches the correct answer
-                if answer == word.word.lower():
-                    score += 1
-            else:
-                # For other types (dictation, true_or_false), check exact match
-                if answer == word.word.lower():
-                    score += 1
+                # For add_letter, word.correct_answer already holds the combined missing letters
+                if user_answer_for_comparison == actual_correct_answer_for_comparison:
+                    is_this_answer_correct = True
+            elif test.type == 'multiple_choice_single' or test.type == 'multiple_choice_multiple':
+                # For MC, word.correct_answer holds the correct option text
+                if user_answer_for_comparison == actual_correct_answer_for_comparison:
+                    is_this_answer_correct = True
+            elif test.type == 'dictation':
+                if user_answer_for_comparison == actual_correct_answer_for_comparison:
+                    is_this_answer_correct = True
+            elif test.type == 'true_false':
+                # For true_false, correct_answer is 'True' or 'False'
+                if user_input_answer.capitalize() == word.correct_answer: # Comparison is case-insensitive for T/F but store as True/False
+                    is_this_answer_correct = True
+            elif test.type == 'fill_word':
+                if user_answer_for_comparison == actual_correct_answer_for_comparison:
+                    is_this_answer_correct = True
+            else: # Fallback for any other types or if logic is missing
+                if user_answer_for_comparison == actual_correct_answer_for_comparison:
+                    is_this_answer_correct = True
+            
+            if is_this_answer_correct:
+                score += 1
+            
+            processed_answers_for_db.append({
+                'test_word_id': word.id,
+                'user_answer': user_input_answer, # Store raw input
+                'is_correct': is_this_answer_correct
+            })
 
         # Update test result
-        test_result.score = int((score / len(test.test_words)) * 100)
+        test_result.score = int((score / len(test.test_words)) * 100) if len(test.test_words) > 0 else 0
         test_result.correct_answers = score
         test_result.completed_at = datetime.utcnow()
-        test_result.answers = json.dumps(answers)
+        test_result.answers = json.dumps(answers_dict_for_json) # Keep the JSON dump as it might be used elsewhere or for quick view
+        
+        # Add TestAnswer instances
+        for ans_data in processed_answers_for_db:
+            test_answer_entry = TestAnswer(
+                test_result_id=test_result.id,
+                test_word_id=ans_data['test_word_id'],
+                user_answer=ans_data['user_answer'],
+                is_correct=ans_data['is_correct']
+            )
+            db.session.add(test_answer_entry)
+
         db.session.commit()
 
         return redirect(url_for('test_results', test_id=test.id, result_id=test_result.id))
@@ -324,12 +631,38 @@ def test_id(id):
                              test_result=test_result,
                              time_limit=test.time_limit)
     elif test.type == 'dictation':
-        words_list = [(word.word, word.perevod) for word in test.test_words]
+        print(f"DEBUG: Accessing dictation test with link: {id}")
+        print(f"DEBUG: Test object: {test}")
+        print(f"DEBUG: Test.test_words count: {len(test.test_words) if test.test_words else 0}")
+        if test.test_words:
+            for i, tw in enumerate(test.test_words):
+                print(f"DEBUG: TestWord {i}: id={tw.id}, word='{tw.word}', perevod='{tw.perevod}', correct_answer='{tw.correct_answer}'")
+        
+        words_list = [(word.word, word.perevod, word.correct_answer, word.id) for word in test.test_words]
+        active_test_result_id = session.get('active_test_result_id')
+        current_test_result = None
+        if active_test_result_id:
+            current_test_result = TestResult.query.get(active_test_result_id)
+            # Ensure the result belongs to the current test and user
+            if not (current_test_result and current_test_result.test_id == test.id and current_test_result.user_id == user.id):
+                current_test_result = None # Invalidate if not matching
+        
+        # If no active session result, try to find an incomplete one (as before)
+        if not current_test_result:
+            current_test_result = TestResult.query.filter_by(
+                test_id=test.id,
+                user_id=user.id,
+                completed_at=None
+            ).first()
+
         return render_template('test_dictation.html', 
-                             words=words_list, 
-                             test_id=id,
-                             test_result=test_result,
-                             time_limit=test.time_limit)
+                             test_title=test.title, # Pass test title
+                             words_data=words_list, # Changed from 'words' to 'words_data' for clarity
+                             test_link_id=id,     # Pass test.link as test_link_id
+                             current_test_result=current_test_result, # Pass the fetched TestResult
+                             time_limit_seconds=test.time_limit * 60 if test.time_limit else 0,
+                             test_db_id=test.id # Pass the actual database ID of the test for submission form
+                             )
     elif test.type == 'true_or_false':
         words_list = [(word.word, word.perevod) for word in test.test_words]
         return render_template('test_true_or_false.html', 
@@ -954,85 +1287,140 @@ def create_test():
         title = request.form.get('title')
         
         time_limit_str = request.form.get('time_limit')
-        time_limit = int(time_limit_str) if time_limit_str and int(time_limit_str) > 0 else None
+        # Time limit: 0 or empty means None (unlimited)
+        time_limit = int(time_limit_str) if time_limit_str and time_limit_str.isdigit() and int(time_limit_str) > 0 else None
         
-        word_order = request.form.get('word_order')
-        word_count_str = request.form.get('word_count')
-        word_count = int(word_count_str) if word_count_str and word_order == 'random' else None
+        # General word order for the final list of test words
+        word_order_form = request.form.get('word_order', 'sequential') 
         
-        test_mode = request.form.get('test_mode', 'random_letters')  # For add_letter type tests
+        # General word count to limit the final number of words (can be None)
+        word_count_form_str = request.form.get('word_count')
+        word_count_form = int(word_count_form_str) if word_count_form_str and word_count_form_str.isdigit() and int(word_count_form_str) > 0 else None
+
+        test_mode = request.form.get('test_mode', 'random_letters') if test_type == 'add_letter' else None
         
-        # Create new test
-        new_test = Test(
-            title=title,
-            classs=class_number,
-            # unit and module will be set later or use default "N/A"
-            type=test_type,
-            link=generate_test_link(),
-            created_by=user.id,
-            time_limit=time_limit,
-            word_order=word_order,
-            word_count=word_count,
-            test_mode=test_mode
-            # unit and module will default to "N/A" if not provided
-        )
+        new_test_params = {
+            'title': title,
+            'classs': class_number,
+            'type': test_type,
+            'link': generate_test_link(),
+            'created_by': user.id,
+            'time_limit': time_limit,
+            'word_order': word_order_form, # This is the overall order
+            'test_mode': test_mode,
+            # unit and module will default to "N/A" if not provided by selected modules
+        }
+
+        words_data_source = [] # Holds {'word': ..., 'perevod': ..., 'source': ...}
+
+        if test_type == 'dictation':
+            dictation_word_source = request.form.get('dictation_word_source')
+            new_test_params['dictation_word_source'] = dictation_word_source
+
+            selected_modules = request.form.getlist('modules[]')
+            module_words_list = []
+            if selected_modules: # Fetch module words if any modules are selected
+                for module_identifier in selected_modules:
+                    class_num, unit, module_name = module_identifier.split('|')
+                    module_words_db = Word.query.filter_by(
+                        classs=class_num,
+                        unit=unit,
+                        module=module_name
+                    ).all()
+                    for mw in module_words_db:
+                        module_words_list.append({'word': mw.word, 'perevod': mw.perevod, 'source': 'module'})
+            
+            if dictation_word_source == 'all_module':
+                words_data_source.extend(module_words_list)
+                # General word_count_form applies as a limiter
+                new_test_params['word_count'] = word_count_form 
+
+            elif dictation_word_source == 'random_from_module':
+                dictation_num_random_words_str = request.form.get('dictation_random_word_count')
+                dictation_num_random_words = int(dictation_num_random_words_str) if dictation_num_random_words_str and dictation_num_random_words_str.isdigit() else 0
+                
+                new_test_params['word_count'] = dictation_num_random_words if dictation_num_random_words > 0 else None # Store the count of random words
+                
+                if module_words_list and dictation_num_random_words > 0:
+                    random.shuffle(module_words_list)
+                    words_data_source.extend(module_words_list[:dictation_num_random_words])
+
+            elif dictation_word_source == 'selected_specific':
+                specific_word_ids_str = request.form.getlist('dictation_specific_word_ids[]')
+                specific_word_ids = [int(id_str) for id_str in specific_word_ids_str if id_str.isdigit()]
+                new_test_params['dictation_selected_words'] = json.dumps(specific_word_ids)
+                
+                if specific_word_ids:
+                    selected_db_words = Word.query.filter(Word.id.in_(specific_word_ids)).all()
+                    for sw in selected_db_words:
+                        words_data_source.append({'word': sw.word, 'perevod': sw.perevod, 'source': 'module_specific'})
+                # General word_count_form can optionally limit these selected words
+                new_test_params['word_count'] = word_count_form
+
+            # Add custom words for dictation - these are always included
+            custom_words_text = request.form.getlist('custom_words[]')
+            custom_translations_text = request.form.getlist('custom_translations[]')
+            for cw_text, ct_text in zip(custom_words_text, custom_translations_text):
+                if cw_text and ct_text:
+                    words_data_source.append({'word': cw_text, 'perevod': ct_text, 'source': 'custom'})
+        
+        else: # For other test types (non-dictation)
+            new_test_params['word_count'] = word_count_form # General word count applies
+
+            selected_modules = request.form.getlist('modules[]')
+            if selected_modules:
+                for module_identifier in selected_modules:
+                    class_num, unit, module_name = module_identifier.split('|')
+                    module_words_db = Word.query.filter_by(
+                        classs=class_num,
+                        unit=unit,
+                        module=module_name
+                    ).all()
+                    for mw in module_words_db:
+                        words_data_source.append({'word': mw.word, 'perevod': mw.perevod, 'source': 'module'})
+
+            custom_words_text = request.form.getlist('custom_words[]')
+            custom_translations_text = request.form.getlist('custom_translations[]')
+            for cw_text, ct_text in zip(custom_words_text, custom_translations_text):
+                if cw_text and ct_text:
+                    words_data_source.append({'word': cw_text, 'perevod': ct_text, 'source': 'custom'})
+        
+        # Create Test object
+        new_test = Test(**new_test_params)
         db.session.add(new_test)
-        db.session.commit()
+        db.session.commit() # Commit to get new_test.id so TestWord entries can be linked
 
-        # Get words from selected modules
-        words_data_source = [] # Using a new list to hold word data consistently
-        selected_modules = request.form.getlist('modules[]')
-        for module_identifier in selected_modules:
-            class_num, unit, module_name = module_identifier.split('|')
-            module_words_db = Word.query.filter_by(
-                classs=class_num,
-                unit=unit,
-                module=module_name
-            ).all()
-            for mw in module_words_db:
-                words_data_source.append({'word': mw.word, 'perevod': mw.perevod, 'source': 'module'})
+        # Final processing of words_data_source based on general word_order and word_count
+        # (This was previously somewhat mixed with initial fetching)
 
-        # Add custom words if provided
-        custom_words_text = request.form.getlist('custom_words[]')
-        custom_translations_text = request.form.getlist('custom_translations[]')
-        for cw_text, ct_text in zip(custom_words_text, custom_translations_text):
-            if cw_text and ct_text:  # Only add if both fields are filled
-                words_data_source.append({
-                    'word': cw_text,
-                    'perevod': ct_text,
-                    'source': 'custom'
-                })
-
-        # Shuffle words if word_order is 'random' before limiting by word_count
-        if word_order == 'random':
+        # 1. Shuffle if overall word_order is 'random'
+        if new_test.word_order == 'random':
             random.shuffle(words_data_source)
         
-        # Limit word count if specified (especially for random order)
-        if word_count is not None and word_count > 0 and len(words_data_source) > word_count:
-            words_data_source = words_data_source[:word_count]
-        elif word_order == 'sequential':
-            # For sequential, word_count could still be used to limit the number of words from the start
-            if word_count is not None and word_count > 0 and len(words_data_source) > word_count:
-                 words_data_source = words_data_source[:word_count]
+        # 2. Apply general word_count as a final limiter, 
+        #    but only if it hasn't been specifically set by 'random_from_module' dictation.
+        #    For 'all_module' and 'selected_specific' dictation, word_count_form acts as the limiter.
+        #    For non-dictation tests, word_count_form acts as the limiter.
+        
+        final_word_count_to_use = new_test.word_count # This comes from new_test_params
+
+        if final_word_count_to_use is not None and final_word_count_to_use > 0:
+            if len(words_data_source) > final_word_count_to_use:
+                words_data_source = words_data_source[:final_word_count_to_use]
+        elif final_word_count_to_use == 0: # Explicitly 0 means no words (edge case, but good to define)
+             words_data_source = []
 
 
-        # Create test words
+        # Create test words (The rest of the logic for populating TestWord based on test_type)
         for idx, word_entry in enumerate(words_data_source):
             original_word_text = word_entry['word']
             original_translation = word_entry['perevod']
             
-            # Initialize default values for TestWord fields
-            # `word` field in TestWord: The primary question content shown to the student.
-            # `perevod` field in TestWord: Supporting information, translation, or detailed prompt.
-            # `correct_answer` field in TestWord: The definitive correct answer for grading.
-            # `options` field in TestWord: For multiple choice, pipe-separated.
-            # `missing_letters` field in TestWord: For add_letter, comma-separated 1-indexed positions.
-
-            current_word_for_test_word_model = original_word_text # Default for what student interacts with
-            prompt_for_test_word_model = original_translation   # Default for supporting info
+            current_word_for_test_word_model = original_word_text 
+            prompt_for_test_word_model = original_translation   
             options_db = None
             missing_letters_positions_db = None
-            correct_answer_for_db = original_word_text # Default correct answer
+            correct_answer_for_db = original_word_text 
 
             if test_type == 'add_letter':
                 prompt_for_test_word_model = original_translation
@@ -1165,6 +1553,8 @@ def create_test():
 
     # GET request - show form
     classes = [str(i) for i in range(1, 12)]
+    # TODO: Pass all words for the selected class/module to the template for "selected_specific" option
+    # For now, this is handled by JS fetching words.
     return render_template('create_test.html', classes=classes)
 
 @app.route("/test/<int:test_id>")
@@ -1182,14 +1572,34 @@ def test_details(test_id):
 
     test = Test.query.get_or_404(test_id)
     
-    # Check if user has access to this test
-    if user.teacher != 'yes' and test.classs != user.class_number:
-        # For students, redirect to the take_test view if they haven't completed it
-        # or to results if they have. For now, redirecting to /tests if not their class.
-        return redirect(url_for('tests')) # Simplified: if not teacher and not their class, back to tests list
+    if user.teacher == 'no':
+        # Student access logic
+        student_completed_result = TestResult.query.filter_by(
+            test_id=test.id,
+            user_id=user.id
+        ).filter(TestResult.completed_at.isnot(None)).order_by(TestResult.completed_at.desc()).first()
 
-    # Teacher's view or student viewing their own class's test details (if allowed by future logic)
+        if not test.is_active: # Test is ARCHIVED
+            if student_completed_result:
+                flash("Этот тест находится в архиве. Просмотр ваших результатов.", "info")
+                return redirect(url_for('test_results', test_id=test.id, result_id=student_completed_result.id))
+            else:
+                flash("Этот тест находится в архиве, и вы его не проходили.", "warning")
+                return redirect(url_for('tests'))
+        else: # Test is ACTIVE
+            if student_completed_result:
+                # If student already completed an active test, show results. Or allow retake via take_test?
+                # For now, let's be consistent: if completed, show results.
+                flash("Вы уже завершили этот тест. Просмотр ваших результатов.", "info")
+                return redirect(url_for('test_results', test_id=test.id, result_id=student_completed_result.id))
+            else:
+                # If active and not completed (or no result at all), student should be able to take it.
+                # The take_test route will handle if they have an in-progress one.
+                return redirect(url_for('take_test', test_link=test.link))
     
+    # Teacher's view (or if any other case, though students are handled above)
+    # The original teacher logic for test_details remains below this block
+
     # Get all students in the test's class
     students_in_class = User.query.filter_by(class_number=test.classs, teacher='no').all()
     total_students_in_class = len(students_in_class)
@@ -1202,17 +1612,54 @@ def test_details(test_id):
     not_started_student_ids = {s.id for s in students_in_class}
 
     for result in all_results_for_test:
-        if result.user_id in not_started_student_ids:
-            not_started_student_ids.remove(result.user_id)
-        
         student_user = User.query.get(result.user_id)
         if not student_user: # Should not happen if DB is consistent
             continue
 
+        # Skip results from teachers
+        if student_user.teacher == 'yes':
+            if result.user_id in not_started_student_ids:
+                 not_started_student_ids.remove(result.user_id)
+            continue
+
+        if result.user_id in not_started_student_ids:
+            not_started_student_ids.remove(result.user_id)
+        
         if result.completed_at:
             completed_students_details.append({'user': student_user, 'result': result})
         else:
-            in_progress_students_details.append({'user': student_user, 'result': result})
+            # This student is in progress
+            item_data_for_template = {
+                'user': student_user,
+                'result': result,
+                'remaining_time_display': "Calculating...", # Placeholder, will be overwritten
+                'has_time_limit': False,
+                'end_time_utc_iso': None
+            }
+
+            if test.time_limit and test.time_limit > 0:
+                end_time_utc = result.started_at + timedelta(minutes=test.time_limit)
+                now_utc = datetime.utcnow()
+                
+                item_data_for_template['has_time_limit'] = True
+                item_data_for_template['end_time_utc_iso'] = end_time_utc.isoformat() + "Z"
+
+                if now_utc < end_time_utc:
+                    remaining_delta = end_time_utc - now_utc
+                    hours, remainder = divmod(remaining_delta.total_seconds(), 3600)
+                    minutes, seconds_float = divmod(remainder, 60)
+                    seconds = int(seconds_float)
+                    if hours > 0:
+                        item_data_for_template['remaining_time_display'] = f"{int(hours)}h {int(minutes)}m {seconds}s left"
+                    else:
+                        item_data_for_template['remaining_time_display'] = f"{int(minutes)}m {seconds}s left"
+                else:
+                    item_data_for_template['remaining_time_display'] = "Время вышло"
+            else:
+                item_data_for_template['remaining_time_display'] = "Без ограничений"
+                item_data_for_template['has_time_limit'] = False # Explicitly ensure it's false
+            
+            in_progress_students_details.append(item_data_for_template)
 
     not_started_students = [User.query.get(uid) for uid in not_started_student_ids]
     not_started_students = [s for s in not_started_students if s] # Filter out None if any ID was bad
@@ -1261,41 +1708,106 @@ def archive_test(test_id):
 
 @app.route('/take_test/<test_link>', methods=['GET', 'POST'])
 def take_test(test_link):
-    if 'user_id' not in session:
+    current_user = None
+    # Consolidate authentication to be cookie-based like other routes
+    for cookie_name in request.cookies:
+        user_obj = User.query.filter_by(nick=cookie_name).first()
+        if user_obj:
+            secret_key_expected = bs64.b64encode(str.encode(user_obj.nick + user_obj.password[:2])).decode("utf-8")
+            if request.cookies.get(cookie_name) == secret_key_expected:
+                current_user = user_obj
+                break
+    
+    if not current_user:
+        flash("Пожалуйста, войдите в систему, чтобы пройти тест.", "error")
         return redirect(url_for('login'))
 
     test = Test.query.filter_by(link=test_link).first_or_404()
-    user = User.query.get(session['user_id'])
 
-    # Check if user has access to this test
-    if test.class_number != user.class_number:
-        abort(403)
+    # Check if student belongs to the correct class for the test
+    if current_user.teacher == 'no' and test.classs != current_user.class_number:
+        flash("Вы не можете пройти этот тест, так как он предназначен для другого класса.", "error")
+        return redirect(url_for('tests'))
 
-    # Check if user has already completed this test
+    # Check if the test is active (students cannot take archived tests)
+    if current_user.teacher == 'no' and not test.is_active:
+        flash("Этот тест больше не активен и не может быть пройден.", "error")
+        return redirect(url_for('tests'))
+
+    # Check if student has already completed this test (or started and not finished)
     existing_result = TestResult.query.filter_by(
         test_id=test.id,
-        user_id=user.id,
+        user_id=current_user.id # Use current_user.id from cookie auth
+        # completed_at=None # Keep this if we want to allow resuming, remove if only one start is allowed
+    ).first()
+
+    if request.method == 'POST': # This POST is to *start* the test
+        if not existing_result or existing_result.completed_at: # Allow starting if no result or previous one completed
+            # If allowing re-takes, ensure a new result is created or old one is handled.
+            # For simplicity, let's assume a student starts a new attempt if prior one is completed or non-existent.
+            # If there's an INCOMPLETE one, the GET request below should handle resuming it.
+            
+            # If there is an existing completed result, and you want to prevent retakes, check here:
+            # if existing_result and existing_result.completed_at:
+            #     flash("Вы уже завершили этот тест.", "info")
+            #     return redirect(url_for('test_results', test_id=test.id, result_id=existing_result.id))
+
+            test_result_to_use = TestResult.query.filter_by(
+                test_id=test.id,
+                user_id=current_user.id,
+                completed_at=None
+            ).first()
+
+            if not test_result_to_use: # No incomplete test, create a new one
+                test_result_to_use = TestResult(
+                    test_id=test.id,
+                    user_id=current_user.id,
+                    total_questions=len(test.test_words),
+                    started_at=datetime.utcnow() # Explicitly set started_at
+                )
+                db.session.add(test_result_to_use)
+                db.session.commit()
+            
+            # Redirect to the actual test taking interface, e.g., test_id or a specific rendering page
+            # The current logic seems to POST to /tests/<id> to submit answers.
+            # This /take_test POST is more like an explicit "Start Test" action.
+            # For now, let's assume starting the test means we show the first question/test interface.
+            # The original code returned jsonify({'success': True}), which implies an AJAX call to start.
+            # A redirect to the test interface is more straightforward for a non-AJAX flow.
+            # Let's redirect to the test view which will be specific to test type.
+            session['active_test_result_id'] = test_result_to_use.id # Store active test result for this session
+            return jsonify({'success': True, 'redirect_url': url_for('test_id', id=test.link)}) # New: Return JSON with redirect URL
+        else: # existing_result is incomplete
+            session['active_test_result_id'] = existing_result.id
+            return jsonify({'success': True, 'redirect_url': url_for('test_id', id=test.link)}) # New: Return JSON with redirect URL
+
+    # GET request logic:
+    # If there's an existing incomplete test result, student should resume it.
+    incomplete_result = TestResult.query.filter_by(
+        test_id=test.id,
+        user_id=current_user.id,
         completed_at=None
     ).first()
 
-    if request.method == 'POST':
-        # Start a new test
-        if not existing_result:
-            test_result = TestResult(
-                test_id=test.id,
-                user_id=user.id,
-                total_questions=len(test.test_words)
-            )
-            db.session.add(test_result)
-            db.session.commit()
-            return jsonify({'success': True})
+    if incomplete_result:
+        # If student has an incomplete test, take them directly to it to resume
+        session['active_test_result_id'] = incomplete_result.id
+        # Redirect to the test interface itself (test_id handles rendering based on type)
+        return redirect(url_for('test_id', id=test.link))
 
-    # If there's an existing incomplete test, show it
-    if existing_result:
-        return render_template('take_test.html', test=test)
+    # If test is completed, show link to results or message
+    completed_result = TestResult.query.filter(
+        TestResult.test_id == test.id,
+        TestResult.user_id == current_user.id,
+        TestResult.completed_at.isnot(None)
+    ).order_by(TestResult.completed_at.desc()).first()
 
-    # Otherwise, show the test start page
-    return render_template('test_start.html', test=test)
+    if completed_result:
+        flash("Вы уже завершили этот тест. Посмотрите свои результаты.", "info")
+        return redirect(url_for('test_results', test_id=test.id, result_id=completed_result.id))
+
+    # Otherwise, show the test start page (if it's a GET request and no active/completed test for this user)
+    return render_template('test_start.html', test=test, user=current_user)
 
 @app.route('/submit_test/<int:test_id>', methods=['POST'])
 def submit_test(test_id):
@@ -1323,9 +1835,19 @@ def submit_test(test_id):
         elif test.type == 'multiple_choice':
             # For multiple choice, check if the selected option matches the correct answer
             is_correct = user_answer == word.word
-        else:
-            # For other types (dictation, true_or_false), check exact match
-            is_correct = user_answer and user_answer.lower() == word.word.lower()
+        elif test.type == 'dictation':
+            # For dictation, compare with TestWord.correct_answer
+            if answer == word.correct_answer.lower():
+                score += 1
+        elif test.type == 'true_false': # Assuming true_false still compares with word.word as statement
+             # For true_false, the TestWord.word is the statement, TestWord.correct_answer is 'True' or 'False'
+            if answer.capitalize() == word.correct_answer: # Compare with correct_answer which should be 'True' or 'False'
+                score += 1
+        else: # Default fallback or other specific types if any
+            # For other types (e.g. fill_word which might be like dictation)
+            # if it relies on comparing user input to TestWord.correct_answer:
+            if answer == word.correct_answer.lower(): 
+                score += 1
 
         if is_correct:
             correct_answers += 1
@@ -1394,16 +1916,39 @@ def test_results(test_id, result_id):
     if result.user_id != user.id:
         return redirect('/tests', 302)
 
+    show_detailed_results = True
+    if test.type == 'dictation' and test.is_active:
+        show_detailed_results = False
+
     # Get detailed results
-    results = []
-    for answer in result.test_answers:
-        results.append({
-            'word': answer.test_word.word,
-            'translation': answer.test_word.perevod,
-            'user_answer': answer.user_answer,
-            'correct_answer': answer.test_word.word,
-            'is_correct': answer.is_correct
-        })
+    detailed_answers = [] # Changed variable name for clarity
+    if show_detailed_results: # Only fetch if we are going to show them
+        for answer_obj in result.test_answers: # answer_obj is a TestAnswer instance
+            test_word_instance = answer_obj.test_word # This is the TestWord instance
+            
+            # Determine what was presented as the 'question' based on test type
+            question_presented = test_word_instance.word # Default (e.g., dictation cue, add_letter gap word)
+            prompt_or_support = test_word_instance.perevod # Default (e.g., dictation audio prompt, add_letter translation)
+
+            if test.type == 'multiple_choice_single' or test.type == 'multiple_choice_multiple':
+                question_presented = test_word_instance.perevod # For MC, perevod is the question/prompt like "Choose translation for X"
+                prompt_or_support = test_word_instance.word    # and word field stored the actual options or question context for options
+                                                            # However, correct_answer is the definitive right choice.
+            elif test.type == 'fill_word':
+                question_presented = test_word_instance.word # Student sees translation (word field)
+                prompt_or_support = test_word_instance.perevod # Prompt is like "Впишите оригинал"
+            elif test.type == 'true_false':
+                question_presented = test_word_instance.word # This is the statement
+                prompt_or_support = test_word_instance.perevod # "Верно или неверно?"
+
+            detailed_answers.append({
+                'question_presented': question_presented, # What the student primarily saw as the question item
+                'prompt_or_support': prompt_or_support, # Supporting info (e.g. translation for dictation, or options for MC)
+                'user_answer': answer_obj.user_answer,
+                'actual_correct_answer': test_word_instance.correct_answer, # The definitive correct answer
+                'is_correct': answer_obj.is_correct,
+                'options': test_word_instance.options # Pass options if any (for MC tests)
+            })
 
     return render_template('test_results.html',
         test=test,
@@ -1412,7 +1957,8 @@ def test_results(test_id, result_id):
         total_questions=result.total_questions,
         time_taken=result.time_taken,
         incorrect_answers=result.total_questions - result.correct_answers,
-        results=results
+        results_summary=detailed_answers, # Changed variable name passed to template
+        show_detailed_results=show_detailed_results
     )
 
 @app.route("/games")

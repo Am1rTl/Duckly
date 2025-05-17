@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Тест: Диктант</title>
+  <title>Тест: {{ test_title|e }}</title>
 
   <!-- Шрифт Poppins -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -52,10 +52,16 @@
       text-align: center;
       margin-bottom: 30px;
     }
+     .header h1 {
+        color: var(--secondary);
+        font-weight: 600;
+     }
 
-    .progress-bar {
+    .progress-bar-container {
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
       margin-bottom: 30px;
       padding: 10px;
       background: var(--background);
@@ -72,15 +78,19 @@
       justify-content: center;
       cursor: pointer;
       transition: all 0.3s ease;
+      font-size: 0.9rem;
     }
     
     .progress-item.answered { 
       background: var(--primary-light);
-      color: white;
+      color: var(--primary-dark);
+      font-weight: 500;
     }
-
     .progress-item.current {
-      border: 2px solid var(--primary);
+      background-color: var(--primary) !important;
+      color: white !important;
+      border: 2px solid var(--primary-dark);
+      transform: scale(1.1);
     }
 
     .timer {
@@ -98,13 +108,27 @@
       border: 1px solid var(--border);
       border-radius: 10px;
       background-color: #fff;
+      box-shadow: var(--shadow);
     }
 
     .translation-text {
-      font-size: 1.6rem; 
+      font-size: 1.8rem;
       font-weight: 600;
-      margin-bottom: 15px;
+      margin-bottom: 20px;
       color: var(--secondary);
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .word-cue-text {
+        font-size: 1.5rem;
+        font-family: 'Courier New', Courier, monospace;
+        color: var(--text);
+        margin-bottom: 15px;
+        letter-spacing: 2px;
+        min-height: 30px;
     }
 
     .input-label {
@@ -117,24 +141,29 @@
     
     .word-input {
       width: 100%;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
       padding: 12px 15px;
       font-size: 1.1rem;
       border: 2px solid var(--border);
       border-radius: 8px;
       margin-bottom: 25px;
-      transition: border-color 0.3s ease;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      text-align: center;
     }
 
     .word-input:focus {
       border-color: var(--primary);
       outline: none;
-      box-shadow: 0 0 0 2px var(--primary-light);
+      box-shadow: 0 0 0 3px var(--primary-light);
     }
 
     .navigation {
       display: flex;
       justify-content: space-between;
       gap: 15px;
+      margin-top: 20px;
     }
 
     .btn {
@@ -174,45 +203,54 @@
     }
 
     .btn:disabled {
-      opacity: 0.5;
+      opacity: 0.6;
       cursor: not-allowed;
+      background-color: #eee;
+      color: #aaa;
     }
+    .btn-secondary:disabled {
+        background-color: var(--background);
+        color: #aaa;
+        border-color: #eee;
+    }
+
   </style>
 </head>
 <body>
 
   <div class="container">
     <div class="header">
-      <h1>Тест: Диктант</h1>
+      <h1>Тест: {{ test_title|e }}</h1>
     </div>
 
-    <div class="timer" id="timer">
+    <div class="timer" id="timer" style="display: none;">
       Осталось времени: <span id="time-left">--:--</span>
     </div>
 
-    <div class="progress-bar" id="progress-bar">
-      {% for item in words %}
-      <div class="progress-item" data-index="{{ loop.index0 }}">
-        {{ loop.index }}
-      </div>
+    <div class="progress-bar-container" id="progress-bar-container">
+      {% for cue, translation, correct_answer_val, tw_id in words_data %}
+      <div class="progress-item" data-index="{{ loop.index0 }}">{{ loop.index }}</div>
       {% endfor %}
     </div>
 
-    <form id="test-form" method="POST">
-      {% for item in words %}
-      {# Assuming item is a tuple (word, perevod) or an object with .word and .perevod #}
-      {% set original_word = item[0] if item is iterable and item|length > 0 else item.word %}
-      {% set translation = item[1] if item is iterable and item|length > 1 else item.perevod %}
-      {% set word_id = loop.index0 %} {# Use loop.index0 as a simple ID if no specific ID is passed #}
-      
-      <div class="word-card" data-index="{{ loop.index0 }}" style="display: {{ 'block' if loop.index0 == 0 else 'none' }};">
+    <form id="test-form" method="POST" action="{{ url_for('test_id', id=test_link_id) }}">
+      <input type="hidden" name="test_db_id" value="{{ test_db_id }}">
+      {% if not words_data %}
+        <p style="text-align:center; color: var(--danger);">Нет слов для этого теста. Обратитесь к учителю.</p>
+      {% endif %}
+      {% for cue, translation, correct_answer_val, tw_id in words_data %}
+      <div class="word-card" data-index="{{ loop.index0 }}" style="display: {{ 'flex' if loop.index0 == 0 else 'none' }}; flex-direction: column; align-items: center;">
         <div class="translation-text">{{ translation }}</div>
-        <label for="answer-{{ word_id }}" class="input-label">Введите слово на языке оригинала:</label>
+        <div class="word-cue-text">{{ cue }}</div>
+        <label for="answer-{{ tw_id }}" class="input-label">Введите слово на языке оригинала:</label>
         <input type="text" 
                class="word-input" 
-               name="answer{{ word_id }}" 
-               id="answer-{{ word_id }}" 
-               autocomplete="off">
+               name="answer{{ tw_id }}"
+               id="answer-{{ tw_id }}" 
+               autocomplete="off"
+               autocorrect="off"
+               autocapitalize="none"
+               spellcheck="false">
       </div>
       {% endfor %}
 
@@ -234,146 +272,189 @@
 
   <script>
     let currentIndex = 0;
-    const wordsList = {{ words|tojson }};
-    const timeLimit = {{ time_limit|default(0) }};
-    let timeLeft = timeLimit > 0 ? timeLimit * 60 : 0;
+    const wordsData = {{ words_data|tojson|safe }};
+    const totalWords = Array.isArray(wordsData) ? wordsData.length : 0;
+    const timeLimitInSeconds = {{ time_limit_seconds|default(0) }};
+    let timeLeft = timeLimitInSeconds;
     let timerInterval;
-    const userAnswers = new Array(wordsList.length).fill(''); // Store user answers as strings
-
-    function startTimer() {
-      if (timeLimit > 0) {
-        updateTimerDisplay();
-        timerInterval = setInterval(updateTimer, 1000);
-      } else {
-        document.getElementById('timer').style.display = 'none';
-      }
-    }
     
+    const rawAnswers = {{ (current_test_result.answers if current_test_result and current_test_result.answers else '{}')|tojson|safe }};
+    let testResultData = {};
+    const userAnswers = new Array(totalWords).fill('');
+
+    if (typeof rawAnswers === 'string') {
+        try {
+            testResultData = JSON.parse(rawAnswers);
+        } catch (e) {
+            console.error("Error parsing existing answers JSON:", e, "Raw data:", rawAnswers);
+            testResultData = {}; 
+        }
+    } else if (typeof rawAnswers === 'object' && rawAnswers !== null) {
+        testResultData = rawAnswers; // Already an object
+    }
+
+    if (totalWords > 0 && Object.keys(testResultData).length > 0) {
+        wordsData.forEach((wordItem, index) => {
+            const testWordId = wordItem[3].toString();
+            if (testResultData[testWordId]) {
+                userAnswers[index] = testResultData[testWordId];
+                const inputField = document.getElementById('answer-' + testWordId);
+                if (inputField) {
+                    inputField.value = testResultData[testWordId];
+                }
+            }
+        });
+    }
+
+    const wordCards = document.querySelectorAll('.word-card');
+    const progressItems = document.querySelectorAll('.progress-item');
+    const nextBtn = document.getElementById('next-btn');
+    const prevBtn = document.getElementById('prev-btn');
+    const submitBtn = document.getElementById('submit-btn');
+    const timerDisplay = document.getElementById('time-left');
+    const timerContainer = document.getElementById('timer');
+
     function updateTimerDisplay() {
       const minutes = Math.floor(timeLeft / 60);
       const seconds = timeLeft % 60;
-      document.getElementById('time-left').textContent = 
-        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
 
-    function updateTimer() {
-      if (timeLeft <= 0) {
-        clearInterval(timerInterval);
-        saveCurrentAnswer(); // Save before submitting
-        document.getElementById('test-form').submit();
-        return;
-      }
-      timeLeft--;
-      updateTimerDisplay();
-    }
-    
-    function saveCurrentAnswer() {
-      const currentInput = document.querySelector(`.word-card[data-index="${currentIndex}"] .word-input`);
-      if (currentInput) {
-        userAnswers[currentIndex] = currentInput.value;
-      }
-    }
-
-    function loadAnswer(index) {
-      const inputField = document.querySelector(`.word-card[data-index="${index}"] .word-input`);
-      if (inputField) {
-        inputField.value = userAnswers[index];
-      }
-    }
-
-    function updateProgressBar() {
-      const items = document.querySelectorAll('.progress-item');
-      items.forEach((item, index) => {
-        item.classList.remove('current', 'answered');
-        if (userAnswers[index] !== '') { // Mark as answered if there is any input
-          item.classList.add('answered');
-        }
-        if (index === currentIndex) {
-          item.classList.add('current');
-        }
-      });
-
-      document.getElementById('prev-btn').disabled = currentIndex === 0;
-      if (currentIndex === wordsList.length - 1) {
-        document.getElementById('next-btn').style.display = 'none';
-        document.getElementById('submit-btn').style.display = 'inline-flex';
+    function startTimer() {
+      if (timeLimitInSeconds > 0) {
+        timerContainer.style.display = 'block';
+        updateTimerDisplay();
+        timerInterval = setInterval(() => {
+          timeLeft--;
+          updateTimerDisplay();
+          if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            alert('Время вышло!');
+            if (document.getElementById('test-form')) document.getElementById('test-form').submit();
+          }
+        }, 1000);
       } else {
-        document.getElementById('next-btn').style.display = 'inline-flex';
-        document.getElementById('submit-btn').style.display = 'none';
+        timerContainer.style.display = 'none';
       }
     }
 
     function showWord(index) {
-      saveCurrentAnswer(); // Save answer of the card we are leaving
-      document.querySelectorAll('.word-card').forEach(container => {
-        container.style.display = 'none';
+      wordCards.forEach((card, i) => {
+        card.style.display = (i === index) ? 'flex' : 'none';
       });
-      const currentContainer = document.querySelector(`.word-card[data-index="${index}"]`);
-      if (currentContainer) {
-         currentContainer.style.display = 'block';
-         const inputField = currentContainer.querySelector('.word-input');
-         if(inputField) inputField.focus(); // Auto-focus on the input field
+      progressItems.forEach((item, i) => {
+        item.classList.toggle('current', i === index);
+        if (i < totalWords && i < wordsData.length) {
+            const testWordIdForProgress = wordsData[i][3];
+            const inputForProgress = document.getElementById('answer-' + testWordIdForProgress);
+            if (inputForProgress && inputForProgress.value.trim() !== '') {
+                item.classList.add('answered');
+            } else {
+                item.classList.remove('answered');
+            }
+        }
+      });
+      prevBtn.disabled = (index === 0);
+      nextBtn.style.display = (index === totalWords - 1 || totalWords === 0) ? 'none' : 'inline-flex';
+      submitBtn.style.display = (index === totalWords - 1 && totalWords > 0) ? 'inline-flex' : 'none';
+      
+      if (index < totalWords && index < wordCards.length && wordCards[index]) {
+        const currentInput = wordCards[index].querySelector('.word-input');
+        if (currentInput) {
+            currentInput.focus();
+        }
       }
-      currentIndex = index;
-      loadAnswer(currentIndex); // Load previously saved answer for the new card
-      updateProgressBar();
     }
 
-    document.getElementById('prev-btn').addEventListener('click', () => {
-      if (currentIndex > 0) {
-        showWord(currentIndex - 1);
+    function saveCurrentAnswer() {
+      if (currentIndex < totalWords && currentIndex < wordCards.length && wordCards[currentIndex]) {
+        const currentWordData = wordsData[currentIndex];
+        const testWordId = currentWordData[3];
+        const inputField = document.getElementById('answer-' + testWordId);
+        if (inputField) {
+          userAnswers[currentIndex] = inputField.value.trim();
+          if (currentIndex < progressItems.length) {
+            const progressItem = progressItems[currentIndex];
+            if (progressItem) {
+              if (inputField.value.trim() !== '') {
+                  progressItem.classList.add('answered');
+              } else {
+                  progressItem.classList.remove('answered');
+              }
+            }
+          }
+        }
       }
-    });
-
-    document.getElementById('next-btn').addEventListener('click', () => {
-      // No mandatory check for dictation, user can leave it blank
-      if (currentIndex < wordsList.length - 1) {
-        showWord(currentIndex + 1);
-      } else {
-        // If on last card and Next is somehow clicked (should be Submit)
-        saveCurrentAnswer();
-        updateProgressBar(); // Ensure progress bar is updated
-      }
-    });
-
-    document.querySelectorAll('.progress-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const index = parseInt(item.dataset.index);
-        showWord(index); // Allow free navigation
-      });
-    });
+    }
     
-    // Save answers before submitting the form
-    document.getElementById('test-form').addEventListener('submit', (e) => {
-      saveCurrentAnswer(); // Save the answer of the very last card
-      // Populate all hidden inputs from userAnswers array before actual submission
-      // This part is crucial if the server expects individual named inputs per word.
-      // If the server processes a single JSON or similar, this might be different.
-      wordsList.forEach((word, index) => {
-        const inputName = `answer${index}`; // Assuming server expects answer0, answer1, ...
-        let hiddenInput = document.querySelector(`input[name="${inputName}"]`);
-        if (!hiddenInput) { // If input doesn't exist (e.g. was part of the card), create it
-          hiddenInput = document.createElement('input');
-          hiddenInput.type = 'hidden';
-          hiddenInput.name = inputName;
-          document.getElementById('test-form').appendChild(hiddenInput);
-        }
-        hiddenInput.value = userAnswers[index];
-      });
-      // Optional: Confirmation if not all fields are filled, though for dictation it might be allowed
-      const allAnswered = userAnswers.every(answer => answer.trim() !== '');
-      if (!allAnswered) {
-        if (!confirm('Некоторые поля не заполнены. Вы уверены, что хотите завершить тест?')) {
-          e.preventDefault();
-          return false;
-        }
-      }
-    });
+    if (totalWords > 0) {
+        nextBtn.addEventListener('click', () => {
+          saveCurrentAnswer();
+          if (currentIndex < totalWords - 1) {
+            currentIndex++;
+            showWord(currentIndex);
+          }
+        });
 
-    // Initial setup
-    startTimer();
-    showWord(0);
+        prevBtn.addEventListener('click', () => {
+          saveCurrentAnswer();
+          if (currentIndex > 0) {
+            currentIndex--;
+            showWord(currentIndex);
+          }
+        });
+        
+        progressItems.forEach((item, index) => {
+            item.addEventListener('click', () => {
+                saveCurrentAnswer();
+                currentIndex = index;
+                showWord(currentIndex);
+            });
+        });
+
+        document.querySelectorAll('.word-input').forEach((input, index) => {
+            input.addEventListener('input', () => {
+                if(index < progressItems.length) {
+                    const correspondingProgressItem = progressItems[index];
+                    if (input.value.trim() !== '') {
+                        if(correspondingProgressItem) correspondingProgressItem.classList.add('answered');
+                    } else {
+                        if(correspondingProgressItem) correspondingProgressItem.classList.remove('answered');
+                    }
+                }
+            });
+             input.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    if (currentIndex === totalWords - 1) {
+                        submitBtn.click();
+                    } else {
+                        nextBtn.click();
+                    }
+                }
+            });
+        });
+
+        showWord(currentIndex);
+        startTimer();
+    } else {
+        prevBtn.style.display = 'none';
+        nextBtn.style.display = 'none';
+        submitBtn.style.display = 'none';
+        timerContainer.style.display = 'none';
+        if (document.getElementById('progress-bar-container')) {
+             document.getElementById('progress-bar-container').style.display = 'none';
+        }
+    }
+
+    const testForm = document.getElementById('test-form');
+    if (testForm) {
+        testForm.addEventListener('submit', function() {
+            saveCurrentAnswer();
+            clearInterval(timerInterval);
+        });
+    }
+
   </script>
-
 </body>
 </html>
