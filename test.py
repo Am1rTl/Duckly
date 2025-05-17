@@ -1,6 +1,6 @@
 from site_1 import app, db, Word, User, Test, TestWord
+from werkzeug.security import generate_password_hash
 import random
-import base64 as bs64
 import time
 
 def generate_test_data():
@@ -134,22 +134,22 @@ def generate_test_data():
         User.query.delete()
         
         # Создание тестового учителя
+        hashed_teacher_password = generate_password_hash('teacher')
         teacher = User(
             fio='Test Teacher',
             nick='teacher',
-            password='teacher',
-            secret_key=bs64.b64encode(str.encode('teacher' + 'teacher'[:2])).decode("utf-8"),
+            password=hashed_teacher_password,
             teacher='yes'
         )
         db.session.add(teacher)
         db.session.commit()
 
         # Создание тестового студента
+        hashed_student_password = generate_password_hash('student')
         student = User(
             fio='Test Student',
             nick='student',
-            password='student',
-            secret_key=bs64.b64encode(str.encode('student' + 'student'[:2])).decode("utf-8"),
+            password=hashed_student_password,
             teacher='no',
             class_number='1'
         )

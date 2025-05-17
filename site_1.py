@@ -1,7 +1,7 @@
 from markupsafe import escape
 from flask import Flask, jsonify, request, render_template, redirect, url_for, flash, make_response, session
 from flask_sqlalchemy import SQLAlchemy
-import base64 as bs64
+from werkzeug.security import generate_password_hash, check_password_hash # Added for password hashing
 import time
 import sqlite3
 import random
@@ -23,8 +23,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     fio = db.Column(db.String, nullable=False)
     nick = db.Column(db.String, unique=True, nullable=False)
-    password = db.Column(db.String, nullable=False)
-    secret_key = db.Column(db.String, nullable=False)
+    password = db.Column(db.String, nullable=False) # Will store hashed password
     teacher = db.Column(db.String, nullable=True)
     class_number = db.Column(db.String, nullable=True)  # Added for student class
 
@@ -112,40 +111,33 @@ def greet(name):
 
 @app.route("/profile")
 def profile():
-    reqinnone = 0
-    user = None
-    for cookie_name in request.cookies:
-        user_obj = User.query.filter_by(nick=cookie_name).first()
-        if user_obj:
-            secret_key = bs64.b64encode(str.encode(user_obj.nick + user_obj.password[:2])).decode("utf-8")
-            if request.cookies.get(cookie_name) == secret_key:
-                user = user_obj
-                break
-            elif request.cookies.get(cookie_name) is not None:
-                res = make_response(redirect('hello', 302))
-                res.set_cookie(cookie_name, request.cookies.get(cookie_name), max_age=0)
-                return res
-    if user is None:
-        return redirect('/login', 302)
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    user = User.query.get(session['user_id'])
+    if not user:
+        # This case should ideally not happen if session is managed correctly
+        session.pop('user_id', None)
+        flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
+        return redirect(url_for('login'))
+        
     return render_template('profile.html', nick=user.nick, fio=user.fio)
 
 
 @app.route("/add_tests", methods=['POST', 'GET'])
 def add_tests():
-    user = None
-    # Authentication check (copied from create_test)
-    for cookie_name in request.cookies:
-        user_obj = User.query.filter_by(nick=cookie_name).first()
-        if user_obj:
-            secret_key_expected = bs64.b64encode(str.encode(user_obj.nick + user_obj.password[:2])).decode("utf-8")
-            if request.cookies.get(cookie_name) == secret_key_expected:
-                user = user_obj
-                break
-    
-    if user is None or user.teacher != 'yes':
+    if 'user_id' not in session:
         flash("Доступ запрещен. Пожалуйста, войдите как учитель.", "warning")
         return redirect(url_for('login'))
 
+    user = User.query.get(session['user_id'])
+    if not user or user.teacher != 'yes':
+        flash("Доступ запрещен. Только учителя могут добавлять тесты.", "warning")
+        # If user is None (e.g. ID in session is invalid), pop session and redirect
+        if not user:
+            session.pop('user_id', None)
+        return redirect(url_for('login'))
+    
     if request.method == "POST":
         test_type = request.form.get('test_type')
         class_number = request.form.get('class_number') # from class_number select
@@ -382,20 +374,14 @@ def add_tests():
 
 @app.route("/tests")
 def tests():
-    user = None
-    for cookie_name in request.cookies:
-        user_obj = User.query.filter_by(nick=cookie_name).first()
-        if user_obj:
-            secret_key = bs64.b64encode(str.encode(user_obj.nick + user_obj.password[:2])).decode("utf-8")
-            if request.cookies.get(cookie_name) == secret_key:
-                user = user_obj
-                break
-            elif request.cookies.get(cookie_name) is not None:
-                res = make_response(redirect('hello', 302))
-                res.set_cookie(cookie_name, request.cookies.get(cookie_name), max_age=0)
-                return res
-    if user is None:
-        return redirect('/login', 302)
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user = User.query.get(session['user_id'])
+    if not user:
+        session.pop('user_id', None)
+        flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
+        return redirect(url_for('login'))
 
     show_archived = request.args.get('show_archived', 'false') == 'true'
     
@@ -498,20 +484,14 @@ def get_words_for_module_selection():
 
 @app.route("/tests/<id>", methods=['GET', 'POST'])
 def test_id(id):
-    user = None
-    for cookie_name in request.cookies:
-        user_obj = User.query.filter_by(nick=cookie_name).first()
-        if user_obj:
-            secret_key = bs64.b64encode(str.encode(user_obj.nick + user_obj.password[:2])).decode("utf-8")
-            if request.cookies.get(cookie_name) == secret_key:
-                user = user_obj
-                break
-            elif request.cookies.get(cookie_name) is not None:
-                res = make_response(redirect('hello', 302))
-                res.set_cookie(cookie_name, request.cookies.get(cookie_name), max_age=0)
-                return res
-    if user is None:
-        return redirect('/login', 302)
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user = User.query.get(session['user_id'])
+    if not user:
+        session.pop('user_id', None)
+        flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
+        return redirect(url_for('login'))
 
     test = Test.query.filter_by(link=id).first()
     if not test:
@@ -691,20 +671,15 @@ def test_id(id):
 
 @app.route("/edit_profile")
 def edit_profile():
-    user = None
-    for cookie_name in request.cookies:
-        user_obj = User.query.filter_by(nick=cookie_name).first()
-        if user_obj:
-            secret_key = bs64.b64encode(str.encode(user_obj.nick + user_obj.password[:2])).decode("utf-8")
-            if request.cookies.get(cookie_name) == secret_key:
-                user = user_obj
-                break
-            elif request.cookies.get(cookie_name) is not None:
-                res = make_response(redirect('hello', 302))
-                res.set_cookie(cookie_name, request.cookies.get(cookie_name), max_age=0)
-                return res
-    if user is None:
-        return redirect('/login', 302)
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    user = User.query.get(session['user_id'])
+    if not user:
+        session.pop('user_id', None)
+        flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
+        return redirect(url_for('login'))
+        
     return render_template('edit_profile.html', nick=user.nick, fio=user.fio)
 
 @app.route("/save_profile", methods=["POST"])
@@ -942,53 +917,48 @@ def login():
     error = None
     if request.method == "POST":
         username = request.form['username']
-        password = request.form['password']
+        password_form = request.form['password']
 
-        # Check for special teacher credentials
-        if username == 'teacher' and password == 'teacher':
-            # Check if teacher user exists, if not create it
-            teacher = User.query.filter_by(nick='teacher').first()
-            if not teacher:
+        if username == 'teacher':
+            teacher_user = User.query.filter_by(nick='teacher').first()
+            if teacher_user and check_password_hash(teacher_user.password, password_form):
+                session['user_id'] = teacher_user.id
+                session.permanent = True  # Make session last for a while
+                app.permanent_session_lifetime = timedelta(days=15)
+                return redirect(url_for('hello'))
+            elif not teacher_user and password_form == 'teacher': # First time teacher login or fallback
+                hashed_password = generate_password_hash('teacher')
                 teacher = User(
                     fio='Teacher',
                     nick='teacher',
-                    password='teacher',
-                    secret_key=bs64.b64encode(str.encode('teacher' + 'teacher'[:2])).decode("utf-8"),
+                    password=hashed_password,
                     teacher='yes'
                 )
                 db.session.add(teacher)
                 db.session.commit()
-            
-            secret_key = bs64.b64encode(str.encode('teacher' + 'teacher'[:2])).decode("utf-8")
-            resp = make_response(redirect('hello', 302))
-            resp.set_cookie('teacher', secret_key, 60*60*24*15)
-            return resp
-
-        # Regular user login
-        user = User.query.filter_by(nick=username, password=password).first()
-        if user:
-            secret_key = bs64.b64encode(str.encode(username + password[:2])).decode("utf-8")
-            resp = make_response(redirect('hello', 302))
-            resp.set_cookie(username, secret_key, 60*60*24*15)
-            return resp
+                session['user_id'] = teacher.id
+                session.permanent = True
+                app.permanent_session_lifetime = timedelta(days=15)
+                return redirect(url_for('hello'))
+            else:
+                error = 'Invalid teacher credentials'
         else:
-            error = 'Invalid username/password'
+            user = User.query.filter_by(nick=username).first()
+            if user and check_password_hash(user.password, password_form):
+                session['user_id'] = user.id
+                session.permanent = True
+                app.permanent_session_lifetime = timedelta(days=15)
+                return redirect(url_for('hello'))
+            else:
+                error = 'Invalid username/password'
 
     return render_template('login.html', error=error)
 
 @app.route("/logout")
 def logout():
-    username = None
-    for cookie_name in request.cookies:
-        if User.query.filter_by(nick=cookie_name).first():
-            username = cookie_name
-            break
-    if username:
-        res = make_response(redirect('/login', 302))
-        res.set_cookie(username, '', expires=0)
-        return res
-    else:
-        return redirect('/login', 302)
+    session.pop('user_id', None)
+    flash("Вы успешно вышли из системы.", "info")
+    return redirect(url_for('login'))
 
 @app.route('/registration', methods=['POST', 'GET'])
 def registration():
@@ -1003,59 +973,49 @@ def registration():
             error = "Please select a class"
             return render_template('registration.html', error=error, classes=[str(i) for i in range(1, 12)])
 
-        secret_key = bs64.b64encode(str.encode(username + password[:2])).decode("utf-8")
-
-        max_id = db.session.query(db.func.max(User.id)).scalar()
-        if max_id is None:
-            max_id = 0
-        else:
-            max_id += 1
-
         existing_user = User.query.filter_by(nick=username).first()
+        if existing_user:
+            error = "Выбранный вами Username уже занят"
+            return render_template('registration.html', error=error, fio=fio, username=username, selected_class=class_number, classes=[str(i) for i in range(1, 12)])
 
         fio_in_mass = fio.split(' ')
-        if len(fio_in_mass) == 3:
-            if existing_user is None:
-                new_user = User(
-                    fio=fio,
-                    nick=username,
-                    password=password,
-                    secret_key=secret_key,
-                    teacher='no',
-                    class_number=class_number,
-                    id=max_id
-                )
-                db.session.add(new_user)
-                db.session.commit()
-                resp = make_response(redirect('hello', 302))
-                resp.set_cookie(username, secret_key, 60*60*24*15)
-                return resp
-            else:
-                error = "Выбранный вами Username уже занят"
-        else:
+        if len(fio_in_mass) != 3: # Assuming FIO should be 3 words
             error = "ФИО должно состоять из 3 слов"
-    else:
-        error = None
+            return render_template('registration.html', error=error, fio=fio, username=username, selected_class=class_number, classes=[str(i) for i in range(1, 12)])
+
+        hashed_password = generate_password_hash(password)
+        
+        # Removed max_id logic as primary key should auto-increment by default
+        new_user = User(
+            fio=fio,
+            nick=username,
+            password=hashed_password,
+            teacher='no',
+            class_number=class_number
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        
+        # Log the user in immediately after registration
+        session['user_id'] = new_user.id
+        session.permanent = True
+        app.permanent_session_lifetime = timedelta(days=15)
+        flash("Регистрация прошла успешно! Вы вошли в систему.", "success")
+        return redirect(url_for('hello'))
 
     classes = [str(i) for i in range(1, 12)]  # Classes 1-11
     return render_template('registration.html', error=error, classes=classes)
 
 @app.route("/hello")
 def hello():
-    user = None
-    for cookie_name in request.cookies:
-        user_obj = User.query.filter_by(nick=cookie_name).first()
-        if user_obj:
-            secret_key = bs64.b64encode(str.encode(user_obj.nick + user_obj.password[:2])).decode("utf-8")
-            if request.cookies.get(cookie_name) == secret_key:
-                user = user_obj
-                break
-            elif request.cookies.get(cookie_name) is not None:
-                res = make_response(redirect('hello', 302))
-                res.set_cookie(cookie_name, request.cookies.get(cookie_name), max_age=0)
-                return res
-    if user is None:
-        return redirect('/login', 302)
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user = User.query.get(session['user_id'])
+    if not user:
+        session.pop('user_id', None) # Clean up invalid session
+        flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
+        return redirect(url_for('login'))
 
     fio_parts = user.fio.split(' ')
     try:
@@ -1271,17 +1231,17 @@ def generate_test_link():
 
 @app.route("/create_test", methods=['GET', 'POST'])
 def create_test():
-    user = None
-    for cookie_name in request.cookies:
-        user_obj = User.query.filter_by(nick=cookie_name).first()
-        if user_obj:
-            secret_key = bs64.b64encode(str.encode(user_obj.nick + user_obj.password[:2])).decode("utf-8")
-            if request.cookies.get(cookie_name) == secret_key:
-                user = user_obj
-                break
-    if user is None or user.teacher != 'yes':
-        return redirect('/login', 302)
+    if 'user_id' not in session:
+        flash("Доступ запрещен. Пожалуйста, войдите как учитель.", "warning")
+        return redirect(url_for('login'))
 
+    user = User.query.get(session['user_id'])
+    if not user or user.teacher != 'yes':
+        flash("Доступ запрещен. Только учителя могут создавать тесты.", "warning")
+        if not user: # If user is None (e.g. ID in session is invalid), pop session and redirect
+            session.pop('user_id', None)
+        return redirect(url_for('login'))
+    
     if request.method == 'POST':
         test_type = request.form.get('test_type')
         class_number = request.form.get('class_number')
@@ -1560,16 +1520,14 @@ def create_test():
 
 @app.route("/test/<int:test_id>")
 def test_details(test_id):
-    user = None
-    for cookie_name in request.cookies:
-        user_obj = User.query.filter_by(nick=cookie_name).first()
-        if user_obj:
-            secret_key = bs64.b64encode(str.encode(user_obj.nick + user_obj.password[:2])).decode("utf-8")
-            if request.cookies.get(cookie_name) == secret_key:
-                user = user_obj
-                break
-    if user is None:
-        return redirect('/login', 302)
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user = User.query.get(session['user_id'])
+    if not user:
+        session.pop('user_id', None)
+        flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
+        return redirect(url_for('login'))
 
     test = Test.query.get_or_404(test_id)
     
@@ -1688,16 +1646,15 @@ def test_details(test_id):
 
 @app.route("/test/<int:test_id>/archive", methods=['POST'])
 def archive_test(test_id):
-    user = None
-    for cookie_name in request.cookies:
-        user_obj = User.query.filter_by(nick=cookie_name).first()
-        if user_obj:
-            secret_key = bs64.b64encode(str.encode(user_obj.nick + user_obj.password[:2])).decode("utf-8")
-            if request.cookies.get(cookie_name) == secret_key:
-                user = user_obj
-                break
-    if user is None or user.teacher != 'yes':
-        return redirect('/login', 302)
+    if 'user_id' not in session:
+        flash("Доступ запрещен. Пожалуйста, войдите как учитель.", "warning")
+        return redirect(url_for('login'))
+
+    user = User.query.get(session['user_id'])
+    if not user or user.teacher != 'yes':
+        flash("Только создатель теста может его архивировать.", "warning")
+        if not user: session.pop('user_id', None)
+        return redirect(url_for('tests')) # Or back to test_details
 
     test = Test.query.get_or_404(test_id)
     if test.created_by != user.id:
@@ -1709,20 +1666,16 @@ def archive_test(test_id):
 
 @app.route('/take_test/<test_link>', methods=['GET', 'POST'])
 def take_test(test_link):
-    current_user = None
-    # Consolidate authentication to be cookie-based like other routes
-    for cookie_name in request.cookies:
-        user_obj = User.query.filter_by(nick=cookie_name).first()
-        if user_obj:
-            secret_key_expected = bs64.b64encode(str.encode(user_obj.nick + user_obj.password[:2])).decode("utf-8")
-            if request.cookies.get(cookie_name) == secret_key_expected:
-                current_user = user_obj
-                break
-    
-    if not current_user:
+    if 'user_id' not in session:
         flash("Пожалуйста, войдите в систему, чтобы пройти тест.", "error")
         return redirect(url_for('login'))
 
+    current_user = User.query.get(session['user_id'])
+    if not current_user:
+        session.pop('user_id', None)
+        flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
+        return redirect(url_for('login'))
+    
     test = Test.query.filter_by(link=test_link).first_or_404()
 
     # Check if student belongs to the correct class for the test
@@ -1895,20 +1848,14 @@ def submit_test(test_id):
 
 @app.route('/test_results/<int:test_id>/<int:result_id>')
 def test_results(test_id, result_id):
-    user = None
-    for cookie_name in request.cookies:
-        user_obj = User.query.filter_by(nick=cookie_name).first()
-        if user_obj:
-            secret_key = bs64.b64encode(str.encode(user_obj.nick + user_obj.password[:2])).decode("utf-8")
-            if request.cookies.get(cookie_name) == secret_key:
-                user = user_obj
-                break
-            elif request.cookies.get(cookie_name) is not None:
-                res = make_response(redirect('hello', 302))
-                res.set_cookie(cookie_name, request.cookies.get(cookie_name), max_age=0)
-                return res
-    if user is None:
-        return redirect('/login', 302)
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user = User.query.get(session['user_id'])
+    if not user:
+        session.pop('user_id', None)
+        flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
+        return redirect(url_for('login'))
 
     test = Test.query.get_or_404(test_id)
     result = TestResult.query.get_or_404(result_id)
@@ -1971,21 +1918,15 @@ def test_results(test_id, result_id):
 
 @app.route("/games")
 def games():
-    user = None
-    for cookie_name in request.cookies:
-        user_obj = User.query.filter_by(nick=cookie_name).first()
-        if user_obj:
-            secret_key = bs64.b64encode(str.encode(user_obj.nick + user_obj.password[:2])).decode("utf-8")
-            if request.cookies.get(cookie_name) == secret_key:
-                user = user_obj
-                break
-            elif request.cookies.get(cookie_name) is not None:
-                res = make_response(redirect('hello', 302))
-                res.set_cookie(cookie_name, request.cookies.get(cookie_name), max_age=0)
-                return res
-    if user is None:
-        return redirect('/login', 302)
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
     
+    user = User.query.get(session['user_id'])
+    if not user:
+        session.pop('user_id', None)
+        flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
+        return redirect(url_for('login'))
+        
     return render_template('games.html', is_teacher=user.teacher == 'yes')
 
 if __name__ == "__main__":
