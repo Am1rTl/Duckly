@@ -9,6 +9,7 @@ import string
 from datetime import datetime, timedelta
 import json
 import subprocess # Added to run external scripts
+import re # Add this at the top with other imports
 
 
 
@@ -491,44 +492,29 @@ def test_id(id):
     if not test:
         return "Test not found", 404
 
-    # If the user is a teacher, redirect them to the test_details page.
-    # Teachers should not be "taking" tests through this interface.
-    if user.teacher == 'yes':
-        # Ensure only active tests or tests they created can be accessed even for details redirect
-        if not test.is_active and test.created_by != user.id:
-             flash("Этот тест заархивирован и вы не являетесь его создателем.", "warning")
-             return redirect(url_for('tests'))
-        flash("Вы были перенаправлены на страницу сведений о тесте.", "info")
-        return redirect(url_for('test_details', test_id=test.id))
+    is_teacher_preview_mode = False # Flag to indicate teacher preview
 
-    # Check if student has access to this test (class matches)
-    if test.classs != user.class_number:
-        flash("Доступ запрещен: тест предназначен для другого класса.", "error") # More specific error
-        return redirect(url_for('tests')) # Redirect to general tests list
-
-    # Check if test is active (students cannot take archived tests)
-    if not test.is_active:
-        flash("Этот тест больше не активен.", "error") # More specific error
-        return redirect(url_for('tests'))
-
-    # Get or create test result (this part is primarily for students starting/resuming a test)
-    test_result = TestResult.query.filter_by(
-        test_id=test.id,
-        user_id=user.id,
-        completed_at=None
-    ).first()
-
+    # Handle POST requests (submitting answers)
     if request.method == 'POST':
-        if not test_result:
-            # Start new test
-            test_result = TestResult(
+        if user.teacher == 'yes':
+            # Teachers in preview mode do not save results
+            flash("Предпросмотр теста. Ответы не были сохранены.", "info")
+            return redirect(url_for('test_details', test_id=test.id))
+        
+        # --- STUDENT SUBMISSION LOGIC (remains largely the same) ---
+        if not test_result: # Should not happen if student started test correctly
+            # This indicates a potential issue or direct POST without GET,
+            # or test_result was not initiated properly.
+            # For robustness, try to get or create one.
+            test_result = TestResult.query.filter_by(
                 test_id=test.id,
                 user_id=user.id,
-                total_questions=len(test.test_words),
-                started_at=datetime.utcnow() # Explicitly set started_at
-            )
-            db.session.add(test_result)
-            db.session.commit()
+                completed_at=None
+            ).first()
+            if not test_result: # If still not found, student likely hasn't started.
+                                # This situation ideally is caught by GET request flow.
+                flash("Не удалось найти активный сеанс теста. Пожалуйста, начните тест сначала.", "warning")
+                return redirect(url_for('take_test', test_link=test.link)) # Redirect to start
 
         # Process answers
         answers_dict_for_json = {} # To store in TestResult.answers (JSON)
@@ -596,30 +582,56 @@ def test_id(id):
 
         return redirect(url_for('test_results', test_id=test.id, result_id=test_result.id))
 
-    # GET request - show test
-    # The 'test_result' variable here is the one queried at the top of the function
-    # (i.e., an incomplete one, or None if no incomplete one is found)
+    # --- HANDLE GET REQUESTS ---
 
-    if user.teacher == 'no': # Student-specific logic for GET request
+    # Teacher Preview Logic for GET
+    if user.teacher == 'yes':
+        # Teachers can preview their own tests or any active test.
+        # If archived, only creator can preview.
+        if not test.is_active and test.created_by != user.id:
+            flash("Этот тест заархивирован, и вы не являетесь его создателем. Предпросмотр невозможен.", "warning")
+            return redirect(url_for('tests'))
+        
+        is_teacher_preview_mode = True
+        # For teachers, no TestResult is needed for preview.
+        # Time is unlimited for preview.
+        remaining_time_seconds = -1 # Indicator for unlimited time
+        test_result = None # Explicitly set to None for teacher preview context
+    
+    # Student Test-Taking Logic for GET
+    else: # user.teacher == 'no'
+        # Check if student has access to this test (class matches)
+        if test.classs != user.class_number:
+            flash("Доступ запрещен: тест предназначен для другого класса.", "error")
+            return redirect(url_for('tests'))
+
+        # Check if test is active (students cannot take archived tests)
+        if not test.is_active:
+            flash("Этот тест больше не активен.", "error")
+            return redirect(url_for('tests'))
+
+        # Get or create test result for students
+        test_result = TestResult.query.filter_by(
+            test_id=test.id,
+            user_id=user.id,
+            completed_at=None
+        ).first()
+
         if test_result: # An incomplete test was found
             if not test_result.started_at: # Ensure it has a start time if resuming
                 test_result.started_at = datetime.utcnow()
                 db.session.commit()
-            # Proceed to render test with this incomplete test_result
-        else: # No incomplete test_result was found (test_result is None from the initial query)
-            # Now, check if they have already COMPLETED this test
+        else: # No incomplete test_result was found
             completed_test_run = TestResult.query.filter_by(
                 test_id=test.id,
                 user_id=user.id
             ).filter(TestResult.completed_at.isnot(None)).order_by(TestResult.completed_at.desc()).first()
 
             if completed_test_run:
-                # Student has already completed this test
                 flash("Вы уже завершили этот тест. Просмотр ваших результатов.", "info")
                 return redirect(url_for('test_results', test_id=test.id, result_id=completed_test_run.id))
             else:
-                # No incomplete and no completed test found - student is starting for the first time
-                # Create a new TestResult instance. This 'test_result' variable will then be used for rendering.
+                # Student is starting for the first time
                 test_result = TestResult(
                     test_id=test.id,
                     user_id=user.id,
@@ -628,56 +640,47 @@ def test_id(id):
                 )
                 db.session.add(test_result)
                 db.session.commit()
-                # 'test_result' now refers to the newly created one for rendering the test page.
+        
+        # Calculate remaining time for students
+        remaining_time_seconds = -1 # Default for unlimited time
+        time_is_up_on_server = False
+        if test.time_limit and test.time_limit > 0 and test_result and test_result.started_at:
+            elapsed_seconds = (datetime.utcnow() - test_result.started_at).total_seconds()
+            total_duration_seconds = test.time_limit * 60
+            remaining_time_seconds = max(0, int(total_duration_seconds - elapsed_seconds))
+            if remaining_time_seconds == 0:
+                time_is_up_on_server = True
+                if not test_result.completed_at: # Auto-submit if time is up on server
+                    flash("Время на тест вышло. Тест будет отправлен автоматически.", "warning")
+                    # Simplified auto-submit: mark as completed. Client should ideally handle submission.
+                    # For a more robust auto-submit, answers would need to be saved progressively.
+                    # Consider if answers submitted via form post-timeout should be accepted or rejected.
+                    # The POST handler has its own time check.
+                    pass # Let client-side timer trigger submission for now.
 
-    remaining_time_seconds = -1 # Default for unlimited time
-    time_is_up_on_server = False
 
-    if test.time_limit and test.time_limit > 0 and test_result and test_result.started_at:
-        elapsed_seconds = (datetime.utcnow() - test_result.started_at).total_seconds()
-        total_duration_seconds = test.time_limit * 60
-        remaining_time_seconds = max(0, int(total_duration_seconds - elapsed_seconds))
-
-        if remaining_time_seconds == 0:
-            time_is_up_on_server = True
-            # If time is up, and test not yet completed, mark as completed and calculate score
-            if not test_result.completed_at:
-                # Auto-submit logic (simplified: mark completed, score would be based on what's saved so far or 0)
-                # A full auto-submission might require answers stored progressively, which is not fully implemented here.
-                # For now, just mark as completed. The client will submit any current answers.
-                # Or, redirect to prevent further interaction if client doesn't submit.
-                flash("Время на тест вышло. Тест будет отправлен автоматически.", "warning")
-                # To prevent further interaction if client doesn't submit based on timer:
-                # test_result.completed_at = datetime.utcnow()
-                # test_result.score = 0 # Or calculate based on any progressively saved answers
-                # test_result.correct_answers = 0
-                # db.session.commit()
-                # return redirect(url_for('test_results', test_id=test.id, result_id=test_result.id))
-                pass # Let client-side timer trigger submission for now.
+    # Common rendering logic for both teachers (preview) and students (taking test)
+    # The specific template and words_list will depend on test.type
 
     if test.type == 'add_letter':
-        # For 'manual_letters' mode, check if the teacher has configured the words.
-        # If not, students should not be able to take it yet.
-        if test.test_mode == 'manual_letters':
-            if test.test_words and any(tw.missing_letters is None for tw in test.test_words):
-                flash("Этот тест (вставить буквы) еще не полностью настроен учителем и пока не доступен для прохождения.", "warning")
-                return redirect(url_for('tests'))
+        if not is_teacher_preview_mode: # Student specific checks
+            if test.test_mode == 'manual_letters':
+                if test.test_words and any(tw.missing_letters is None for tw in test.test_words):
+                    flash("Этот тест (вставить буквы) еще не полностью настроен учителем и пока не доступен для прохождения.", "warning")
+                    return redirect(url_for('tests'))
 
         words_list = []
         for word in test.test_words:
-            print(f"--- Word Details for Test '{test.title}' (Link: {test.link}) ---")
-            print(f"  TestWord ID: {word.id}")
-            print(f"  Gapped Word (to display): '{word.word}'")
-            print(f"  Translation/Hint: '{word.perevod}'")
-            print(f"  Correct letters (to be inserted by student): '{word.correct_answer}'")
-            if word.missing_letters:
-                print(f"  Missing letter positions (1-indexed in original word): '{word.missing_letters}'")
-            print(f"  Number of letters to input: {len(word.correct_answer) if word.correct_answer else 0}")
-            print("-" * 40)
-
-            # Student sees word.word (already gapped by teacher/random mode)
-            # Student types word.correct_answer
-            # num_inputs helps template build the input fields
+            # Debug prints can be removed in production
+            # print(f"--- Word Details for Test '{test.title}' (Link: {test.link}) ---")
+            # print(f"  TestWord ID: {word.id}")
+            # print(f"  Gapped Word (to display): '{word.word}'")
+            # print(f"  Translation/Hint: '{word.perevod}'")
+            # print(f"  Correct letters (to be inserted by student): '{word.correct_answer}'")
+            # if word.missing_letters:
+            #     print(f"  Missing letter positions (1-indexed in original word): '{word.missing_letters}'")
+            # print(f"  Number of letters to input: {len(word.correct_answer) if word.correct_answer else 0}")
+            # print("-" * 40)
             words_list.append({
                 'id': word.id,
                 'word': word.word, 
@@ -687,71 +690,106 @@ def test_id(id):
         return render_template('test_add_letter.html', 
                              words=words_list, 
                              test_id=id, # link
-                             test_result=test_result,
-                             time_limit=test.time_limit, # Original limit in minutes
-                             remaining_time_seconds=remaining_time_seconds, # Remaining time in seconds
+                             test_result=test_result, # Will be None for teacher preview
+                             time_limit=test.time_limit,
+                             remaining_time_seconds=remaining_time_seconds,
                              test_title=test.title, 
-                             test_db_id=test.id # numerical ID
-                             )
+                             test_db_id=test.id, # numerical ID
+                             is_teacher_preview=is_teacher_preview_mode) # Pass the preview flag
     elif test.type == 'dictation':
-        print(f"DEBUG: Accessing dictation test with link: {id}")
-        print(f"DEBUG: Test object: {test}")
-        print(f"DEBUG: Test.test_words count: {len(test.test_words) if test.test_words else 0}")
-        if test.test_words:
-            for i, tw in enumerate(test.test_words):
-                print(f"DEBUG: TestWord {i}: id={tw.id}, word='{tw.word}', perevod='{tw.perevod}', correct_answer='{tw.correct_answer}'")
+        # Debug prints can be removed
+        # print(f"DEBUG: Accessing dictation test with link: {id}")
+        # print(f"DEBUG: Test object: {test}")
+        # print(f"DEBUG: Test.test_words count: {len(test.test_words) if test.test_words else 0}")
+        # if test.test_words:
+        #     for i, tw in enumerate(test.test_words):
+        #         print(f"DEBUG: TestWord {i}: id={tw.id}, word='{tw.word}', perevod='{tw.perevod}', correct_answer='{tw.correct_answer}'")
         
         words_list = [(word.word, word.perevod, word.correct_answer, word.id) for word in test.test_words]
-        active_test_result_id = session.get('active_test_result_id')
-        current_test_result = None
-        if active_test_result_id:
-            current_test_result = TestResult.query.get(active_test_result_id)
-            # Ensure the result belongs to the current test and user
-            if not (current_test_result and current_test_result.test_id == test.id and current_test_result.user_id == user.id):
-                current_test_result = None # Invalidate if not matching
         
-        # If no active session result, try to find an incomplete one (as before)
-        if not current_test_result:
-            current_test_result = TestResult.query.filter_by(
-                test_id=test.id,
-                user_id=user.id,
-                completed_at=None
-            ).first()
+        current_test_result_for_template = test_result # Use the one determined by student/teacher logic
+        if is_teacher_preview_mode:
+            current_test_result_for_template = None # Ensure no result object for teacher preview
 
         return render_template('test_dictation.html', 
-                             test_title=test.title, # Pass test title
-                             words_data=words_list, # Changed from 'words' to 'words_data' for clarity
-                             test_link_id=id,     # Pass test.link as test_link_id
-                             current_test_result=current_test_result, # Pass the fetched TestResult
-                             time_limit_seconds=test.time_limit * 60 if test.time_limit else 0, # This was initial full time
-                             remaining_time_seconds=remaining_time_seconds, # Pass new remaining time
-                             test_db_id=test.id # Pass the actual database ID of the test for submission form
-                             )
-    elif test.type == 'true_or_false':
-        words_list = [(word.word, word.perevod) for word in test.test_words]
-        return render_template('test_true_or_false.html', 
+                             test_title=test.title,
+                             words_data=words_list,
+                             test_link_id=id,
+                             current_test_result=current_test_result_for_template, # Pass the correct result object
+                             time_limit_seconds=test.time_limit * 60 if test.time_limit else 0,
+                             remaining_time_seconds=remaining_time_seconds,
+                             test_db_id=test.id,
+                             is_teacher_preview=is_teacher_preview_mode) # Pass the preview flag
+    elif test.type == 'true_false': # Assuming this was a typo for true_false
+        words_list = [(word.word, word.perevod, word.id) for word in test.test_words] # Added word.id
+        return render_template('test_true_false.html', # Corrected template name
                              words=words_list, 
-                             test_id=id,
-                             test_result=test_result,
+                             test_id=id, # link
+                             test_result=test_result, # Will be None for teacher preview
                              time_limit=test.time_limit,
-                             remaining_time_seconds=remaining_time_seconds)
-    elif test.type == 'multiple_choice':
+                             remaining_time_seconds=remaining_time_seconds,
+                             test_title=test.title,
+                             test_db_id=test.id,
+                             is_teacher_preview=is_teacher_preview_mode)
+    elif test.type == 'multiple_choice': # Assuming this is multiple_choice_single from context
         words_list = []
         for word in test.test_words:
-            options = word.options.split('|')
+            options = word.options.split('|') if word.options else []
             words_list.append({
                 'id': word.id,
-                'word': word.word,
-                'perevod': word.perevod,
+                'word': word.word, # This is the question (e.g., translation)
+                'perevod': word.perevod, # This is the prompt (e.g., "Choose the correct word")
                 'options': options
             })
         return render_template('test_multiple_choice.html', 
                              words=words_list, 
-                             test_id=id,
-                             test_result=test_result,
-                             time_limit=test.time_limit)
+                             test_id=id, # link
+                             test_result=test_result, # Will be None for teacher preview
+                             time_limit=test.time_limit,
+                             remaining_time_seconds=remaining_time_seconds,
+                             test_title=test.title,
+                             test_db_id=test.id,
+                             is_teacher_preview=is_teacher_preview_mode)
+    elif test.type == 'fill_word':
+        words_list = []
+        for word in test.test_words:
+            words_list.append({
+                'id': word.id,
+                'word': word.word, # This is the question (e.g., translation)
+                'perevod': word.perevod # This is the prompt (e.g., "Fill in the original word")
+            })
+        return render_template('test_fill_word.html', # Assuming a template test_fill_word.html exists
+                             words=words_list,
+                             test_id=id, # link
+                             test_result=test_result, # Will be None for teacher preview
+                             time_limit=test.time_limit,
+                             remaining_time_seconds=remaining_time_seconds,
+                             test_title=test.title,
+                             test_db_id=test.id,
+                             is_teacher_preview=is_teacher_preview_mode)
+    elif test.type == 'multiple_choice_multiple':
+        words_list = []
+        for word in test.test_words:
+            options = word.options.split('|') if word.options else []
+            words_list.append({
+                'id': word.id,
+                'word': word.word,       # Question (e.g., translation/definition)
+                'perevod': word.perevod, # Prompt (e.g., "Select all correct options")
+                'options': options
+            })
+        return render_template('test_multiple_choice_multiple.html', # Assuming this template exists
+                             words=words_list,
+                             test_id=id, # link
+                             test_result=test_result, # Will be None for teacher preview
+                             time_limit=test.time_limit,
+                             remaining_time_seconds=remaining_time_seconds,
+                             test_title=test.title,
+                             test_db_id=test.id,
+                             is_teacher_preview=is_teacher_preview_mode)
     else:
-        return "Unknown test type", 400
+        # Fallback for unknown test types
+        flash(f"Неизвестный тип теста: {test.type}", "error")
+        return redirect(url_for('tests'))
 
 @app.route("/edit_profile")
 def edit_profile():
@@ -1938,74 +1976,61 @@ def take_test(test_link):
         return redirect(url_for('tests'))
 
     # Check if the test is active (students cannot take archived tests)
+    # Teachers can preview archived tests they created (handled in test_id route)
     if current_user.teacher == 'no' and not test.is_active:
         flash("Этот тест больше не активен и не может быть пройден.", "error")
         return redirect(url_for('tests'))
 
-    # Check if student has already completed this test (or started and not finished)
-    existing_result = TestResult.query.filter_by(
-        test_id=test.id,
-        user_id=current_user.id # Use current_user.id from cookie auth
-        # completed_at=None # Keep this if we want to allow resuming, remove if only one start is allowed
-    ).first()
+    # POST request: Starting the test
+    if request.method == 'POST':
+        if current_user.teacher == 'yes':
+            # Teachers starting a test go directly to preview mode via test_id route
+            # No TestResult is created for them.
+            flash("Начат предпросмотр теста.", "info")
+            return jsonify({'success': True, 'redirect_url': url_for('test_id', id=test.link)})
 
-    if request.method == 'POST': # This POST is to *start* the test
-        # Student starting a test: Verifications needed
-        if current_user.teacher == 'no':
-            if test.classs != current_user.class_number:
-                flash("Вы не можете начать этот тест, так как он предназначен для другого класса.", "error")
-                # For AJAX calls, a JSON response is often better than a redirect
-                return jsonify({'success': False, 'error': 'Класс не совпадает', 'redirect_url': url_for('tests')}), 403
-            if not test.is_active:
-                flash("Этот тест больше не активен и не может быть начат.", "error")
-                return jsonify({'success': False, 'error': 'Тест не активен', 'redirect_url': url_for('tests')}), 403
+        # --- STUDENT LOGIC FOR POST (starting a test) ---
+        if test.classs != current_user.class_number:
+            flash("Вы не можете начать этот тест, так как он предназначен для другого класса.", "error")
+            return jsonify({'success': False, 'error': 'Класс не совпадает', 'redirect_url': url_for('tests')}), 403
+        if not test.is_active:
+            flash("Этот тест больше не активен и не может быть начат.", "error")
+            return jsonify({'success': False, 'error': 'Тест не активен', 'redirect_url': url_for('tests')}), 403
 
-        existing_result = TestResult.query.filter_by(
+        # Check for existing incomplete result for student
+        existing_incomplete_result = TestResult.query.filter_by(
             test_id=test.id,
             user_id=current_user.id,
             completed_at=None
         ).first()
 
-        if not existing_result or existing_result.completed_at: # Allow starting if no result or previous one completed
-            # If allowing re-takes, ensure a new result is created or old one is handled.
-            # For simplicity, let's assume a student starts a new attempt if prior one is completed or non-existent.
-            # If there's an INCOMPLETE one, the GET request below should handle resuming it.
+        if existing_incomplete_result:
+            # If student already has an incomplete test, use that one
+            session['active_test_result_id'] = existing_incomplete_result.id
+            return jsonify({'success': True, 'redirect_url': url_for('test_id', id=test.link)})
+        else:
+            # If no incomplete test, check if they completed it before.
+            # Depending on policy, you might prevent retakes or allow new attempts.
+            # For now, let's allow a new attempt if previous was completed or none exists.
             
-            # If there is an existing completed result, and you want to prevent retakes, check here:
-            # if existing_result and existing_result.completed_at:
-            #     flash("Вы уже завершили этот тест.", "info")
-            #     return redirect(url_for('test_results', test_id=test.id, result_id=existing_result.id))
-
-            test_result_to_use = TestResult.query.filter_by(
+            # Create a new TestResult for the student
+            new_test_result = TestResult(
                 test_id=test.id,
                 user_id=current_user.id,
-                completed_at=None
-            ).first()
-
-            if not test_result_to_use: # No incomplete test, create a new one
-                test_result_to_use = TestResult(
-                    test_id=test.id,
-                    user_id=current_user.id,
-                    total_questions=len(test.test_words),
-                    started_at=datetime.utcnow() # Explicitly set started_at
-                )
-                db.session.add(test_result_to_use)
-                db.session.commit()
-            
-            # Redirect to the actual test taking interface, e.g., test_id or a specific rendering page
-            # The current logic seems to POST to /tests/<id> to submit answers.
-            # This /take_test POST is more like an explicit "Start Test" action.
-            # For now, let's assume starting the test means we show the first question/test interface.
-            # The original code returned jsonify({'success': True}), which implies an AJAX call to start.
-            # A redirect to the test interface is more straightforward for a non-AJAX flow.
-            # Let's redirect to the test view which will be specific to test type.
-            session['active_test_result_id'] = test_result_to_use.id # Store active test result for this session
-            return jsonify({'success': True, 'redirect_url': url_for('test_id', id=test.link)}) # New: Return JSON with redirect URL
-        else: # existing_result is incomplete
-            session['active_test_result_id'] = existing_result.id
-            return jsonify({'success': True, 'redirect_url': url_for('test_id', id=test.link)}) # New: Return JSON with redirect URL
+                total_questions=len(test.test_words) if test.test_words else 0,
+                started_at=datetime.utcnow()
+            )
+            db.session.add(new_test_result)
+            db.session.commit()
+            session['active_test_result_id'] = new_test_result.id
+            return jsonify({'success': True, 'redirect_url': url_for('test_id', id=test.link)})
 
     # GET request logic:
+    if current_user.teacher == 'yes':
+        # Teachers see the start page, clicking "Start" will POST and then redirect to preview
+        return render_template('test_start.html', test=test, user=current_user)
+        
+    # --- STUDENT LOGIC FOR GET ---
     # If there's an existing incomplete test result, student should resume it.
     incomplete_result = TestResult.query.filter_by(
         test_id=test.id,
@@ -2154,8 +2179,48 @@ def submit_test(test_id):
             user_submitted_answer_string = request.form.get(f'answer_{test_word.id}', '').strip()
             is_correct = user_submitted_answer_string.lower() == test_word.correct_answer.lower()
         elif test.type == 'dictation': # Example
-            user_submitted_answer_string = request.form.get(f'answer_{test_word.id}', '').strip()
-            is_correct = user_submitted_answer_string.lower() == test_word.correct_answer.lower()
+            # OLD: user_submitted_answer_string = request.form.get(f'answer_{test_word.id}', '').strip()
+            # NEW: Reconstruct the answer string from individual character inputs
+            current_word_chars_map = {}
+            # Collect all characters for this specific test_word.id
+            # Key format: dictation_answer_{test_word.id}_{char_index}
+            prefix = f'dictation_answer_{test_word.id}_'
+            for key, value in request.form.items():
+                if key.startswith(prefix):
+                    try:
+                        char_idx_str = key[len(prefix):] # Get the part after the prefix
+                        char_idx = int(char_idx_str)
+                        
+                        # Ensure value is a single character, take the first if multiple submitted
+                        # maxlength=1 on client side should prevent multiple.
+                        char_value = value.strip()
+                        if len(char_value) > 1:
+                            char_value = char_value[0]
+                        # If char_value is empty, it represents an empty box for that position.
+                        
+                        current_word_chars_map[char_idx] = char_value
+                    except ValueError:
+                        # Log or handle malformed key if char_idx_str is not an int
+                        print(f"Warning: Could not parse char index from key {key} for dictation word {test_word.id}")
+                        pass # Ignore malformed keys
+            
+            answer_chars = []
+            if current_word_chars_map:
+                # Reconstruct the word by sorting characters by their index.
+                # Iterate from 0 up to the maximum index found for this word.
+                max_idx_found = -1
+                if current_word_chars_map: # Ensure not empty before calling max
+                    max_idx_found = max(current_word_chars_map.keys())
+                
+                for i in range(max_idx_found + 1):
+                    answer_chars.append(current_word_chars_map.get(i, "")) # Append char or empty string if index is missing
+            
+            user_submitted_answer_string = "".join(answer_chars)
+            
+            # Normalize answers for comparison in dictation
+            normalized_user_answer = re.sub(r'[\s\.,!?-]', '', user_submitted_answer_string).lower()
+            normalized_correct_answer = re.sub(r'[\s\.,!?-]', '', test_word.correct_answer).lower()
+            is_correct = normalized_user_answer == normalized_correct_answer
         elif test.type == 'true_false': # Example
             user_submitted_answer_string = request.form.get(f'answer_{test_word.id}', '').strip()
             is_correct = user_submitted_answer_string.capitalize() == test_word.correct_answer # True/False comparison

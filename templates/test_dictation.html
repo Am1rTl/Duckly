@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Тест: {{ test_title|e }}</title>
+  <title>Диктант: {{ test_title|e }}</title>
 
   <!-- Шрифт Poppins -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -23,6 +23,10 @@
       --success: #28a745;
       --warning: #ffc107;
       --danger: #dc3545;
+      /* Adding RGB versions for box-shadows with alpha */
+      --primary-rgb: 108, 99, 255;
+      --warning-rgb: 255, 193, 7;
+      --info-rgb: 23, 162, 184;
     }
 
     * {
@@ -39,131 +43,108 @@
       line-height: 1.6;
     }
 
-    .container {
+    .test-container { 
       max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
+      margin: 20px auto;
+      padding: 25px; /* Increased padding */
       background: var(--card-bg);
-      border-radius: 15px;
+      border-radius: 15px; 
       box-shadow: var(--shadow);
     }
 
-    .header {
+    .test-header {
       text-align: center;
       margin-bottom: 30px;
     }
-     .header h1 {
+     .test-header h2 { 
         color: var(--secondary);
         font-weight: 600;
+        margin-bottom: 15px; 
      }
-
-    .progress-bar-container {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 30px;
-      padding: 10px;
-      background: var(--background);
-      border-radius: 10px;
+    .test-header .alert { 
+        margin-top: 15px;
+        padding: 12px 15px; /* Custom padding for alerts */
+        border-radius: 8px;
+        font-size: 0.95em;
+    }
+    .alert-info { /* Custom style for info alerts */
+        background-color: rgba(var(--info-rgb), 0.1);
+        color: var(--secondary); /* Darker info text */
+        border: 1px solid rgba(var(--info-rgb), 0.3);
+    }
+     .alert-warning { /* Custom style for warning alerts (like teacher preview) */
+        background-color: rgba(var(--warning-rgb), 0.1);
+        color: #856404; /* Darker warning text */
+        border: 1px solid rgba(var(--warning-rgb), 0.3);
     }
 
-    .progress-item {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      background: var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      font-size: 0.9rem;
-    }
-    
-    .progress-item.answered { 
-      background: var(--primary-light);
-      color: var(--primary-dark);
-      font-weight: 500;
-    }
-    .progress-item.current {
-      background-color: var(--primary) !important;
-      color: white !important;
-      border: 2px solid var(--primary-dark);
-      transform: scale(1.1);
-    }
 
     .timer {
+      font-size: 1.2em;
+      font-weight: bold;
+      color: var(--danger); 
       text-align: center;
-      font-size: 1.2rem;
-      font-weight: 500;
-      margin-bottom: 20px;
-      color: var(--primary);
+      margin-bottom: 25px; /* Increased margin */
+      padding: 12px; /* Increased padding */
+      background-color: rgba(var(--danger-rgb, 220, 53, 69), 0.05); /* Using danger-rgb if defined */
+      border: 1px solid rgba(var(--danger-rgb, 220, 53, 69), 0.2);
+      border-radius: 8px; 
     }
-
-    .word-card {
-      text-align: center;
-      margin-bottom: 30px;
-      padding: 25px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background-color: #fff;
-      box-shadow: var(--shadow);
-    }
-
-    .translation-text {
-      font-size: 1.8rem;
-      font-weight: 600;
-      margin-bottom: 20px;
-      color: var(--secondary);
-      min-height: 50px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .timer.almost-up {
+        color: #c9302c; 
+        background-color: rgba(var(--danger-rgb, 220, 53, 69), 0.1);
+        font-weight: bold;
     }
     
-    .word-cue-text {
-        font-size: 1.5rem;
-        font-family: 'Courier New', Courier, monospace;
-        color: var(--text);
+    .dictation-word-container.word-item {
+        margin-bottom: 30px; /* Increased spacing */
+        padding: 20px; 
+        border: 1px solid var(--border);
+        border-radius: 10px; 
+        background-color: #fff; 
+        box-shadow: 0 3px 10px rgba(0,0,0,0.07); /* Slightly enhanced shadow */
+    }
+
+    .dictation-word-container p.lead { 
+        font-size: 1.25em; /* Hint text size */
+        color: var(--secondary);
         margin-bottom: 15px;
-        letter-spacing: 2px;
-        min-height: 30px;
+        font-weight: 500;
     }
 
-    .input-label {
-      display: block;
-      font-size: 0.9rem;
-      margin-bottom: 8px;
-      color: var(--text);
-      opacity: 0.8;
+    .char-inputs-wrapper {
+        display: flex;
+        flex-wrap: wrap; 
+        align-items: center; 
+        justify-content: flex-start; 
+        margin-top: 10px; 
+    }
+
+    .dictation-char-input {
+        width: 42px; /* Input box size */
+        height: 42px;
+        text-align: center;
+        font-size: 1.35em; 
+        font-family: 'Courier New', Courier, monospace; 
+        margin: 5px; 
+        border: 2px solid var(--border); 
+        border-radius: 6px; 
+        box-sizing: border-box;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        caret-color: var(--primary); 
+    }
+
+    .dictation-char-input:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 0 0.2rem rgba(var(--primary-rgb), 0.25); 
     }
     
-    .word-input {
-      width: 100%;
-      max-width: 400px;
-      margin-left: auto;
-      margin-right: auto;
-      padding: 12px 15px;
-      font-size: 1.1rem;
-      border: 2px solid var(--border);
-      border-radius: 8px;
-      margin-bottom: 25px;
-      transition: border-color 0.3s ease, box-shadow 0.3s ease;
-      text-align: center;
-    }
-
-    .word-input:focus {
-      border-color: var(--primary);
-      outline: none;
-      box-shadow: 0 0 0 3px var(--primary-light);
-    }
-
-    .navigation {
-      display: flex;
-      justify-content: space-between;
-      gap: 15px;
-      margin-top: 20px;
+    .submit-btn-container {
+        text-align: center;
+        margin-top: 35px; /* More space above submit */
+        padding-top: 25px; 
+        border-top: 1px solid var(--border); 
     }
 
     .btn {
@@ -171,334 +152,317 @@
       font-size: 1rem;
       font-weight: 500;
       border: none;
-      border-radius: 10px;
+      border-radius: 8px; 
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.25s ease;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      flex: 1;
       justify-content: center;
+      gap: 8px;
     }
 
     .btn-primary {
       background-color: var(--primary);
       color: white;
     }
-
     .btn-primary:hover {
       background-color: var(--primary-dark);
+      transform: translateY(-2px); 
+      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
     }
-
-    .btn-secondary {
-      background-color: var(--background);
-      color: var(--text);
-      border: 2px solid var(--border);
+    .btn-lg { 
+        padding: 15px 30px;
+        font-size: 1.15rem; /* Slightly larger submit button text */
     }
-
-    .btn-secondary:hover {
-      border-color: var(--primary);
-      color: var(--primary);
-    }
-
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      background-color: #eee;
-      color: #aaa;
-    }
-    .btn-secondary:disabled {
+     .btn-secondary { /* For "back to tests" link if needed */
         background-color: var(--background);
-        color: #aaa;
-        border-color: #eee;
+        color: var(--text);
+        border: 2px solid var(--border);
+    }
+    .btn-secondary:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+        background-color: rgba(var(--primary-rgb), 0.05);
+    }
+    /* Define danger-rgb if not already in :root */
+    :root {
+        --danger-rgb: 220, 53, 69;
     }
 
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <div class="header">
-      <h1>Тест: {{ test_title|e }}</h1>
+  <div class="test-container">
+    <div class="test-header">
+        <h2>Диктант: {{ test_title|e }}</h2>
+        {% if is_teacher_preview %}
+            <div class="alert alert-warning" role="alert">
+                <strong>Режим предпросмотра для учителя.</strong> Ответы не будут сохранены.
+            </div>
+        {% endif %}
     </div>
 
-    <div class="timer" id="timer" style="display: none;">
-      Осталось времени: <span id="time-left">--:--</span>
-    </div>
+    {% if time_limit_seconds and time_limit_seconds > 0 and not is_teacher_preview %}
+    <div id="timer" class="timer">Время на тест: <span id="time-left">{{ "%02d:%02d" % (time_limit_seconds // 60, time_limit_seconds % 60) }}</span></div>
+    {% elif not is_teacher_preview %}
+    <div class="alert alert-info text-center">Время на тест не ограничено.</div>
+    {% endif %}
 
-    <div class="progress-bar-container" id="progress-bar-container">
-      {% for cue, translation, correct_answer_val, tw_id in words_data %}
-      <div class="progress-item" data-index="{{ loop.index0 }}">{{ loop.index }}</div>
-      {% endfor %}
-    </div>
 
-    <form id="test-form" method="POST" action="{{ url_for('test_id', id=test_link_id) }}">
-      <input type="hidden" name="test_db_id" value="{{ test_db_id }}">
-      {% if not words_data %}
-        <p style="text-align:center; color: var(--danger);">Нет слов для этого теста. Обратитесь к учителю.</p>
-      {% endif %}
-      {% for cue, translation, correct_answer_val, tw_id in words_data %}
-      <div class="word-card" data-index="{{ loop.index0 }}" style="display: {{ 'flex' if loop.index0 == 0 else 'none' }}; flex-direction: column; align-items: center;">
-        <div class="translation-text">{{ translation }}</div>
-        <div class="word-cue-text">{{ cue }}</div>
-        <label for="answer-{{ tw_id }}" class="input-label">Введите слово на языке оригинала:</label>
-        <input type="text" 
-               class="word-input" 
-               name="answer{{ tw_id }}"
-               id="answer-{{ tw_id }}" 
-               autocomplete="off"
-               autocorrect="off"
-               autocapitalize="none"
-               spellcheck="false">
-      </div>
-      {% endfor %}
-
-      <div class="navigation">
-        <button type="button" class="btn btn-secondary" id="prev-btn" disabled>
-          <i class="fas fa-arrow-left"></i>
-          Назад
-        </button>
-        <button type="button" class="btn btn-primary" id="next-btn">
-          Далее
-          <i class="fas fa-arrow-right"></i>
-        </button>
-        <button type="submit" class="btn btn-primary" id="submit-btn" style="display: none;">
-          Завершить тест
-        </button>
-      </div>
-    </form>
-  </div>
-
-  <script>
-    let currentIndex = 0;
-    // Ensure wordsData is an array
-    const wordsData = Array.isArray({{ words_data|tojson|safe }}) ? {{ words_data|tojson|safe }} : [];
-    const totalWords = wordsData.length;
-    
-    // Time variables
-    const initialTotalSecondsRaw = "{{ time_limit_seconds | default('0') }}";
-    const initialTotalSeconds = parseInt(initialTotalSecondsRaw, 10) || 0;
-
-    const remainingSecondsRaw = "{{ remaining_time_seconds | default('-1') }}";
-    let remainingSeconds = parseInt(remainingSecondsRaw, 10);
-
-    let timeLeft;
-    if (initialTotalSeconds > 0) { // It's a timed test
-        if (remainingSeconds >= 0) { // Server provided a valid remaining time
-            timeLeft = remainingSeconds;
-        } else { // Server didn't provide remaining time (or it was -1), use initial full duration
-            timeLeft = initialTotalSeconds;
-        }
-    } else { // Not a timed test
-        timeLeft = 0; // Timer won't run with this value if initialTotalSeconds is 0
-    }
-
-    let timerInterval;
-    
-    const rawAnswers = {{ (current_test_result.answers if current_test_result and current_test_result.answers else '{}')|tojson|safe }};
-    let testResultData = {};
-    const userAnswers = new Array(totalWords).fill('');
-
-    if (typeof rawAnswers === 'string') {
-        try {
-            testResultData = JSON.parse(rawAnswers);
-        } catch (e) {
-            console.error("Error parsing existing answers JSON:", e, "Raw data:", rawAnswers);
-            testResultData = {}; 
-        }
-    } else if (typeof rawAnswers === 'object' && rawAnswers !== null) {
-        testResultData = rawAnswers; // Already an object
-    }
-
-    if (totalWords > 0 && Object.keys(testResultData).length > 0) {
-        wordsData.forEach((wordItem, index) => {
-            const testWordId = wordItem[3].toString();
-            if (testResultData[testWordId]) {
-                userAnswers[index] = testResultData[testWordId];
-                const inputField = document.getElementById('answer-' + testWordId);
-                if (inputField) {
-                    inputField.value = testResultData[testWordId];
-                }
-            }
-        });
-    }
-
-    const wordCards = document.querySelectorAll('.word-card');
-    const progressItems = document.querySelectorAll('.progress-item');
-    const nextBtn = document.getElementById('next-btn');
-    const prevBtn = document.getElementById('prev-btn');
-    const submitBtn = document.getElementById('submit-btn');
-    const timerDisplay = document.getElementById('time-left');
-    const timerContainer = document.getElementById('timer');
-    const testForm = document.getElementById('test-form');
-
-    function updateTimerDisplay() {
-      const minutes = Math.floor(timeLeft / 60);
-      const seconds = timeLeft % 60;
-      timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
-
-    function startTimer() {
-      // Re-fetch elements inside function scope in case they are not global or ready at script parse time
-      const currentTestForm = document.getElementById('test-form');
-      const currentTimerContainer = document.getElementById('timer');
-      const currentTimeLeftDisplay = document.getElementById('time-left');
-
-      if (initialTotalSeconds > 0) { // Only proceed if it's a timed test
-        currentTimerContainer.style.display = 'block';
-
-        if (timeLeft <= 0) { // Time is already up (either from server or calculated)
-            currentTimeLeftDisplay.textContent = "00:00";
-            console.log("Time is up or was 0 on load (dictation). Submitting form.");
-            if (currentTestForm) { 
-                if (!currentTestForm.dataset.submitted) {
-                    currentTestForm.dataset.submitted = "true";
-                    currentTestForm.submit();
-                }
-            }
-            return; 
-        }
-
-        updateTimerDisplay(); // Display initial time correctly
-
-        timerInterval = setInterval(() => {
-          timeLeft--;
-          updateTimerDisplay(); // updateTimerDisplay will use global timeLeft
-          if (timeLeft <= 0) {
-            clearInterval(timerInterval);
-            currentTimeLeftDisplay.textContent = "00:00";
-            console.log("Client timer reached zero (dictation). Submitting form.");
-            if (currentTestForm) { 
-                if (!currentTestForm.dataset.submitted) {
-                    currentTestForm.dataset.submitted = "true";
-                    currentTestForm.submit();
-                }
-            }
-          }
-        }, 1000);
-      } else {
-        currentTimerContainer.style.display = 'none'; // Not a timed test
-      }
-    }
-
-    function showWord(index) {
-      wordCards.forEach((card, i) => {
-        card.style.display = (i === index) ? 'flex' : 'none';
-      });
-      progressItems.forEach((item, i) => {
-        item.classList.toggle('current', i === index);
-        if (i < totalWords && i < wordsData.length) {
-            const testWordIdForProgress = wordsData[i][3];
-            const inputForProgress = document.getElementById('answer-' + testWordIdForProgress);
-            if (inputForProgress && inputForProgress.value.trim() !== '') {
-                item.classList.add('answered');
-            } else {
-                item.classList.remove('answered');
-            }
-        }
-      });
-      prevBtn.disabled = (index === 0);
-      nextBtn.style.display = (index === totalWords - 1 || totalWords === 0) ? 'none' : 'inline-flex';
-      submitBtn.style.display = (index === totalWords - 1 && totalWords > 0) ? 'inline-flex' : 'none';
-      
-      if (index < totalWords && index < wordCards.length && wordCards[index]) {
-        const currentInput = wordCards[index].querySelector('.word-input');
-        if (currentInput) {
-            currentInput.focus();
-        }
-      }
-      startTimer(); // Call startTimer after the word is shown and relevant elements are in DOM
-    }
-
-    function saveCurrentAnswer() {
-      if (currentIndex < totalWords && currentIndex < wordCards.length && wordCards[currentIndex]) {
-        const currentWordData = wordsData[currentIndex];
-        const testWordId = currentWordData[3];
-        const inputField = document.getElementById('answer-' + testWordId);
-        if (inputField) {
-          userAnswers[currentIndex] = inputField.value.trim();
-          if (currentIndex < progressItems.length) {
-            const progressItem = progressItems[currentIndex];
-            if (progressItem) {
-              if (inputField.value.trim() !== '') {
-                  progressItem.classList.add('answered');
-              } else {
-                  progressItem.classList.remove('answered');
-              }
-            }
-          }
-        }
-      }
-    }
-    
-    if (totalWords > 0) {
-        nextBtn.addEventListener('click', () => {
-          saveCurrentAnswer();
-          if (currentIndex < totalWords - 1) {
-            currentIndex++;
-            showWord(currentIndex);
-          }
-        });
-
-        prevBtn.addEventListener('click', () => {
-          saveCurrentAnswer();
-          if (currentIndex > 0) {
-            currentIndex--;
-            showWord(currentIndex);
-          }
-        });
+    <form id="dictationTestForm" method="POST" action="{{ url_for('submit_test', test_id=test_db_id) }}">
+        {# CSRF token - if you use Flask-WTF, ensure it's included #}
+        {# Example: <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"> #}
         
-        progressItems.forEach((item, index) => {
-            item.addEventListener('click', () => {
-                saveCurrentAnswer();
-                currentIndex = index;
-                showWord(currentIndex);
-            });
-        });
+        {% for word_data in words_data %}
+            {# word_data is a tuple: (word_placeholder, perevod_prompt, correct_answer_word, test_word_id) #}
+            <div class="dictation-word-container word-item" data-word-id="{{ word_data[3] }}">
+                <p class="lead">{{ word_data[1] }}</p> {# Display the hint/translation #}
+                
+                <div class="char-inputs-wrapper">
+                    {# Start with 3 input boxes per word. JS will add more. #}
+                    {% for i in range(3) %}
+                    <input type="text"                            name="dictation_answer_{{ word_data[3] }}_{{ i }}"                            class="dictation-char-input"                            maxlength="1"                            data-word-id="{{ word_data[3] }}"                            data-char-index="{{ i }}"                           autocomplete="off"                            spellcheck="false"                           aria-label="Character {{ i + 1 }} for word hint {{ word_data[1]|truncate(30) }}">
+                    {% endfor %}
+                </div>
+            </div>
+        {% else %}
+            <p style="text-align:center; color: var(--danger); padding: 20px; font-size: 1.1em;">В этом тесте нет слов для отображения.</p>
+        {% endfor %}
 
-        document.querySelectorAll('.word-input').forEach((input, index) => {
-            input.addEventListener('input', () => {
-                if(index < progressItems.length) {
-                    const correspondingProgressItem = progressItems[index];
-                    if (input.value.trim() !== '') {
-                        if(correspondingProgressItem) correspondingProgressItem.classList.add('answered');
-                    } else {
-                        if(correspondingProgressItem) correspondingProgressItem.classList.remove('answered');
-                    }
-                }
-            });
-             input.addEventListener('keypress', function(event) {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    if (currentIndex === totalWords - 1) {
-                        submitBtn.click();
-                    } else {
-                        nextBtn.click();
-                    }
-                }
-            });
-        });
+        {% if words_data %}
+            <div class="submit-btn-container">
+                <button type="submit" class="btn btn-primary btn-lg">Завершить тест</button>
+            </div>
+        {% else %}
+             <div class="submit-btn-container" style="border-top: none;">
+                <a href="{{ url_for('tests') }}" class="btn btn-secondary">Вернуться к списку тестов</a>
+            </div>
+        {% endif %}
+    </form>
+</div>
 
-        showWord(currentIndex);
-    } else {
-        prevBtn.style.display = 'none';
-        nextBtn.style.display = 'none';
-        submitBtn.style.display = 'none';
-        timerContainer.style.display = 'none';
-        if (document.getElementById('progress-bar-container')) {
-             document.getElementById('progress-bar-container').style.display = 'none';
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const testForm = document.getElementById('dictationTestForm');
+
+    document.querySelectorAll('.dictation-word-container').forEach(wordContainer => {
+        const charInputWrapper = wordContainer.querySelector('.char-inputs-wrapper');
+        if (charInputWrapper) {
+            charInputWrapper.querySelectorAll('.dictation-char-input').forEach(input => {
+                input.addEventListener('input', handleDictationInput);
+                input.addEventListener('keydown', handleKeyDown);
+            });
+        }
+    });
+
+    function handleDictationInput(event) {
+        const currentInput = event.target;
+        const wordContainer = currentInput.closest('.dictation-word-container');
+        const charInputWrapper = wordContainer.querySelector('.char-inputs-wrapper');
+        const wordId = wordContainer.dataset.wordId; // Use wordId from container
+
+        if (currentInput.value.length >= 1) { // Character was entered, or input has content
+            const charIndex = parseInt(currentInput.dataset.charIndex);
+            const nextCharIndex = charIndex + 1;
+            let nextInput = charInputWrapper.querySelector(`.dictation-char-input[data-char-index="${nextCharIndex}"]`);
+
+            if (nextInput) {
+                nextInput.focus();
+                nextInput.select(); // Select content for easier overwrite
+            } else {
+                // No next input, we are at the end. If this one is filled, a new one might be needed.
+                // checkAndAddNewInput will verify if ALL are full.
+                checkAndAddNewInput(wordContainer, wordId, charInputWrapper); 
+            }
+        }
+        // Always call checkAndAddNewInput after any input action.
+        // This ensures that if filling an earlier box makes all boxes full, a new one is added,
+        // or if the current input was the last one and got filled.
+        checkAndAddNewInput(wordContainer, wordId, charInputWrapper);
+    }
+    
+    function checkAndAddNewInput(wordContainer, wordId, charInputWrapper) {
+        const allInputsForWord = charInputWrapper.querySelectorAll('.dictation-char-input');
+        let allCurrentlyFilled = true; 
+
+        if (allInputsForWord.length === 0) {
+            // This case should ideally not happen if initial inputs are always present.
+            // If it occurs, it means there are no boxes to check, so not all are 'filled'.
+            allCurrentlyFilled = false;
+        } else {
+            for (const inp of allInputsForWord) {
+                if (inp.value.length === 0) {
+                    allCurrentlyFilled = false;
+                    break; // Exit loop as soon as one empty input is found
+                }
+            }
+        }
+
+        if (allCurrentlyFilled) {
+            // console.log(`All ${allInputsForWord.length} inputs for word ${wordId} are filled. Adding a new one.`);
+            addNewInputBox(wordContainer, wordId, allInputsForWord.length, charInputWrapper);
+        } else {
+            // console.log(`Not all inputs for word ${wordId} are filled (found ${allInputsForWord.length} inputs). Not adding a new one.`);
         }
     }
 
-    if (testForm) {
-        testForm.addEventListener('submit', function(event) {
-            saveCurrentAnswer(); 
-            clearInterval(timerInterval); 
-            console.log("Form submitted by user or timer (dictation).");
-        });
+    function addNewInputBox(wordContainer, wordId, newIndex, charInputWrapper) {
+        const newInput = document.createElement('input');
+        newInput.type = 'text';
+        newInput.name = `dictation_answer_${wordId}_${newIndex}`;
+        newInput.className = 'dictation-char-input';
+        newInput.maxLength = 1;
+        newInput.dataset.wordId = wordId;
+        newInput.dataset.charIndex = newIndex;
+        newInput.autocomplete = 'off';
+        newInput.spellcheck = false;
+        
+        let hintText = "current word";
+        const hintElement = wordContainer.querySelector('p.lead');
+        if (hintElement) {
+            hintText = hintElement.textContent.trim().substring(0,30);
+        }
+        newInput.setAttribute('aria-label', `Character ${newIndex + 1} for word hint ${hintText}`);
+
+        newInput.addEventListener('input', handleDictationInput);
+        newInput.addEventListener('keydown', handleKeyDown);
+
+        if (charInputWrapper) {
+            charInputWrapper.appendChild(newInput);
+            newInput.focus(); 
+        } else {
+            console.error("Error: Could not find .char-inputs-wrapper for wordId:", wordId, "when adding new input box.");
+        }
     }
 
-  </script>
+    function handleKeyDown(event) {
+        const currentInput = event.target;
+        const charIndex = parseInt(currentInput.dataset.charIndex);
+        const charInputWrapper = currentInput.closest('.char-inputs-wrapper');
+
+        if (event.key === 'Backspace' && currentInput.value === '') {
+            if (charIndex > 0) {
+                const prevCharIndex = charIndex - 1;
+                const prevInput = charInputWrapper.querySelector(`.dictation-char-input[data-char-index="${prevCharIndex}"]`);
+                if (prevInput) {
+                    prevInput.focus();
+                    prevInput.select(); // Select content on backspace navigation
+                    event.preventDefault(); 
+                }
+            }
+        } else if (event.key === 'ArrowLeft') {
+            if (charIndex > 0) {
+                const prevCharIndex = charIndex - 1;
+                const prevInput = charInputWrapper.querySelector(`.dictation-char-input[data-char-index="${prevCharIndex}"]`);
+                if (prevInput) {
+                    prevInput.focus();
+                    prevInput.select(); // Select content on arrow navigation
+                    event.preventDefault();
+                }
+            } else {
+                 event.preventDefault(); // Prevent moving out of first box to left
+            }
+        } else if (event.key === 'ArrowRight') {
+            const nextCharIndex = charIndex + 1;
+            const nextInput = charInputWrapper.querySelector(`.dictation-char-input[data-char-index="${nextCharIndex}"]`);
+            if (nextInput) {
+                nextInput.focus();
+                nextInput.select(); // Select content on arrow navigation
+                event.preventDefault();
+            } else {
+                event.preventDefault(); // Prevent moving out of last box to right
+            }
+        }
+    }
+
+    // Timer logic
+    const timeLeftSpan = document.getElementById('time-left');
+    let timeLimitSeconds = parseInt("{{ time_limit_seconds if time_limit_seconds else 0 }}", 10);
+    const isTeacherPreview = {{ is_teacher_preview|tojson }};
+    let testSubmittedByTimer = false;
+
+    if (timeLeftSpan && timeLimitSeconds > 0 && !isTeacherPreview) {
+        const timerDiv = document.getElementById('timer');
+        let remainingTime = parseInt("{{ remaining_time_seconds if remaining_time_seconds is not none else time_limit_seconds }}", 10);
+
+        if (remainingTime <= 0 && timeLimitSeconds > 0) { 
+            timeLeftSpan.textContent = "00:00";
+            timerDiv.innerHTML = "<strong>Время вышло!</strong> Тест будет отправлен автоматически.";
+            timerDiv.classList.add('almost-up');
+            if (testForm && !testSubmittedByTimer) {
+                testSubmittedByTimer = true;
+                testForm.submit();
+            }
+        } else if (remainingTime > 0) {
+            const interval = setInterval(() => {
+                if (testSubmittedByTimer) {
+                    clearInterval(interval);
+                    return;
+                }
+                remainingTime--;
+                const minutes = Math.floor(remainingTime / 60);
+                const seconds = remainingTime % 60;
+                timeLeftSpan.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+                if (remainingTime <= 60 && remainingTime > 10) { 
+                    timerDiv.classList.add('almost-up');
+                } else if (remainingTime <= 10 && remainingTime > 0) {
+                     timerDiv.classList.add('almost-up'); // Ensure class is there
+                     timerDiv.style.fontWeight = 'bold'; // Make text bold
+                }
+
+                if (remainingTime <= 0) {
+                    clearInterval(interval);
+                    timeLeftSpan.textContent = "00:00";
+                    timerDiv.innerHTML = "<strong>Время вышло!</strong> Тест отправляется...";
+                    if (testForm && !testSubmittedByTimer) {
+                         testSubmittedByTimer = true;
+                         testForm.submit();
+                    }
+                }
+            }, 1000);
+        }
+    }
+    
+    if (testForm) {
+        testForm.addEventListener('submit', function() {
+            const submitButton = testForm.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Отправка...';
+            }
+            testSubmittedByTimer = true; 
+        });
+
+        testForm.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && event.target.type === 'text' && event.target.classList.contains('dictation-char-input')) {
+                event.preventDefault();
+                const currentInput = event.target;
+                const wordId = currentInput.dataset.wordId;
+                const wordContainer = currentInput.closest('.dictation-word-container');
+                const charInputWrapper = wordContainer.querySelector('.char-inputs-wrapper');
+                
+                const charIndex = parseInt(currentInput.dataset.charIndex);
+                const nextCharIndex = charIndex + 1;
+                let nextInput = charInputWrapper.querySelector(`.dictation-char-input[data-char-index="${nextCharIndex}"]`);
+                
+                if (nextInput) {
+                    nextInput.focus();
+                } else { 
+                    checkAndAddNewInput(wordContainer, wordId, charInputWrapper);
+                    const allInputsNow = charInputWrapper.querySelectorAll('.dictation-char-input');
+                    if (allInputsNow.length > nextCharIndex) { 
+                         allInputsNow[nextCharIndex].focus();
+                    } else if (allInputsNow.length > 0) { // focus last one if new one not at nextCharIndex
+                        allInputsNow[allInputsNow.length -1].focus();
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
 </body>
 </html>
