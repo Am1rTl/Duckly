@@ -1089,11 +1089,16 @@ def registration():
         fio = request.form["fio"]
         username = request.form['username']
         password = request.form['password']
+        password_confirm = request.form.get('password_confirm') # New field
         class_number = request.form.get('class_number')
 
         if not class_number:
             error = "Please select a class"
-            return render_template('registration.html', error=error, classes=[str(i) for i in range(1, 12)])
+            return render_template('registration.html', error=error, classes=[str(i) for i in range(1, 12)], fio=fio, username=username)
+
+        if password != password_confirm:
+            error = "Пароли не совпадают"
+            return render_template('registration.html', error=error, fio=fio, username=username, selected_class=class_number, classes=[str(i) for i in range(1, 12)])
 
         existing_user = User.query.filter_by(nick=username).first()
         if existing_user:
