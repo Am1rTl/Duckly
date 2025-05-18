@@ -184,6 +184,38 @@
             color: var(--text);
             opacity: 0.8;
         }
+
+        /* Styles for add_letter reconstructed words */
+        .reconstructed-word {
+            letter-spacing: 0.5px; /* Adjust for readability */
+            font-family: monospace; /* Helps align characters if widths vary */
+        }
+        .student-input-char {
+            font-weight: bold;
+            border: 1px solid #999; /* Neutral border */
+            padding: 1px 3px;
+            border-radius: 3px;
+            margin: 0 1px;
+            display: inline-block; /* Ensures border wraps char */
+            line-height: 1;
+        }
+        .student-input-char.correct {
+            color: var(--success);
+            border-color: var(--success);
+            background-color: rgba(40, 167, 69, 0.1);
+        }
+        .student-input-char.incorrect {
+            color: var(--danger);
+            border-color: var(--danger);
+            background-color: rgba(220, 53, 69, 0.1);
+            /* text-decoration: line-through; */ /* Optional: can make it hard to read */
+        }
+        .student-input-char.missing {
+            color: #777;
+            border-style: dashed;
+            border-color: #aaa;
+            background-color: #f0f0f0;
+        }
     </style>
 </head>
 <body>
@@ -214,74 +246,79 @@
         </div>
 
         <div class="results-list">
-            {% if is_teacher %}
-                {# Teacher always sees details if results_summary is available #}
+            {% if is_teacher or show_detailed_results %}
                 {% if results_summary %}
-                    {% for result in results_summary %}
-                    <div class="result-item {% if result.is_correct %}correct{% else %}incorrect{% endif %}">
-                        <div class="word-pair">
-                            <span class="word">Вопрос: {{ result.question_presented }}</span>
-                        </div>
-                        {% if result.prompt_or_support and result.prompt_or_support != result.question_presented %}
-                            <div style="font-size: 0.9em; color: #555; margin-bottom: 5px;">
-                                Слово: {{ result.prompt_or_support }}
+                    {% for item in results_summary %}
+                    <div class="result-item {% if item.is_correct %}correct{% else %}incorrect{% endif %}">
+                        {% if test.type == 'add_letter' and item.student_reconstructed_parts %}
+                            <div class="word-pair">
+                                <span class="word">Задание: {{ item.question_presented }}</span> {# Original gapped word #}
                             </div>
-                        {% endif %}
-                        {% if result.is_correct %}
-                            <div class="answer">Ваш ответ: <span class="correct-answer">{{ result.user_answer if result.user_answer else 'Нет ответа' }}</span></div>
-                        {% else %}
-                            <div class="answer">Ваш ответ: <span class="user-answer">{{ result.user_answer if result.user_answer else 'Нет ответа' }}</span></div>
-                            <div class="answer">Правильный ответ: <span class="correct-answer">{{ result.actual_correct_answer }}</span></div>
-                        {% endif %}
-                         {% if result.options %} {# Display options for multiple choice #}
-                            <div style="margin-top: 5px; font-size:0.9em;">
-                                Варианты: {{ result.options.replace('|', ', ') }}
+                            {% if item.prompt_or_support %}
+                                <div style="font-size: 0.9em; color: #555; margin-bottom: 5px;">
+                                    Перевод: {{ item.prompt_or_support }}
+                                </div>
+                            {% endif %}
+                            <div class="answer">
+                                Ваш ответ: 
+                                <span class="reconstructed-word">
+                                    {% for part in item.student_reconstructed_parts %}
+                                        {% if part.is_student_input %}
+                                            <span class="student-input-char {% if part.is_correct_char %}correct{% elif part.is_correct_char == False %}incorrect{% else %}missing{% endif %}">{{ part.char }}</span>
+                                        {% else %}
+                                            <span>{{ part.char }}</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </span>
                             </div>
+                            {% if not item.is_correct and item.correct_reconstructed_parts %}
+                                <div class="answer" style="margin-top: 5px;">
+                                    Правильный ответ: 
+                                    <span class="reconstructed-word">
+                                        {% for part in item.correct_reconstructed_parts %}
+                                            {% if part.is_student_input %}
+                                                <span class="student-input-char correct">{{ part.char }}</span>
+                                            {% else %}
+                                                <span>{{ part.char }}</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </span>
+                                </div>
+                            {% endif %}
+                        {% else %} {# Fallback for other test types or if parts not available #}
+                            <div class="word-pair">
+                                <span class="word">Вопрос: {{ item.question_presented }}</span>
+                            </div>
+                            {% if item.prompt_or_support and item.prompt_or_support != item.question_presented %}
+                                <div style="font-size: 0.9em; color: #555; margin-bottom: 5px;">
+                                    Слово: {{ item.prompt_or_support }}
+                                </div>
+                            {% endif %}
+                            {% if item.is_correct %}
+                                <div class="answer">Ваш ответ: <span class="correct-answer">{{ item.user_answer if item.user_answer else 'Нет ответа' }}</span></div>
+                            {% else %}
+                                <div class="answer">Ваш ответ: <span class="user-answer">{{ item.user_answer if item.user_answer else 'Нет ответа' }}</span></div>
+                                <div class="answer">Правильный ответ: <span class="correct-answer">{{ item.actual_correct_answer }}</span></div>
+                            {% endif %}
+                            {% if item.options %} {# Display options for multiple choice #}
+                                <div style="margin-top: 5px; font-size:0.9em;">
+                                    Варианты: {{ item.options.replace('|', ', ') }}
+                                </div>
+                            {% endif %}
                         {% endif %}
                     </div>
                     {% endfor %}
                 {% else %}
                     <div class="result-item" style="text-align: center;">
-                        <p>Подробные результаты для этого теста не найдены или отсутствуют для данного ученика.</p>
+                        <p>Подробные результаты для этого теста не найдены или отсутствуют{% if not is_teacher %} для вашего текущего статуса просмотра{% endif %}.</p>
                     </div>
                 {% endif %}
-            {% elif show_detailed_results %}
-                 {# Student sees details if this flag is true and results_summary is available #}
-                {% if results_summary %}
-                    {% for result in results_summary %}
-                    <div class="result-item {% if result.is_correct %}correct{% else %}incorrect{% endif %}">
-                        <div class="word-pair">
-                            <span class="word">Вопрос: {{ result.question_presented }}</span>
-                        </div>
-                        {% if result.prompt_or_support and result.prompt_or_support != result.question_presented %}
-                            <div style="font-size: 0.9em; color: #555; margin-bottom: 5px;">
-                                Слово: {{ result.prompt_or_support }}
-                            </div>
-                        {% endif %}
-                        {% if result.is_correct %}
-                            <div class="answer">Ваш ответ: <span class="correct-answer">{{ result.user_answer if result.user_answer else 'Нет ответа' }}</span></div>
-                        {% else %}
-                            <div class="answer">Ваш ответ: <span class="user-answer">{{ result.user_answer if result.user_answer else 'Нет ответа' }}</span></div>
-                            <div class="answer">Правильный ответ: <span class="correct-answer">{{ result.actual_correct_answer }}</span></div>
-                        {% endif %}
-                         {% if result.options %} {# Display options for multiple choice #}
-                            <div style="margin-top: 5px; font-size:0.9em;">
-                                Варианты: {{ result.options.replace('|', ', ') }}
-                            </div>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="result-item" style="text-align: center;">
-                        <p>Подробные результаты для этого теста не найдены или отсутствуют.</p>
-                    </div>
-                {% endif %}
-            {% elif test.type == 'dictation' %} {# Implies not is_teacher and not show_detailed_results #}
+            {% elif test.type == 'dictation' %}
                 <div class="result-item" style="text-align: center;">
                     <p>Подробные результаты для диктантов доступны после того, как тест будет перенесен в архив учителем.</p>
                 </div>
-            {% else %} {# Implies not is_teacher and not show_detailed_results and test.type != 'dictation' #}
-                 <div class="result-item" style="text-align: center;">
+            {% else %}
+                <div class="result-item" style="text-align: center;">
                     <p>Подробные результаты для этого типа теста не отображаются в данный момент.</p> {# Fallback for other types if needed #}
                 </div>
             {% endif %}

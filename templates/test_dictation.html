@@ -272,10 +272,28 @@
 
   <script>
     let currentIndex = 0;
-    const wordsData = {{ words_data|tojson|safe }};
-    const totalWords = Array.isArray(wordsData) ? wordsData.length : 0;
-    const timeLimitInSeconds = {{ time_limit_seconds|default(0) }};
-    let timeLeft = timeLimitInSeconds;
+    // Ensure wordsData is an array
+    const wordsData = Array.isArray({{ words_data|tojson|safe }}) ? {{ words_data|tojson|safe }} : [];
+    const totalWords = wordsData.length;
+    
+    // Time variables
+    const initialTotalSecondsRaw = "{{ time_limit_seconds | default('0') }}";
+    const initialTotalSeconds = parseInt(initialTotalSecondsRaw, 10) || 0;
+
+    const remainingSecondsRaw = "{{ remaining_time_seconds | default('-1') }}";
+    let remainingSeconds = parseInt(remainingSecondsRaw, 10);
+
+    let timeLeft;
+    if (initialTotalSeconds > 0) { // It's a timed test
+        if (remainingSeconds >= 0) { // Server provided a valid remaining time
+            timeLeft = remainingSeconds;
+        } else { // Server didn't provide remaining time (or it was -1), use initial full duration
+            timeLeft = initialTotalSeconds;
+        }
+    } else { // Not a timed test
+        timeLeft = 0; // Timer won't run with this value if initialTotalSeconds is 0
+    }
+
     let timerInterval;
     
     const rawAnswers = {{ (current_test_result.answers if current_test_result and current_test_result.answers else '{}')|tojson|safe }};
@@ -313,6 +331,7 @@
     const submitBtn = document.getElementById('submit-btn');
     const timerDisplay = document.getElementById('time-left');
     const timerContainer = document.getElementById('timer');
+    const testForm = document.getElementById('test-form');
 
     function updateTimerDisplay() {
       const minutes = Math.floor(timeLeft / 60);
@@ -321,20 +340,45 @@
     }
 
     function startTimer() {
-      if (timeLimitInSeconds > 0) {
-        timerContainer.style.display = 'block';
-        updateTimerDisplay();
+      // Re-fetch elements inside function scope in case they are not global or ready at script parse time
+      const currentTestForm = document.getElementById('test-form');
+      const currentTimerContainer = document.getElementById('timer');
+      const currentTimeLeftDisplay = document.getElementById('time-left');
+
+      if (initialTotalSeconds > 0) { // Only proceed if it's a timed test
+        currentTimerContainer.style.display = 'block';
+
+        if (timeLeft <= 0) { // Time is already up (either from server or calculated)
+            currentTimeLeftDisplay.textContent = "00:00";
+            console.log("Time is up or was 0 on load (dictation). Submitting form.");
+            if (currentTestForm) { 
+                if (!currentTestForm.dataset.submitted) {
+                    currentTestForm.dataset.submitted = "true";
+                    currentTestForm.submit();
+                }
+            }
+            return; 
+        }
+
+        updateTimerDisplay(); // Display initial time correctly
+
         timerInterval = setInterval(() => {
           timeLeft--;
-          updateTimerDisplay();
+          updateTimerDisplay(); // updateTimerDisplay will use global timeLeft
           if (timeLeft <= 0) {
             clearInterval(timerInterval);
-            alert('Время вышло!');
-            if (document.getElementById('test-form')) document.getElementById('test-form').submit();
+            currentTimeLeftDisplay.textContent = "00:00";
+            console.log("Client timer reached zero (dictation). Submitting form.");
+            if (currentTestForm) { 
+                if (!currentTestForm.dataset.submitted) {
+                    currentTestForm.dataset.submitted = "true";
+                    currentTestForm.submit();
+                }
+            }
           }
         }, 1000);
       } else {
-        timerContainer.style.display = 'none';
+        currentTimerContainer.style.display = 'none'; // Not a timed test
       }
     }
 
@@ -364,6 +408,7 @@
             currentInput.focus();
         }
       }
+      startTimer(); // Call startTimer after the word is shown and relevant elements are in DOM
     }
 
     function saveCurrentAnswer() {
@@ -436,7 +481,6 @@
         });
 
         showWord(currentIndex);
-        startTimer();
     } else {
         prevBtn.style.display = 'none';
         nextBtn.style.display = 'none';
@@ -447,15 +491,11 @@
         }
     }
 
-    const testForm = document.getElementById('test-form');
     if (testForm) {
         testForm.addEventListener('submit', function(event) {
-            saveCurrentAnswer();
-            clearInterval(timerInterval);
-            // Display a confirmation dialog
-            if (!confirm('Вы точно готовы завершить тест?')) {
-                event.preventDefault(); // Prevent form submission if the user cancels
-            }
+            saveCurrentAnswer(); 
+            clearInterval(timerInterval); 
+            console.log("Form submitted by user or timer (dictation).");
         });
     }
 

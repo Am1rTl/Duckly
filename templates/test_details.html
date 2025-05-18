@@ -22,6 +22,7 @@
             --danger-color: #ff4757;
             --success-color: #2ed573;
             --warning-color: #ffa500; /* Added for in-progress status */
+            --info-color: #17a2b8; /* Teal for btn-info */
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             --shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.12);
             --navbar-text-color: #ffffff; /* Explicit navbar text color */
@@ -410,6 +411,36 @@
                 font-size: 0.9rem;
             }
         }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+        .btn-success:hover {
+            background-color: #25a25a; /* Darker green */
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: white; /* Consider black text for better contrast if needed */
+        }
+        .btn-warning:hover {
+            background-color: #e69500; /* Darker orange */
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .btn-info {
+            background-color: var(--info-color);
+            color: white;
+        }
+        .btn-info:hover {
+            background-color: #138496; /* Darker teal */
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
     </style>
 </head>
 <body>
@@ -436,7 +467,7 @@
             {% if test.time_limit %}
             <p><strong>Time Limit:</strong> <span style="color: var(--danger-color); font-weight: bold;">{{ test.time_limit }} minutes</span></p>
             {% endif %}
-            <p><strong>Status:</strong> <span style="color: {{ 'var(--success-color)' if test.is_active else 'var(--text-light)' }}; font-weight: bold;">{{ 'Active' if test.is_active else 'Archived' }}</span></p>
+            <p><strong>Status:</strong> <span style="font-weight: bold; color: {% if test.is_active %}var(--success-color){% else %}var(--text-light){% endif %};">{{ 'Active' if test.is_active else 'Archived' }}</span></p>
         </div>
 
         {% if is_teacher and test.is_active %}
@@ -522,12 +553,23 @@
 
         <div class="actions-container">
             <a href="{{ url_for('tests') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Tests</a>
-            {% if is_teacher and test.is_active %}
-                <form action="{{ url_for('archive_test', test_id=test.id) }}" method="POST">
-                    <button type="submit" class="btn btn-danger"><i class="fas fa-archive"></i> Archive Test</button>
+            {% if is_teacher %}
+                {% if test.is_active %}
+                    <form action="{{ url_for('archive_test', test_id=test.id) }}" method="POST" style="display: inline-block;">
+                        <button type="submit" class="btn btn-warning"><i class="fas fa-archive"></i> Archive Test</button>
+                    </form>
+                {% else %}
+                    <form action="{{ url_for('unarchive_test', test_id=test.id) }}" method="POST" style="display: inline-block;">
+                        <button type="submit" class="btn btn-success"><i class="fas fa-undo"></i> Unarchive Test</button>
+                    </form>
+                {% endif %}
+                <form action="{{ url_for('clear_test_results', test_id=test.id) }}" method="POST" style="display: inline-block; margin-left: 5px;" onsubmit="return confirm('Вы уверены, что хотите удалить все результаты для этого теста? Это действие необратимо.');">
+                    <button type="submit" class="btn btn-info"><i class="fas fa-eraser"></i> Clear Results</button>
                 </form>
-            {% elif is_teacher and not test.is_active %}
-                 <span class="status-archived-text"><i class="fas fa-exclamation-triangle"></i> This test is archived.</span>
+                <form action="{{ url_for('delete_test_completely', test_id=test.id) }}" method="POST" style="display: inline-block; margin-left: 5px;" onsubmit="return confirm('Вы уверены, что хотите ПОЛНОСТЬЮ удалить этот тест и все связанные с ним данные (результаты, слова)? Это действие необратимо.');">
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-trash-alt"></i> Delete Test</button>
+                </form>
+                {# Add other teacher actions here if needed, e.g., edit test #}
             {% endif %}
         </div>
     </div>

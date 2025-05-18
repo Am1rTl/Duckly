@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block title %}Настройка слов для теста: {{ test.title }}{% endblock %}
+
+{% block head_extra %}
+<style>
+    .word-config-item {
+        border: 1px solid #eee;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+    }
+    .word-original {
+        font-size: 1.4em;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 5px;
+    }
+    .word-translation {
+        font-style: italic;
+        color: #555;
+        margin-bottom: 10px;
+    }
+    .letter-selector span {
+        display: inline-block;
+        padding: 5px 10px;
+        margin: 2px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        cursor: pointer;
+        background-color: #fff;
+        user-select: none;
+    }
+    .letter-selector span.selected {
+        background-color: #6c63ff;
+        color: white;
+        border-color: #6c63ff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Настройка слов: <span>{{ test.title }}</span></h1>
+        <a href="{{ url_for('test_details', test_id=test.id) }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> К деталям теста
+        </a>
+    </div>
+    <p class="text-muted">Тест типа "Вставить букву" (ручной режим). Укажите, какие буквы должны быть пропущены в каждом слове.</p>
+    <p class="text-muted">Для каждого слова ниже, кликните по буквам, которые должны быть скрыты. Повторный клик отменит выбор буквы.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('configure_test_words', test_id=test.id) }}" id="configureWordsForm">
+        {% for word_obj in test_words %}
+        <div class="word-config-item card mb-3">
+            <div class="card-body">
+                <h5 class="card-title word-original">Слово: <span id="word-display-{{word_obj.id}}">{{ word_obj.word }}</span></h5>
+                {% if word_obj.perevod %}
+                <p class="card-subtitle mb-2 text-muted word-translation">Подсказка/перевод: {{ word_obj.perevod }}</p>
+                {% endif %}
+
+                <input type="hidden" 
+                       name="word_{{ word_obj.id }}_indices" 
+                       id="word_{{ word_obj.id }}_indices_input" 
+                       value="{{ word_obj.display_indices_for_form }}">
+                
+                <div class="mb-2">
+                    <label class="form-label fw-bold">Выберите буквы для пропуска кликом:</label>
+                    <div class="letter-selector" id="letter-selector-{{ word_obj.id }}" data-word-id="{{ word_obj.id }}" data-target-input="word_{{ word_obj.id }}_indices_input">
+                        {# JavaScript will populate this #}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <p>В этом тесте нет слов для настройки.</p>
+        {% endfor %}
+
+        {% if test_words %}
+        <div class="mt-4 form-actions">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-save"></i> Сохранить настройки букв
+            </button>
+            <a href="{{ url_for('test_details', test_id=test.id) }}" class="btn btn-secondary btn-lg">Отмена</a>
+        </div>
+        {% endif %}
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const letterSelectors = document.querySelectorAll('.letter-selector');
+
+    letterSelectors.forEach(selector => {
+        const wordId = selector.dataset.wordId;
+        const wordDisplaySpan = document.getElementById(`word-display-${wordId}`);
+        const targetInputId = selector.dataset.targetInput;
+        const targetInput = document.getElementById(targetInputId);
+        
+        if (!wordDisplaySpan || !targetInput) return;
+
+        const originalWord = wordDisplaySpan.textContent.trim(); // This is the word as saved (could be with gaps if re-editing)
+                                                              // We need the true original for selection.
+                                                              // For simplicity, current setup assumes word_obj.word in template is original.
+                                                              // This needs to be robust if page reloads with errors.
+                                                              // For initial creation, word_obj.word IS the original word.
+        
+        let selectedIndices = new Set();
+        if (targetInput.value) {
+            targetInput.value.split(',').forEach(idxStr => {
+                if (idxStr.trim() !== '') {
+                    selectedIndices.add(parseInt(idxStr.trim(), 10));
+                }
+            });
+        }
+
+        selector.innerHTML = ''; // Clear any placeholder
+
+        for (let i = 0; i < originalWord.length; i++) {
+            const charSpan = document.createElement('span');
+            charSpan.textContent = originalWord[i];
+            charSpan.dataset.index = i;
+            if (selectedIndices.has(i)) {
+                charSpan.classList.add('selected');
+            }
+
+            charSpan.addEventListener('click', function() {
+                const index = parseInt(this.dataset.index, 10);
+                if (selectedIndices.has(index)) {
+                    selectedIndices.delete(index);
+                    this.classList.remove('selected');
+                } else {
+                    selectedIndices.add(index);
+                    this.classList.add('selected');
+                }
+                targetInput.value = Array.from(selectedIndices).sort((a, b) => a - b).join(',');
+            });
+            selector.appendChild(charSpan);
+        }
+    });
+});
+</script>
+
+{% endblock %} 

@@ -123,6 +123,132 @@ def generate_test_data():
             ('green and yellow', 'зеленый и желтый'),
             ('blue and white', 'синий и белый'),
             ('red and green', 'красный и зеленый')
+        ],
+        'Family Members': [
+            ('mother', 'мама'),
+            ('father', 'папа'),
+            ('sister', 'сестра'),
+            ('brother', 'брат'),
+            ('grandmother', 'бабушка')
+        ],
+        'Relationships': [
+            ('family', 'семья'),
+            ('parents', 'родители'),
+            ('children', 'дети'),
+            ('relatives', 'родственники'),
+            ('cousin', 'двоюродный брат/сестра')
+        ],
+        'Family Activities': [
+            ('cook', 'готовить'),
+            ('clean', 'убирать'),
+            ('play', 'играть'),
+            ('read', 'читать'),
+            ('watch', 'смотреть')
+        ],
+        'Pets': [
+            ('dog', 'собака'),
+            ('cat', 'кошка'),
+            ('bird', 'птица'),
+            ('fish', 'рыба'),
+            ('hamster', 'хомяк')
+        ],
+        'Wild Animals': [
+            ('lion', 'лев'),
+            ('tiger', 'тигр'),
+            ('elephant', 'слон'),
+            ('monkey', 'обезьяна'),
+            ('giraffe', 'жираф')
+        ],
+        'Farm Animals': [
+            ('cow', 'корова'),
+            ('pig', 'свинья'),
+            ('sheep', 'овца'),
+            ('chicken', 'курица'),
+            ('horse', 'лошадь')
+        ],
+        'Fruits': [
+            ('apple', 'яблоко'),
+            ('banana', 'банан'),
+            ('orange', 'апельсин'),
+            ('grape', 'виноград'),
+            ('strawberry', 'клубника')
+        ],
+        'Vegetables': [
+            ('carrot', 'морковь'),
+            ('potato', 'картофель'),
+            ('tomato', 'помидор'),
+            ('cucumber', 'огурец'),
+            ('onion', 'лук')
+        ],
+        'Meals': [
+            ('breakfast', 'завтрак'),
+            ('lunch', 'обед'),
+            ('dinner', 'ужин'),
+            ('snack', 'перекус'),
+            ('dessert', 'десерт')
+        ],
+        'School Subjects': [
+            ('math', 'математика'),
+            ('science', 'наука'),
+            ('history', 'история'),
+            ('geography', 'география'),
+            ('literature', 'литература')
+        ],
+        'School Supplies': [
+            ('pencil', 'карандаш'),
+            ('notebook', 'тетрадь'),
+            ('book', 'книга'),
+            ('ruler', 'линейка'),
+            ('eraser', 'ластик')
+        ],
+        'School Activities': [
+            ('study', 'учиться'),
+            ('read', 'читать'),
+            ('write', 'писать'),
+            ('draw', 'рисовать'),
+            ('calculate', 'вычислять')
+        ],
+        'Weather Conditions': [
+            ('sunny', 'солнечно'),
+            ('rainy', 'дождливо'),
+            ('cloudy', 'облачно'),
+            ('windy', 'ветрено'),
+            ('snowy', 'снежно')
+        ],
+        'Seasons': [
+            ('spring', 'весна'),
+            ('summer', 'лето'),
+            ('autumn', 'осень'),
+            ('winter', 'зима'),
+            ('season', 'сезон')
+        ],
+        'Weather Forecast': [
+            ('temperature', 'температура'),
+            ('forecast', 'прогноз'),
+            ('degree', 'градус'),
+            ('weather', 'погода'),
+            ('climate', 'климат')
+        ],
+        'Basic Clothes': [
+            ('shirt', 'рубашка'),
+            ('pants', 'брюки'),
+            ('dress', 'платье'),
+            ('jacket', 'куртка'),
+            ('shoes', 'обувь')
+        ],
+        'Accessories': [
+            ('hat', 'шляпа'),
+            ('scarf', 'шарф'),
+            ('gloves', 'перчатки'),
+            ('belt', 'ремень'),
+            ('watch', 'часы')
+        ],
+        'Fashion': [
+            ('style', 'стиль'),
+            ('trend', 'тренд'),
+            ('design', 'дизайн'),
+            ('brand', 'бренд'),
+            ('collection', 'коллекция')
         ]
     }
 
@@ -160,12 +286,17 @@ def generate_test_data():
         for class_num in classes:
             for unit in units[class_num]:
                 for module in modules[unit]:
-                    # Если есть тестовые слова для модуля, используем их
+                    # Используем слова из словаря test_words
                     if module in test_words:
                         words = test_words[module]
                     else:
-                        # Иначе генерируем случайные слова
-                        words = [(f'word_{i}', f'перевод_{i}') for i in range(5)]
+                        # Если модуля нет в словаре, используем слова из похожего модуля
+                        similar_module = next((m for m in test_words.keys() if m.lower() in module.lower() or module.lower() in m.lower()), None)
+                        if similar_module:
+                            words = test_words[similar_module]
+                        else:
+                            # Если похожего модуля нет, используем базовые слова
+                            words = test_words['Basic Greetings']
                     
                     for word, translation in words:
                         new_word = Word(
