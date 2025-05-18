@@ -597,24 +597,38 @@ def test_id(id):
         return redirect(url_for('test_results', test_id=test.id, result_id=test_result.id))
 
     # GET request - show test
+    # The 'test_result' variable here is the one queried at the top of the function
+    # (i.e., an incomplete one, or None if no incomplete one is found)
 
-    # Ensure a TestResult exists for a student taking the test
-    if user.teacher == 'no': # Only create/manage TestResult for students here
-        if not test_result: # No incomplete TestResult found
-            # Check if there's any completed result to prevent re-creation if not allowed
-            # This logic might depend on whether retakes are permitted.
-            # For now, assume if no incomplete, and student is here, they are starting.
-            test_result = TestResult(
+    if user.teacher == 'no': # Student-specific logic for GET request
+        if test_result: # An incomplete test was found
+            if not test_result.started_at: # Ensure it has a start time if resuming
+                test_result.started_at = datetime.utcnow()
+                db.session.commit()
+            # Proceed to render test with this incomplete test_result
+        else: # No incomplete test_result was found (test_result is None from the initial query)
+            # Now, check if they have already COMPLETED this test
+            completed_test_run = TestResult.query.filter_by(
                 test_id=test.id,
-                user_id=user.id,
-                total_questions=len(test.test_words) if test.test_words else 0,
-                started_at=datetime.utcnow() # Set start time
-            )
-            db.session.add(test_result)
-            db.session.commit()
-        elif not test_result.started_at: # Should not happen if using default in model
-            test_result.started_at = datetime.utcnow()
-            db.session.commit()
+                user_id=user.id
+            ).filter(TestResult.completed_at.isnot(None)).order_by(TestResult.completed_at.desc()).first()
+
+            if completed_test_run:
+                # Student has already completed this test
+                flash("Вы уже завершили этот тест. Просмотр ваших результатов.", "info")
+                return redirect(url_for('test_results', test_id=test.id, result_id=completed_test_run.id))
+            else:
+                # No incomplete and no completed test found - student is starting for the first time
+                # Create a new TestResult instance. This 'test_result' variable will then be used for rendering.
+                test_result = TestResult(
+                    test_id=test.id,
+                    user_id=user.id,
+                    total_questions=len(test.test_words) if test.test_words else 0,
+                    started_at=datetime.utcnow()
+                )
+                db.session.add(test_result)
+                db.session.commit()
+                # 'test_result' now refers to the newly created one for rendering the test page.
 
     remaining_time_seconds = -1 # Default for unlimited time
     time_is_up_on_server = False
@@ -1840,25 +1854,34 @@ def clear_test_results(test_id):
     if not user or user.teacher != 'yes':
         flash("Только создатель теста может очистить его результаты.", "warning")
         if not user: session.pop('user_id', None)
-        return redirect(url_for('tests'))
+        return redirect(url_for('tests')) # Or back to test_details
 
     test = Test.query.get_or_404(test_id)
     if test.created_by != user.id:
         flash("Только создатель теста может очистить его результаты.", "warning")
         return redirect(url_for('test_details', test_id=test_id))
 
-    # Delete associated TestAnswer entries first due to foreign key constraints
-    answers_to_delete = TestAnswer.query.join(TestResult).filter(TestResult.test_id == test_id).all()
-    for answer in answers_to_delete:
-        db.session.delete(answer)
+    results_to_delete = TestResult.query.filter_by(test_id=test.id).all()
     
-    # Now delete TestResult entries
-    results_to_delete = TestResult.query.filter_by(test_id=test_id).all()
-    for result in results_to_delete:
-        db.session.delete(result)
-    
-    db.session.commit()
-    flash(f"Все результаты для теста '{test.title}' были успешно удалены.", "success")
+    if not results_to_delete:
+        flash(f"Нет результатов для очистки для теста '{test.title}'.", "info")
+        return redirect(url_for('test_details', test_id=test_id))
+
+    try:
+        for result in results_to_delete:
+            # Explicitly delete TestAnswer objects associated with this result
+            TestAnswer.query.filter_by(test_result_id=result.id).delete(synchronize_session=False)
+            # Now delete the TestResult object
+            db.session.delete(result)
+        
+        db.session.commit()
+        flash(f"Все результаты для теста '{test.title}' были успешно удалены.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Ошибка при удалении результатов теста: {str(e)}", "error")
+        # app.logger.error(f"Error clearing test results for test_id {test_id}: {e}") # Requires app.logger to be configured
+        print(f"Error clearing test results for test_id {test_id}: {e}") # simple print for now
+
     return redirect(url_for('test_details', test_id=test_id))
 
 @app.route("/test/<int:test_id>/delete", methods=['POST'])
@@ -2314,6 +2337,105 @@ def games():
         return redirect(url_for('login'))
         
     return render_template('games.html', is_teacher=user.teacher == 'yes')
+
+@app.route('/test_details_data/<int:test_id>')
+def test_details_data(test_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    user = User.query.get(session['user_id'])
+    if not user or user.teacher != 'yes': # Only teachers should access this live data endpoint
+        return jsonify({'error': 'Forbidden for non-teachers'}), 403
+
+    test = Test.query.get_or_404(test_id)
+    if test.created_by != user.id:
+        return jsonify({'error': 'Forbidden, not test creator'}), 403
+
+    students_in_class = User.query.filter_by(class_number=test.classs, teacher='no').all()
+    total_students_in_class = len(students_in_class)
+    all_results_for_test = TestResult.query.filter_by(test_id=test.id).all()
+
+    completed_students_details_json = []
+    in_progress_students_details_json = []
+    not_started_student_ids = {s.id for s in students_in_class}
+
+    for result in all_results_for_test:
+        student_user = User.query.get(result.user_id)
+        if not student_user or student_user.teacher == 'yes':
+            if student_user and result.user_id in not_started_student_ids:
+                not_started_student_ids.remove(result.user_id)
+            continue
+
+        if result.user_id in not_started_student_ids:
+            not_started_student_ids.remove(result.user_id)
+        
+        student_data = {
+            'id': student_user.id,
+            'fio': student_user.fio,
+            'nick': student_user.nick,
+            'result_id': result.id
+        }
+
+        if result.completed_at:
+            student_data.update({
+                'completed_at_iso': result.completed_at.isoformat() + "Z" if result.completed_at else None,
+                'score': result.score,
+                'correct_answers': result.correct_answers,
+                'total_questions': result.total_questions
+            })
+            completed_students_details_json.append(student_data)
+        else: # In progress
+            item_data_for_template = {
+                'remaining_time_display': "Без ограничений",
+                'has_time_limit': False,
+                'end_time_utc_iso': None,
+                'started_at_iso': result.started_at.isoformat() + "Z" if result.started_at else None
+            }
+            if test.time_limit and test.time_limit > 0 and result.started_at:
+                end_time_utc = result.started_at + timedelta(minutes=test.time_limit)
+                now_utc = datetime.utcnow()
+                item_data_for_template['has_time_limit'] = True
+                item_data_for_template['end_time_utc_iso'] = end_time_utc.isoformat() + "Z"
+                if now_utc < end_time_utc:
+                    remaining_delta = end_time_utc - now_utc
+                    hours, remainder = divmod(remaining_delta.total_seconds(), 3600)
+                    minutes, seconds_float = divmod(remainder, 60)
+                    seconds = int(seconds_float)
+                    if hours > 0:
+                        item_data_for_template['remaining_time_display'] = f"{int(hours)}h {int(minutes)}m {seconds}s left"
+                    else:
+                        item_data_for_template['remaining_time_display'] = f"{int(minutes)}m {seconds}s left"
+                else:
+                    item_data_for_template['remaining_time_display'] = "Время вышло"
+            student_data.update(item_data_for_template)
+            in_progress_students_details_json.append(student_data)
+
+    not_started_students_json = []
+    for uid in not_started_student_ids:
+        s_user = User.query.get(uid)
+        if s_user:
+            not_started_students_json.append({'id': s_user.id, 'fio': s_user.fio, 'nick': s_user.nick})
+    
+    completed_count = len(completed_students_details_json)
+    progress_percentage = (completed_count / total_students_in_class * 100) if total_students_in_class > 0 else 0
+
+    data_to_return = {
+        'test_id': test.id,
+        'test_title': test.title,
+        'is_active': test.is_active,
+        'total_students_in_class': total_students_in_class,
+        'completed_students_count': completed_count,
+        'in_progress_students_count': len(in_progress_students_details_json),
+        'not_started_students_count': len(not_started_students_json),
+        'progress_percentage': round(progress_percentage, 2),
+        'completed_students': completed_students_details_json,
+        'in_progress_students': in_progress_students_details_json,
+        'not_started_students': not_started_students_json,
+        'urls': { # For constructing links in JS if needed
+            'test_results_base': url_for('test_results', test_id=test.id, result_id=0)[:-1] # remove trailing 0
+        }
+    }
+    return jsonify(data_to_return)
 
 if __name__ == "__main__":
     with app.app_context():

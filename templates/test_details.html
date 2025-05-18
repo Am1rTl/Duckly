@@ -480,16 +480,16 @@
         <div class="card">
             <h2><i class="fas fa-tasks"></i> Overall Progress</h2>
              <div class="progress-bar-container">
-                <div class="progress-bar" data-percentage="{{ progress_percentage }}" style="width: {{ progress_percentage }}%;">
+                <div class="progress-bar" id="overall-progress-bar" data-percentage="{{ progress_percentage }}" style="width: {{ progress_percentage }}%;">
                     {{ "%.0f"|format(progress_percentage) }}%
                 </div>
             </div>
-            <p class="progress-label">{{ completed_students_details|length }} / {{ total_students_in_class }} student(s) completed</p>
+            <p class="progress-label" id="overall-progress-label">{{ completed_students_details|length }} / {{ total_students_in_class }} student(s) completed</p>
         </div>
 
         <div class="card student-section">
-            <h3><i class="fas fa-check-circle" style="color: var(--success-color);"></i> Completed Students ({{ completed_students_details|length }})</h3>
-            <div class="student-list">
+            <h3 id="completed-students-title"><i class="fas fa-check-circle" style="color: var(--success-color);"></i> Completed Students ({{ completed_students_details|length }})</h3>
+            <div class="student-list" id="completed-students-list">
                 {% if completed_students_details %}
                     <ul>
                         {% for item in completed_students_details %}
@@ -511,8 +511,8 @@
         </div>
 
         <div class="card student-section">
-            <h3><i class="fas fa-spinner fa-pulse" style="color: var(--warning-color);"></i> In Progress ({{ in_progress_students_details|length }})</h3>
-            <div class="student-list">
+            <h3 id="inprogress-students-title"><i class="fas fa-spinner fa-pulse" style="color: var(--warning-color);"></i> In Progress ({{ in_progress_students_details|length }})</h3>
+            <div class="student-list" id="inprogress-students-list">
                 {% if in_progress_students_details %}
                     <ul>
                         {% for item in in_progress_students_details %}
@@ -522,7 +522,7 @@
                                         <span class="student-name">{{ item.user.fio }} ({{ item.user.nick }})</span><br>
                                         <span class="student-meta">Started: {{ item.result.started_at.strftime('%d %b %Y, %H:%M') }}</span>
                                     </div>
-                                    <span class="student-meta">{{ item.remaining_time_display }}</span>
+                                    <span class="student-meta" id="remaining-time-{{item.result.id}}">{{ item.remaining_time_display }}</span>
                                 </a>
                             </li>
                         {% endfor %}
@@ -534,8 +534,8 @@
         </div>
         
         <div class="card student-section">
-            <h3><i class="fas fa-hourglass-half" style="color: #adb5bd;"></i> Not Started ({{ not_started_students|length }})</h3>
-            <div class="student-list">
+            <h3 id="notstarted-students-title"><i class="fas fa-hourglass-half" style="color: #adb5bd;"></i> Not Started ({{ not_started_students|length }})</h3>
+            <div class="student-list" id="notstarted-students-list">
                 {% if not_started_students %}
                     <ul>
                         {% for student in not_started_students %}
@@ -593,6 +593,171 @@
         }
         // The progress bar width is set via inline style with Jinja.
         // No additional JS needed for its initial rendering.
+
+        const TEST_ID = {{ test.id }};
+        const IS_TEACHER = {{ is_teacher|tojson }};
+        let inProgressStudentEndTimes = {}; // Object to store { resultId: endTimeISO }
+        let liveTimerIntervalId; // For the 1-second interval
+        
+        function formatDateTime(isoString) {
+            if (!isoString) return 'N/A';
+            const date = new Date(isoString);
+            return date.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function updateStudentList(listElement, titleElement, students, listType, urls) {
+            titleElement.innerHTML = `<i class="fas ${
+                listType === 'completed' ? 'fa-check-circle' : (listType === 'inprogress' ? 'fa-spinner fa-pulse' : 'fa-hourglass-half')
+            }" style="color: ${
+                listType === 'completed' ? 'var(--success-color)' : (listType === 'inprogress' ? 'var(--warning-color)' : '#adb5bd')
+            };"></i> ${listType.charAt(0).toUpperCase() + listType.slice(1)} Students (${students.length})`;
+
+            if (students.length === 0) {
+                listElement.innerHTML = `<p class="no-students">${
+                    listType === 'completed' ? 'No students have completed this test yet.' :
+                    listType === 'inprogress' ? 'No students are currently taking this test.' :
+                    'All students in the class have engaged with this test.'
+                }</p>`;
+                if (listType === 'inprogress') { // Clear end times if no one is in progress
+                    inProgressStudentEndTimes = {};
+                }
+                return;
+            }
+
+            let listHTML = '<ul>';
+            const currentInProgressFromServer = {}; // Track current in-progress students from this fetch
+
+            students.forEach(student => {
+                listHTML += `<li class="status-${listType}">`;
+                if (listType === 'completed' || listType === 'inprogress') {
+                    const resultsBaseUrl = urls.test_results_base;
+                    const studentResultUrl = `${resultsBaseUrl}${student.result_id}?user_id=${student.id}`;
+                    listHTML += `<a href="${studentResultUrl}" class="student-entry-link">`;
+                }
+                
+                listHTML += `<div>
+                                <span class="student-name">${student.fio} (${student.nick})</span><br>`;
+                if (listType === 'completed') {
+                    listHTML += `<span class="student-meta">Completed: ${formatDateTime(student.completed_at_iso)}</span>
+                               </div>
+                               <span class="student-score">Score: ${student.score}% (${student.correct_answers}/${student.total_questions})</span>`;
+                } else if (listType === 'inprogress') {
+                    listHTML += `<span class="student-meta">Started: ${formatDateTime(student.started_at_iso)}</span>
+                               </div>
+                               <span class="student-meta" id="remaining-time-${student.result_id}">${student.remaining_time_display}</span>`;
+                    // Store/update end time for live timer
+                    if (student.end_time_utc_iso) {
+                        inProgressStudentEndTimes[student.result_id] = student.end_time_utc_iso;
+                        currentInProgressFromServer[student.result_id] = true;
+                    }
+                } else { // notstarted
+                    listHTML += `</div>
+                               <span class="student-meta">Awaiting Start</span>`;
+                }
+                if (listType === 'completed' || listType === 'inprogress') {
+                    listHTML += `</a>`;
+                }
+                listHTML += `</li>`;
+            });
+            listHTML += '</ul>';
+            listElement.innerHTML = listHTML;
+
+            // Clean up inProgressStudentEndTimes for students no longer in progress
+            if (listType === 'inprogress') {
+                for (const resultId in inProgressStudentEndTimes) {
+                    if (!currentInProgressFromServer[resultId]) {
+                        delete inProgressStudentEndTimes[resultId];
+                    }
+                }
+            }
+        }
+
+        function updateIndividualTimers() {
+            if (Object.keys(inProgressStudentEndTimes).length === 0) return;
+
+            const now = new Date();
+            for (const resultId in inProgressStudentEndTimes) {
+                const endTimeISO = inProgressStudentEndTimes[resultId];
+                const timerElement = document.getElementById(`remaining-time-${resultId}`);
+                
+                if (timerElement && endTimeISO) {
+                    const endTime = new Date(endTimeISO);
+                    if (now >= endTime) {
+                        timerElement.textContent = "Время вышло!";
+                        // Optionally, remove from inProgressStudentEndTimes if you want to stop updating it after time is up
+                        // delete inProgressStudentEndTimes[resultId]; 
+                    } else {
+                        const diffSeconds = Math.round((endTime - now) / 1000);
+                        const hours = Math.floor(diffSeconds / 3600);
+                        const minutes = Math.floor((diffSeconds % 3600) / 60);
+                        const seconds = diffSeconds % 60;
+                        let displayString = "";
+                        if (hours > 0) displayString += `${hours}h `;
+                        if (minutes > 0 || hours > 0) displayString += `${minutes}m `;
+                        displayString += `${seconds}s left`;
+                        timerElement.textContent = displayString;
+                    }
+                }
+            }
+        }
+
+        async function fetchTestDetails() {
+            if (!IS_TEACHER) return; // Only fetch for teachers
+
+            try {
+                const url = '/test_details_data/' + TEST_ID; // Use string concatenation
+                const response = await fetch(url);
+                if (!response.ok) {
+                    console.error('Failed to fetch test details:', response.status, await response.text());
+                    if (response.status === 401 || response.status === 403) {
+                        // Stop further updates if auth fails
+                        clearInterval(intervalId); 
+                        console.warn("Stopping updates due to auth error.");
+                    }
+                    return;
+                }
+                const data = await response.json();
+
+                // Update Overall Progress
+                const progressBar = document.getElementById('overall-progress-bar');
+                const progressLabel = document.getElementById('overall-progress-label');
+                if (progressBar && progressLabel) {
+                    progressBar.style.width = data.progress_percentage + '%';
+                    progressBar.textContent = Math.round(data.progress_percentage) + '%';
+                    progressBar.setAttribute('data-percentage', data.progress_percentage);
+                    progressLabel.textContent = data.completed_students_count + ' / ' + data.total_students_in_class + ' student(s) completed';
+                }
+
+                // Update student lists
+                const completedListEl = document.getElementById('completed-students-list');
+                const completedTitleEl = document.getElementById('completed-students-title');
+                const inProgressListEl = document.getElementById('inprogress-students-list');
+                const inProgressTitleEl = document.getElementById('inprogress-students-title');
+                const notStartedListEl = document.getElementById('notstarted-students-list');
+                const notStartedTitleEl = document.getElementById('notstarted-students-title');
+
+                if (completedListEl && completedTitleEl) {
+                    updateStudentList(completedListEl, completedTitleEl, data.completed_students, 'completed', data.urls);
+                }
+                if (inProgressListEl && inProgressTitleEl) {
+                    updateStudentList(inProgressListEl, inProgressTitleEl, data.in_progress_students, 'inprogress', data.urls);
+                }
+                if (notStartedListEl && notStartedTitleEl) {
+                    updateStudentList(notStartedListEl, notStartedTitleEl, data.not_started_students, 'notstarted', data.urls);
+                }
+
+            } catch (error) {
+                console.error('Error fetching or processing test details:', error);
+            }
+        }
+
+        let intervalId;
+        if (IS_TEACHER) {
+            fetchTestDetails(); // Initial fetch
+            intervalId = setInterval(fetchTestDetails, 10000); // Fetch every 10 seconds
+            liveTimerIntervalId = setInterval(updateIndividualTimers, 1000); // Start 1-second timer for in-progress students
+        }
+
     </script>
 </body>
 </html> 
