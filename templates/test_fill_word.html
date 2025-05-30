@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Тест: Вписать слово - {{ test_title }}{% endblock %}
+
+{% block head_extra %}
+<style>
+    .question-item {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 1px solid #e0e0e0;
+    }
+    .question-item p.prompt { /* The translation shown as the question */
+        font-size: 1.2rem;
+        font-weight: 500;
+        margin-bottom: 5px;
+    }
+    .question-item small.instruction { /* "Впишите соответствующее слово (оригинал):" */
+        color: #555;
+        display: block;
+        margin-bottom: 10px;
+    }
+    #timer {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: var(--primary);
+        margin-bottom: 20px;
+        text-align: center;
+        padding: 10px;
+        background-color: var(--primary-light);
+        border-radius: 8px;
+        color: white;
+    }
+    .form-control {
+        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+    }
+    .form-control:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 0.25rem rgba(108, 99, 255, 0.25);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="text-center mb-4">
+                <h1>{{ test_title }}</h1>
+            </div>
+
+            <div id="timer"
+                 data-time-limit="{{ time_limit | default(0) }}"
+                 data-remaining-time-seconds="{{ remaining_time_seconds | default(-1) }}">
+                 Загрузка таймера...
+            </div>
+
+            {% if is_teacher_preview %}
+            <div class="alert alert-info" role="alert">
+                <strong>Режим предпросмотра:</strong> Вы просматриваете этот тест как учитель. Ответы не будут сохранены.
+            </div>
+            {% endif %}
+
+            <form method="POST" action="{{ url_for('submit_test', test_id=test_db_id) }}" id="fillWordTestForm">
+                {% for word_item in words %}
+                <div class="question-item shadow-sm">
+                    <p class="mb-1"><strong>Вопрос {{ loop.index }}:</strong></p>
+                    <p class="prompt">{{ word_item.word }}</p> {# This is the translation/prompt for the student #}
+                    {% if word_item.perevod %}
+                        <small class="instruction"><em>{{ word_item.perevod }}</em></small> {# This is the instruction e.g. "Впишите..." #}
+                    {% endif %}
+
+                    <div class="mt-2">
+                        <input type="text"
+                               name="answer_{{ word_item.id }}"
+                               id="answer_{{ word_item.id }}"
+                               class="form-control"
+                               required
+                               autocomplete="off"
+                               aria-label="Ответ на вопрос {{ loop.index }}">
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-warning" role="alert">
+                    В этом тесте нет вопросов.
+                </div>
+                {% endfor %}
+
+                {% if words %} {# Only show submit button if there are words #}
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-check-circle"></i> Завершить тест
+                    </button>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/test_fill_word.js') }}" defer></script>
+{% endblock %}

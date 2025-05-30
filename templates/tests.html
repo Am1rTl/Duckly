@@ -281,7 +281,7 @@
   </div>
 
   <div class="nav-tabs">
-    <a href="{{ url_for('words') }}" id="words" class="nav-tab"><i class="fas fa-book"></i>Слова</a>
+    <a href="{{ url_for('words.words') }}" id="words" class="nav-tab"><i class="fas fa-book"></i>Слова</a>
     <a href="{{ url_for('tests') }}" id="tests" class="nav-tab active"><i class="fas fa-file-alt"></i>Тесты</a>
     <a href="{{ url_for('games') }}" id="games" class="nav-tab"><i class="fas fa-gamepad"></i>Игры</a>
   </div>
@@ -438,7 +438,7 @@
     var backButton = document.getElementById("back");
     if (backButton) {
         backButton.onclick = function() { 
-            location.href = window.location.origin + '/hello'; 
+            location.href = "{{ url_for('hello') }}";
         };
     }
     // Navigation links (words, tests, games, addTestBtn) are <a> tags with hrefs.

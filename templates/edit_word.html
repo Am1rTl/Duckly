@@ -177,7 +177,7 @@
       <h1 class="page-title">Редактировать слово</h1>
     </div>
 
-    <form class="form-container" method="POST" action="/edit_word/{{ word.word }}?class={{ classs }}&unit={{ unit }}&module={{ module }}&perevod={{ word.perevod }}">
+    <form class="form-container" method="POST" action="{{ url_for('words.edit_word', word_id=word.id) }}">
 
       <div class="form-group">
         <label class="form-label" for="word">Слово:</label>
@@ -282,7 +282,7 @@
       }
       clearSelect(unitSelect, "--- Загрузка юнитов... ---");
       try {
-        const response = await fetch(`/get_units_for_class?class_name=${selectedClass}`);
+        const response = await fetch(`{{ url_for('words.get_units_for_class') }}?class_name=${selectedClass}`);
         const units = await response.json();
         clearSelect(unitSelect, "--- Выберите юнит ---", false); // Enable before populating
         populateSelect(unitSelect, units, "add_new_unit", "Добавить новый юнит...", preselectUnit);
@@ -311,7 +311,7 @@
       }
       clearSelect(moduleSelect, "--- Загрузка модулей... ---");
       try {
-        const response = await fetch(`/get_modules_for_unit?class_name=${selectedClass}&unit_name=${selectedUnit}`);
+        const response = await fetch(`{{ url_for('words.get_modules_for_unit') }}?class_name=${selectedClass}&unit_name=${selectedUnit}`);
         const modules = await response.json();
         clearSelect(moduleSelect, "", false); // No default text, allow empty selection
         populateSelect(moduleSelect, modules, "add_new_module", "Добавить новый модуль...", preselectModule, true);

@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Тест: Верно/Неверно - {{ test_title }}{% endblock %}
+
+{% block head_extra %}
+<style>
+    .question-item {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 1px solid #e0e0e0;
+    }
+    .question-item p {
+        font-size: 1.1rem;
+        margin-bottom: 5px;
+    }
+    .question-item small {
+        color: #555;
+        display: block;
+        margin-bottom: 10px;
+    }
+    .form-check-label {
+        font-weight: normal;
+    }
+    #timer {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: var(--primary);
+        margin-bottom: 20px;
+        text-align: center;
+        padding: 10px;
+        background-color: var(--primary-light);
+        border-radius: 8px;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="text-center mb-4">
+                <h1>{{ test_title }}</h1>
+            </div>
+
+            <div id="timer"
+                 data-time-limit="{{ time_limit | default(0) }}"
+                 data-remaining-time-seconds="{{ remaining_time_seconds | default(-1) }}">
+                 Загрузка таймера...
+            </div>
+
+            {% if is_teacher_preview %}
+            <div class="alert alert-info" role="alert">
+                <strong>Режим предпросмотра:</strong> Вы просматриваете этот тест как учитель. Ответы не будут сохранены.
+            </div>
+            {% endif %}
+
+            <form method="POST" action="{{ url_for('submit_test', test_id=test_db_id) }}" id="trueFalseTestForm">
+                {% for word_item in words %}
+                <div class="question-item shadow-sm">
+                    <p class="mb-1"><strong>Вопрос {{ loop.index }}:</strong></p>
+                    <p>{{ word_item.word }}</p>
+                    {% if word_item.perevod and word_item.perevod != "Верно или неверно?" %}
+                        <small><em>Подсказка: {{ word_item.perevod }}</em></small>
+                    {% endif %}
+
+                    <div class="mt-2">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="answer_{{ word_item.id }}" id="answer_{{ word_item.id }}_true" value="True" required>
+                            <label class="form-check-label" for="answer_{{ word_item.id }}_true">Верно</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="answer_{{ word_item.id }}" id="answer_{{ word_item.id }}_false" value="False">
+                            <label class="form-check-label" for="answer_{{ word_item.id }}_false">Неверно</label>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-warning" role="alert">
+                    В этом тесте нет вопросов.
+                </div>
+                {% endfor %}
+
+                {% if words %} {# Only show submit button if there are words #}
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-check-circle"></i> Завершить тест
+                    </button>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/test_true_false.js') }}" defer></script>
+{% endblock %}

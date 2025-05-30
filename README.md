@@ -56,6 +56,23 @@ This project is a web-based educational platform, likely designed for language l
 *   **Templating:** Jinja2
 *   **Containerization:** Docker
 
+## Configuration
+
+Before running the application, especially in a production-like environment, you should configure a `SECRET_KEY`. This key is used by Flask for session management and other security-related purposes.
+
+*   **Environment Variable:** `SECRET_KEY`
+*   **How to set:**
+    *   When running with Docker (recommended), you can set this environment variable using the `-e` flag:
+        ```bash
+        docker run -e SECRET_KEY='your_very_strong_and_unique_secret_key' ... other_docker_options ... duckly-app
+        ```
+    *   If running locally without Docker (for development), you can set it in your shell:
+        ```bash
+        export SECRET_KEY='your_development_secret_key'
+        python site_1.py
+        ```
+*   **Default:** If `SECRET_KEY` is not set, the application will use a default, insecure key suitable only for development. **It is crucial to set a strong, unique secret key for any production deployment.**
+
 ## Setup and Installation
 
 The application is designed to be run using Docker.

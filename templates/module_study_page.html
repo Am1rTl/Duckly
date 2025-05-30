@@ -277,7 +277,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <a href="{{ url_for('words') }}" class="back-button"><i class="fas fa-arrow-left"></i> К словарю</a>
+            <a href="{{ url_for('words.words') }}" class="back-button"><i class="fas fa-arrow-left"></i> К словарю</a>
             <h1 class="page-main-title">{{ page_title }}</h1>
             <div></div> </div>
 
@@ -380,16 +380,22 @@
             updateCardActionButtons(wordObj);
         }
         
+        const editWordUrlBase = "{{ url_for('words.edit_word', word_id='ID_PLACEHOLDER') }}";
+
+        function getEditUrl(wordId) {
+          return editWordUrlBase.replace('ID_PLACEHOLDER', wordId);
+        }
+
         function updateCardActionButtons(wordObj) {
-            const editUrl = `/edit_word/${encodeURIComponent(wordObj.word)}?class=${encodeURIComponent(className)}&unit=${encodeURIComponent(unitName)}&module=${encodeURIComponent(moduleName)}&perevod=${encodeURIComponent(wordObj.perevod)}`;
+            const editUrl = getEditUrl(wordObj.id);
             cardActionsBar.innerHTML = `
                 <a href="${editUrl}" class="action-btn btn-edit">
                     <i class="fas fa-edit"></i> Редактировать
                 </a>
                 <button class="action-btn btn-delete" 
-                        data-word="${encodeURIComponent(wordObj.word)}"
-                        data-perevod="${encodeURIComponent(wordObj.perevod)}"
-                        onclick="handleDeleteWord(this.dataset.word, this.dataset.perevod, true)">
+                        data-word-id="${wordObj.id}"
+                        data-word-text="${encodeURIComponent(wordObj.word)}"
+                        onclick="handleDeleteWord(this.dataset.wordId, this.dataset.wordText, true)">
                     <i class="fas fa-trash"></i> Удалить
                 </button>
             `;
@@ -417,56 +423,57 @@
                 cellWord.textContent = wordObj.word;
                 cellTranslation.textContent = wordObj.perevod;
 
-                const editUrl = `/edit_word/${encodeURIComponent(wordObj.word)}?class=${encodeURIComponent(className)}&unit=${encodeURIComponent(unitName)}&module=${encodeURIComponent(moduleName)}&perevod=${encodeURIComponent(wordObj.perevod)}`;
+                const editUrl = getEditUrl(wordObj.id);
 
                 cellActions.innerHTML = `
                     <a href="${editUrl}" class="action-btn btn-edit">
                         <i class="fas fa-edit"></i> Редактировать
                     </a>
                     <button class="action-btn btn-delete" 
-                            data-word="${encodeURIComponent(wordObj.word)}"
-                            data-perevod="${encodeURIComponent(wordObj.perevod)}"
-                            onclick="handleDeleteWord(this.dataset.word, this.dataset.perevod, false)">
+                            data-word-id="${wordObj.id}"
+                            data-word-text="${encodeURIComponent(wordObj.word)}"
+                            onclick="handleDeleteWord(this.dataset.wordId, this.dataset.wordText, false)">
                         <i class="fas fa-trash"></i> Удалить
                     </button>
                 `;
             });
         }
         
-        function handleDeleteWord(word, perevod, isCardView) {
-            const decodedWord = decodeURIComponent(word);
-            if (confirm(`Вы уверены, что хотите удалить слово "${decodedWord}"?`)) {
-                fetch(`/delete_word/${word}`, { // word is already URL encoded from dataset
+        function handleDeleteWord(wordId, wordText, isCardView) { // Changed params
+            const decodedWordText = decodeURIComponent(wordText); // Use wordText for confirmation
+            if (confirm(`Вы уверены, что хотите удалить слово "${decodedWordText}" (ID: ${wordId})?`)) {
+                fetch(`/delete_word/${wordId}`, { // Use wordId in URL
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        class: className,
-                        unit: unitName,
-                        module: moduleName
-                        // 'perevod' might not be needed by backend if word+class+unit+module is unique
-                    })
+                        'Content-Type': 'application/json', // Still good practice, though body is empty
+                        // Add CSRF token header here if needed by your Flask app
+                    }
+                    // No body needed for DELETE by ID as per words_bp
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(errData => { throw new Error(errData.error || `Server error: ${response.status}`); });
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success) {
-                        alert(`Слово "${decodedWord}" успешно удалено.`);
+                        alert(`Слово "${decodedWordText}" успешно удалено.`);
                         // Remove word from local wordsData and refresh view
-                        const indexToRemove = wordsData.findIndex(w => w.word === decodedWord && w.perevod === decodeURIComponent(perevod));
+                        const indexToRemove = wordsData.findIndex(w => w.id === parseInt(wordId)); // Find by ID
                         if (indexToRemove > -1) {
                             wordsData.splice(indexToRemove, 1);
                             if (currentView === 'cards') {
                                 if (wordsData.length === 0) {
                                     currentCardIndex = 0;
-                                    displayCard(currentCardIndex); // Will show "no words"
+                                    displayCard(currentCardIndex);
                                 } else if (currentCardIndex >= wordsData.length) {
                                     currentCardIndex = wordsData.length - 1;
                                     displayCard(currentCardIndex);
                                 } else {
                                     displayCard(currentCardIndex);
                                 }
-                            } else {
+                            } else { // Table view
                                 populateTable();
                             }
                         }

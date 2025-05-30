@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Флэш-карточки - Выбор модуля{% endblock %}
+
+{% block head_extra %}
+<style>
+    .form-container {
+        max-width: 600px;
+        margin: 40px auto;
+        padding: 30px;
+        background-color: #fff;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    }
+    .form-container h1 {
+        color: var(--secondary);
+        text-align: center;
+        margin-bottom: 25px;
+    }
+    .form-label {
+        font-weight: 500;
+        color: var(--text);
+    }
+    .form-select, .btn-primary {
+        border-radius: 8px;
+    }
+    .btn-primary {
+        padding: 10px 20px;
+        font-size: 1.05rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="form-container">
+        <h1>Выберите модуль для флэш-карточек</h1>
+        <form id="selectModuleForm">
+            <div class="mb-3">
+                <label for="class_select" class="form-label">Класс:</label>
+                <select id="class_select" name="class_select" class="form-select" required>
+                    <option value="">Выберите класс...</option>
+                    {% for class_item in classes %}
+                    <option value="{{ class_item }}">{{ class_item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="unit_select" class="form-label">Юнит:</label>
+                <select id="unit_select" name="unit_select" class="form-select" required disabled>
+                    <option value="">Сначала выберите класс...</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="module_select" class="form-label">Модуль:</label>
+                <select id="module_select" name="module_select" class="form-select" required disabled>
+                    <option value="">Сначала выберите юнит...</option>
+                </select>
+            </div>
+
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary">Начать!</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const classSelect = document.getElementById('class_select');
+    const unitSelect = document.getElementById('unit_select');
+    const moduleSelect = document.getElementById('module_select');
+    const selectForm = document.getElementById('selectModuleForm');
+
+    classSelect.addEventListener('change', function() {
+        const className = this.value;
+        unitSelect.innerHTML = '<option value="">Загрузка юнитов...</option>';
+        unitSelect.disabled = true;
+        moduleSelect.innerHTML = '<option value="">Сначала выберите юнит...</option>';
+        moduleSelect.disabled = true;
+
+        if (className) {
+            fetch(`/get_units_for_class?class_name=${encodeURIComponent(className)}`)
+                .then(response => response.json())
+                .then(units => {
+                    unitSelect.innerHTML = '<option value="">Выберите юнит...</option>';
+                    units.forEach(unit => {
+                        const option = new Option(unit, unit);
+                        unitSelect.add(option);
+                    });
+                    unitSelect.disabled = units.length === 0;
+                    if (units.length === 0) {
+                         unitSelect.innerHTML = '<option value="">Нет юнитов для этого класса</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching units:', error);
+                    unitSelect.innerHTML = '<option value="">Ошибка загрузки юнитов</option>';
+                });
+        } else {
+            unitSelect.innerHTML = '<option value="">Сначала выберите класс...</option>';
+        }
+    });
+
+    unitSelect.addEventListener('change', function() {
+        const className = classSelect.value;
+        const unitName = this.value;
+        moduleSelect.innerHTML = '<option value="">Загрузка модулей...</option>';
+        moduleSelect.disabled = true;
+
+        if (className && unitName) {
+            fetch(`/get_modules_for_unit?class_name=${encodeURIComponent(className)}&unit_name=${encodeURIComponent(unitName)}`)
+                .then(response => response.json())
+                .then(modules => {
+                    moduleSelect.innerHTML = '<option value="">Выберите модуль...</option>';
+                    modules.forEach(module => {
+                        const option = new Option(module, module);
+                        moduleSelect.add(option);
+                    });
+                    moduleSelect.disabled = modules.length === 0;
+                     if (modules.length === 0) {
+                         moduleSelect.innerHTML = '<option value="">Нет модулей для этого юнита</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching modules:', error);
+                    moduleSelect.innerHTML = '<option value="">Ошибка загрузки модулей</option>';
+                });
+        } else {
+            moduleSelect.innerHTML = '<option value="">Сначала выберите юнит...</option>';
+        }
+    });
+
+    selectForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        const selectedClass = classSelect.value;
+        const selectedUnit = unitSelect.value;
+        const selectedModule = moduleSelect.value;
+
+        if (selectedClass && selectedUnit && selectedModule) {
+            // Construct the URL and redirect
+            const gameUrl = `/games/flashcards/${encodeURIComponent(selectedClass)}/${encodeURIComponent(selectedUnit)}/${encodeURIComponent(selectedModule)}`;
+            window.location.href = gameUrl;
+        } else {
+            // Handle error or prompt user to make selections
+            alert('Пожалуйста, выберите класс, юнит и модуль.');
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -7,4 +7,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 EXPOSE 1800
 
-CMD ["sh", "-c", "rm -f app.db && python site_1.py"]
+CMD ["sh", "-c", "python site_1.py"]

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Тест: Множественный выбор - {{ test_title }}{% endblock %}
+
+{% block head_extra %}
+<style>
+    .question-item {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 1px solid #e0e0e0;
+    }
+    .question-item p.prompt {
+        font-size: 1.2rem;
+        font-weight: 500;
+        margin-bottom: 5px;
+    }
+    .question-item small.instruction {
+        color: #555;
+        display: block;
+        margin-bottom: 10px;
+    }
+    .form-check {
+        margin-bottom: 0.5rem;
+    }
+    .form-check-label {
+        font-weight: normal;
+    }
+    #timer {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: var(--primary);
+        margin-bottom: 20px;
+        text-align: center;
+        padding: 10px;
+        background-color: var(--primary-light);
+        border-radius: 8px;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="text-center mb-4">
+                <h1>{{ test_title }}</h1>
+            </div>
+
+            <div id="timer"
+                 data-time-limit="{{ time_limit | default(0) }}"
+                 data-remaining-time-seconds="{{ remaining_time_seconds | default(-1) }}">
+                 Загрузка таймера...
+            </div>
+
+            {% if is_teacher_preview %}
+            <div class="alert alert-info" role="alert">
+                <strong>Режим предпросмотра:</strong> Вы просматриваете этот тест как учитель. Ответы не будут сохранены.
+            </div>
+            {% endif %}
+
+            <form method="POST" action="{{ url_for('submit_test', test_id=test_db_id) }}" id="mcmTestForm">
+                {% for word_item in words %}
+                <div class="question-item shadow-sm">
+                    <p class="mb-1"><strong>Вопрос {{ loop.index }}:</strong></p>
+                    <p class="prompt">{{ word_item.word }}</p> {# Question/Prompt, e.g., the translation/definition #}
+                    {% if word_item.perevod %}
+                        <small class="instruction"><em>{{ word_item.perevod }}</em></small> {# Instruction, e.g., "Выберите все подходящие варианты:" #}
+                    {% endif %}
+
+                    <div class="mt-2">
+                        {% set options_list = word_item.options.split('|') %}
+                        {% for option in options_list %}
+                        <div class="form-check">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   name="answer_{{ word_item.id }}"
+                                   value="{{ option }}"
+                                   id="option_{{ word_item.id }}_{{ loop.index0 }}">
+                            <label class="form-check-label" for="option_{{ word_item.id }}_{{ loop.index0 }}">
+                                {{ option }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                        {# No hidden sentinel needed if backend uses getlist and handles empty lists correctly #}
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-warning" role="alert">
+                    В этом тесте нет вопросов.
+                </div>
+                {% endfor %}
+
+                {% if words %}
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-check-circle"></i> Завершить тест
+                    </button>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/test_multiple_choice_multiple.js') }}" defer></script>
+{% endblock %}

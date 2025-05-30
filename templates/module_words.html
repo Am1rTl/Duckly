@@ -316,9 +316,9 @@
     </div>
 
     <div class="link-box">
-      <input type="text" id="quizletLink" value="{{ url_for('quizlet_cards', class_name=class_name, unit_name=unit_name, module_name=module_name, _external=True) }}" readonly>
+      <input type="text" id="quizletLink" value="{{ url_for('words.quizlet_cards', class_name=class_name, unit_name=unit_name, module_name=module_name, _external=True) }}" readonly>
       <button class="btn btn-primary" onclick="copyLink()"><i class="fas fa-copy"></i> Копировать ссылку</button>
-      <a href="{{ url_for('quizlet_cards', class_name=class_name, unit_name=unit_name, module_name=module_name) }}" class="btn btn-primary"><i class="fas fa-external-link-alt"></i> Перейти к карточкам</a>
+      <a href="{{ url_for('words.quizlet_cards', class_name=class_name, unit_name=unit_name, module_name=module_name) }}" class="btn btn-primary"><i class="fas fa-external-link-alt"></i> Перейти к карточкам</a>
     </div>
 
     <div class="view-toggle">
@@ -395,7 +395,8 @@
       // Add event listener for the add words button
       document.getElementById('addWordsButton').addEventListener('click', function() {
         // Redirect to add_words page with pre-selected class, unit, and module
-        window.location.href = '/add_words?class={{ class_name }}&unit={{ unit_name }}&module={{ module_name }}';
+        const addWordsUrl = `{{ url_for('words.add_words') }}?class={{ class_name|urlencode }}&unit={{ unit_name|urlencode }}&module={{ module_name|urlencode }}`;
+        window.location.href = addWordsUrl;
       });
     };
   </script>

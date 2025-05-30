@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Добавить тест (Расширенный)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -42,6 +43,13 @@
         .custom-word-pair input { flex-grow: 1; }
         .btn-remove-word { background: var(--danger); color: white; border: none; border-radius: 8px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
         .btn-add-field { background: var(--success); font-size:0.9rem; padding: 8px 15px; margin-top:5px;}
+
+        /* Accordion Custom Styles */
+        .accordion-button { background-color: var(--primary-light); color: var(--primary-dark); font-weight: 500; }
+        .accordion-button:not(.collapsed) { background-color: var(--primary); color: white; }
+        .accordion-button:focus { box-shadow: var(--input-focus-shadow); }
+        .accordion-item { border-color: var(--border); margin-bottom: 10px; border-radius: 8px !important; overflow: hidden;}
+        .accordion-body { padding: 20px; }
     </style>
 </head>
 <body>
@@ -57,379 +65,197 @@
         </div>
 
         <form method="POST" action="{{ url_for('add_tests') }}">
-            <div class="form-grid">
-                <div class="form-group full-width">
-                    <label for="title">Название теста</label>
-                    <input type="text" id="title" name="title" placeholder="Введите название теста" required>
-            </div>
+            <div class="accordion" id="addTestAccordion">
+                <!-- Accordion Item 1: Basic Information -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingOne">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                            Основные настройки теста
+                        </button>
+                    </h2>
+                    <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#addTestAccordion">
+                        <div class="accordion-body">
+                            <div class="form-grid">
+                                <div class="form-group full-width">
+                                    <label for="title">Название теста</label>
+                                    <input type="text" id="title" name="title" placeholder="Введите название теста" required class="form-control">
+                                </div>
 
-            <div class="form-group">
-                    <label for="class_number">Для какого класса</label>
-                    <select id="class_number" name="class_number" required>
-                    <option value="">Выберите класс</option>
-                        {% for class_val in classes %}
-                        <option value="{{ class_val }}">{{ class_val }} класс</option>
-                    {% endfor %}
-                </select>
-            </div>
+                                <div class="form-group">
+                                    <label for="class_number">Для какого класса</label>
+                                    <select id="class_number" name="class_number" required class="form-select">
+                                        <option value="">Выберите класс</option>
+                                        {% for class_val in classes %}
+                                        <option value="{{ class_val }}">{{ class_val }} класс</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
 
-            <div class="form-group">
-                    <label for="test_type">Тип теста</label>
-                    <select id="test_type" name="test_type" required>
-                        <option value="">Выберите тип теста</option>
-                        <option value="dictation">Диктант</option>
-                        <option value="add_letter">Вставить букву</option>
-                        <option value="true_false">Верно/Неверно</option>
-                        <option value="multiple_choice_single">Выбор ответа (один правильный)</option>
-                        <option value="multiple_choice_multiple">Выбор ответа (несколько правильных)</option>
-                        <option value="fill_word">Вписать слово (по переводу)</option>
-                </select>
-            </div>
+                                <div class="form-group">
+                                    <label for="test_type">Тип теста</label>
+                                    <select id="test_type" name="test_type" required class="form-select">
+                                        <option value="">Выберите тип теста</option>
+                                        <option value="dictation">Диктант</option>
+                                        <option value="add_letter">Вставить букву</option>
+                                        <option value="true_false">Верно/Неверно</option>
+                                        <option value="multiple_choice_single">Выбор ответа (один правильный)</option>
+                                        <option value="multiple_choice_multiple">Выбор ответа (несколько правильных)</option>
+                                        <option value="fill_word">Вписать слово (по переводу)</option>
+                                    </select>
+                                </div>
 
-            <div class="form-group">
-                    <label for="time_limit">Лимит времени (минуты, 0 - нет лимита)</label>
-                    <input type="number" id="time_limit" name="time_limit" min="0" value="0">
-                </div>
+                                <div class="form-group">
+                                    <label for="time_limit">Лимит времени (минуты, 0 - нет лимита)</label>
+                                    <input type="number" id="time_limit" name="time_limit" min="0" value="0" class="form-control">
+                                </div>
 
-                <div class="form-group">
-                    <label for="word_order">Порядок слов</label>
-                    <select id="word_order" name="word_order" required>
-                        <option value="sequential">Последовательно</option>
-                        <option value="random">Случайно</option>
-                    </select>
-                </div>
-                
-                <div class="form-group" id="word_count_general_group">
-                    <label for="word_count">Общее макс. количество слов (0 или пусто - без ограничения)</label>
-                    <input type="number" id="word_count" name="word_count" min="0" placeholder="Все выбранные слова" value="0">
-                </div>
-            </div>
-            
-            <hr style="margin-top: 30px; margin-bottom: 20px; border-color: var(--border); opacity: 0.5;">
+                                <div class="form-group">
+                                    <label for="word_order">Порядок слов</label>
+                                    <select id="word_order" name="word_order" required class="form-select">
+                                        <option value="sequential">Последовательно</option>
+                                        <option value="random">Случайно</option>
+                                    </select>
+                                </div>
 
-            <div class="form-group full-width" style="margin-bottom: 25px;">
-                <h2 style="font-size:1.4rem; color: var(--secondary); border-bottom: 2px solid var(--primary-light); padding-bottom: 8px; margin-bottom:15px;">Источники слов для теста</h2>
-                <label for="word_source_type">Выберите, откуда брать слова:</label>
-                 <select id="word_source_type" name="word_source_type">
-                    <option value="modules_only" selected>Только из выбранных модулей</option>
-                    <option value="custom_only">Только свои слова (ввести ниже)</option>
-                    <option value="modules_and_custom">Из модулей И свои слова</option>
-                </select>
-            </div>
-
-            <!-- Module Selection Area (becomes primary container for module related settings) -->
-            <div id="module_selection_area_container" class="form-group full-width" style="display: block; border: 1px solid var(--border); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                <h3 style="margin-bottom: 15px; color: var(--secondary); font-size: 1.2rem;">Настройка слов из модулей</h3>
-                <div id="module_selection_inputs"> 
-                    <label>Выберите Юнит и Модуль:</label>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="unit_select_main">Юнит:</label>
-                            <select id="unit_select_main" name="unit_select_main" disabled>
-                                <option value="">Сначала выберите класс</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="module_select_main">Модуль:</label>
-                            <select id="module_select_main" name="module_select_main" disabled>
-                                <option value="">Сначала выберите юнит</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div id="selected_modules_display_container" style="margin-top:10px;">
-                         <label>Выбранные модули для теста:</label>
-                         <div id="selected_modules_list" class="module-list-container" style="min-height:50px; background-color: #f9f9f9;">
-                            <!-- Selected modules will be listed here -->
-                            <p><em>Модули не выбраны.</em></p>
-                         </div>
-                    </div>
-                     <button type="button" id="add_module_to_test_btn" class="btn-add-field" style="background-color: var(--primary-light); color: var(--primary-dark); margin-top:10px;">
-                        <i class="fas fa-plus"></i> Добавить выбранный модуль в тест
-                    </button>
-                </div>
-
-                <!-- Conditional Dictation Options (now inside module area) -->
-                <div id="dictation_options_group" style="display: none; margin-top: 20px; padding-top:20px; border-top: 1px solid var(--border);">
-                    <h4 style="margin-bottom: 15px; color: var(--primary-dark);">Как использовать слова из модулей (для диктанта):</h4>
-                    <div class="form-group">
-                        <label style="font-weight:normal; margin-bottom:10px;">Способ выбора слов из добавленных модулей:</label>
-                        <div>
-                            <input type="radio" id="dict_src_all" name="dictation_word_source" value="all_module" checked>
-                            <label for="dict_src_all" style="font-weight: normal; margin-right: 15px;">Все слова из выбранных модулей</label>
-                        </div>
-                        <div>
-                            <input type="radio" id="dict_src_random" name="dictation_word_source" value="random_from_module">
-                            <label for="dict_src_random" style="font-weight: normal; margin-right: 15px;">Случайные слова из выбранных модулей</label>
-                        </div>
-                        <div>
-                            <input type="radio" id="dict_src_specific" name="dictation_word_source" value="selected_specific">
-                            <label for="dict_src_specific" style="font-weight: normal;">Выбрать конкретные слова из модулей</label>
-                        </div>
-                    </div>
-
-                    <div class="form-group" id="dictation_random_word_count_group" style="display: none; margin-top: 10px;">
-                        <label for="dictation_random_word_count">Количество случайных слов из модулей</label>
-                        <input type="number" id="dictation_random_word_count" name="dictation_random_word_count" min="1" class="form-control">
-                    </div>
-
-                    <div class="form-group" id="dictation_specific_words_group" style="display: none; margin-top: 10px;">
-                        <label>Выберите слова (из добавленных в тест модулей):</label>
-                        <div id="specific_words_checkbox_container" class="module-list-container">
-                            <p>Сначала выберите модули выше.</p>
+                                <div class="form-group" id="word_count_general_group">
+                                    <label for="word_count">Общее макс. количество слов (0 или пусто - без ограничения)</label>
+                                    <input type="number" id="word_count" name="word_count" min="0" placeholder="Все выбранные слова" value="0" class="form-control">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <!-- End Conditional Dictation Options -->
-            </div>
 
-            <!-- Custom Words Area -->
-            <div id="custom_words_area_container" class="form-group full-width" style="display: none; border: 1px solid var(--border); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                 <h3 style="margin-bottom: 15px; color: var(--secondary); font-size: 1.2rem;">Собственные слова</h3>
-                <div id="custom_word_pairs_container">
-                    <div class="custom-word-pair">
-                        <input type="text" name="custom_words[]" placeholder="Слово">
-                        <input type="text" name="custom_translations[]" placeholder="Перевод">
-                        <button type="button" class="btn-remove-word" onclick="removeWordPair(this)"><i class="fas fa-times"></i></button>
+                <!-- Accordion Item 2: Word Sources and Configuration -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingTwo">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                            Источники и настройка слов
+                        </button>
+                    </h2>
+                    <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#addTestAccordion">
+                        <div class="accordion-body">
+                            <div class="form-group full-width" style="margin-bottom: 25px;">
+                                <h2 style="font-size:1.4rem; color: var(--secondary); border-bottom: 2px solid var(--primary-light); padding-bottom: 8px; margin-bottom:15px;">Источники слов для теста</h2>
+                                <label for="word_source_type">Выберите, откуда брать слова:</label>
+                                 <select id="word_source_type" name="word_source_type" class="form-select">
+                                    <option value="modules_only" selected>Только из выбранных модулей</option>
+                                    <option value="custom_only">Только свои слова (ввести ниже)</option>
+                                    <option value="modules_and_custom">Из модулей И свои слова</option>
+                                </select>
+                            </div>
+
+                            <!-- Module Selection Area -->
+                            <div id="module_selection_area_container" class="form-group full-width" style="display: block; border: 1px solid var(--border); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                <h3 style="margin-bottom: 15px; color: var(--secondary); font-size: 1.2rem;">Настройка слов из модулей</h3>
+                                <div id="module_selection_inputs">
+                                    <label>Выберите Юнит и Модуль:</label>
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label for="unit_select_main">Юнит:</label>
+                                            <select id="unit_select_main" name="unit_select_main" disabled class="form-select">
+                                                <option value="">Сначала выберите класс</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="module_select_main">Модуль:</label>
+                                            <select id="module_select_main" name="module_select_main" disabled class="form-select">
+                                                <option value="">Сначала выберите юнит</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div id="selected_modules_display_container" style="margin-top:10px;">
+                                         <label>Выбранные модули для теста:</label>
+                                         <div id="selected_modules_list" class="module-list-container" style="min-height:50px; background-color: #f9f9f9;">
+                                            <p><em>Модули не выбраны.</em></p>
+                                         </div>
+                                    </div>
+                                     <button type="button" id="add_module_to_test_btn" class="btn-add-field btn btn-sm" style="background-color: var(--primary-light); color: var(--primary-dark); margin-top:10px;">
+                                        <i class="fas fa-plus"></i> Добавить выбранный модуль в тест
+                                    </button>
+                                </div>
+
+                                <!-- Conditional Dictation Options -->
+                                <div id="dictation_options_group" style="display: none; margin-top: 20px; padding-top:20px; border-top: 1px solid var(--border);">
+                                    <h4 style="margin-bottom: 15px; color: var(--primary-dark);">Как использовать слова из модулей (для диктанта):</h4>
+                                    <div class="form-group">
+                                        <label style="font-weight:normal; margin-bottom:10px;">Способ выбора слов из добавленных модулей:</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" id="dict_src_all" name="dictation_word_source" value="all_module" checked>
+                                            <label class="form-check-label" for="dict_src_all" style="font-weight: normal;">Все слова из выбранных модулей</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" id="dict_src_random" name="dictation_word_source" value="random_from_module">
+                                            <label class="form-check-label" for="dict_src_random" style="font-weight: normal;">Случайные слова из выбранных модулей</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" id="dict_src_specific" name="dictation_word_source" value="selected_specific">
+                                            <label class="form-check-label" for="dict_src_specific" style="font-weight: normal;">Выбрать конкретные слова из модулей</label>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group" id="dictation_random_word_count_group" style="display: none; margin-top: 10px;">
+                                        <label for="dictation_random_word_count">Количество случайных слов из модулей</label>
+                                        <input type="number" id="dictation_random_word_count" name="dictation_random_word_count" min="1" class="form-control">
+                                    </div>
+
+                                    <div class="form-group" id="dictation_specific_words_group" style="display: none; margin-top: 10px;">
+                                        <label>Выберите слова (из добавленных в тест модулей):</label>
+                                        <div id="specific_words_checkbox_container" class="module-list-container">
+                                            <p>Сначала выберите модули выше.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Custom Words Area -->
+                            <div id="custom_words_area_container" class="form-group full-width" style="display: none; border: 1px solid var(--border); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                 <h3 style="margin-bottom: 15px; color: var(--secondary); font-size: 1.2rem;">Собственные слова</h3>
+                                <div id="custom_word_pairs_container">
+                                    <div class="custom-word-pair">
+                                        <input type="text" name="custom_words[]" placeholder="Слово" class="form-control">
+                                        <input type="text" name="custom_translations[]" placeholder="Перевод" class="form-control">
+                                        <button type="button" class="btn-remove-custom-word btn btn-danger btn-sm"><i class="fas fa-times"></i></button>
+                                    </div>
+                                </div>
+                                <button type="button" id="add_custom_word_pair_btn" class="btn-add-field btn btn-success btn-sm">
+                                    <i class="fas fa-plus"></i> Добавить еще слово
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <button type="button" id="add_custom_word_pair_btn" class="btn-add-field">
-                    <i class="fas fa-plus"></i> Добавить еще слово
-                </button>
-            </div>
-            
-            <div id="add_letter_mode_container" class="form-group full-width" style="display:none; margin-top:15px; padding-top:15px; border-top:1px solid #eee;">
-                <label for="test_mode">Режим для теста "Вставить букву"</label>
-                <select id="test_mode" name="test_mode">
-                    <option value="random_letters">Пропустить случайные буквы</option>
-                    <option value="manual_letters">Указать пропускаемые буквы вручную (на следующем шаге)</option>
-                </select>
+
+                <!-- Accordion Item 3: Test Type Specific Settings -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingThree">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                            Специфичные настройки типа теста
+                        </button>
+                    </h2>
+                    <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#addTestAccordion">
+                        <div class="accordion-body">
+                            <div id="add_letter_mode_container" class="form-group full-width" style="display:none; margin-top:15px; padding-top:15px;">
+                                <label for="test_mode">Режим для теста "Вставить букву"</label>
+                                <select id="test_mode" name="test_mode" class="form-select">
+                                    <option value="random_letters">Пропустить случайные буквы</option>
+                                    <option value="manual_letters">Указать пропускаемые буквы вручную (на следующем шаге)</option>
+                                </select>
+                            </div>
+                            <!-- Other test-type specific settings can be added here -->
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="form-actions">
-                <button type="submit" class="btn-submit">
+                <button type="submit" class="btn-submit btn">
                     <i class="fas fa-plus-circle"></i> Создать тест
                 </button>
             </div>
         </form>
     </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const classSelect = document.getElementById('class_number');
-            const unitSelectMain = document.getElementById('unit_select_main');
-            const moduleSelectMain = document.getElementById('module_select_main');
-            const addModuleToTestBtn = document.getElementById('add_module_to_test_btn');
-            const selectedModulesListDiv = document.getElementById('selected_modules_list');
-            const form = document.querySelector('form');
-
-            const testTypeSelect = document.getElementById('test_type');
-            const dictationOptionsGroup = document.getElementById('dictation_options_group');
-            const dictationWordSourceRadios = document.querySelectorAll('input[name="dictation_word_source"]');
-            const randomWordCountGroup = document.getElementById('dictation_random_word_count_group');
-            const specificWordsGroup = document.getElementById('dictation_specific_words_group');
-            const specificWordsCheckboxContainer = document.getElementById('specific_words_checkbox_container');
-            
-            const wordSourceTypeSelect = document.getElementById('word_source_type');
-            const moduleSelectionArea = document.getElementById('module_selection_area_container');
-            const customWordsArea = document.getElementById('custom_words_area_container');
-            const addLetterModeContainer = document.getElementById('add_letter_mode_container');
-
-
-            function updateUnitOptions(units) {
-                unitSelectMain.innerHTML = '<option value="">Выберите юнит</option>';
-                        units.forEach(unit => {
-                    unitSelectMain.innerHTML += `<option value="${unit}">${unit}</option>`;
-                });
-                unitSelectMain.disabled = units.length === 0;
-                moduleSelectMain.innerHTML = '<option value="">Сначала выберите юнит</option>';
-                moduleSelectMain.disabled = true;
-            }
-
-            function updateModuleOptions(modules) {
-                moduleSelectMain.innerHTML = '<option value="">Выберите модуль</option>';
-                modules.forEach(module => {
-                    moduleSelectMain.innerHTML += `<option value="${module}">${module}</option>`;
-                });
-                moduleSelectMain.disabled = modules.length === 0;
-            }
-
-            classSelect.addEventListener('change', function() {
-                const classValue = this.value;
-                if (classValue) {
-                    fetch(`/get_units_for_class?class_name=${classValue}`)
-                        .then(response => response.json()).then(updateUnitOptions);
-                } else {
-                    updateUnitOptions([]);
-                }
-                // Clear selected modules when class changes
-                selectedModulesListDiv.innerHTML = '<p><em>Модули не выбраны.</em></p>';
-                document.querySelectorAll('input[name="modules[]"]').forEach(inp => inp.remove());
-                if (testTypeSelect.value === 'dictation') fetchWordsForSpecificSelection(); // Re-fetch/clear words
-            });
-
-            unitSelectMain.addEventListener('change', function() {
-                const classValue = classSelect.value;
-            const unitValue = this.value;
-                if (unitValue && classValue) {
-                    fetch(`/get_modules_for_unit?class_name=${classValue}&unit_name=${unitValue}`)
-                        .then(response => response.json()).then(updateModuleOptions);
-                } else {
-                    updateModuleOptions([]);
-                }
-            });
-
-            let selectedModulesForTest = [];
-
-            addModuleToTestBtn.addEventListener('click', function() {
-                const classVal = classSelect.value;
-                const unitVal = unitSelectMain.value;
-                const moduleVal = moduleSelectMain.value;
-
-                if (classVal && unitVal && moduleVal) {
-                    const moduleIdentifier = `${classVal}|${unitVal}|${moduleVal}`;
-                    if (!selectedModulesForTest.includes(moduleIdentifier)) {
-                        selectedModulesForTest.push(moduleIdentifier);
-                        
-                        const hiddenInput = document.createElement('input');
-                        hiddenInput.type = 'hidden';
-                        hiddenInput.name = 'modules[]';
-                        hiddenInput.value = moduleIdentifier;
-                        hiddenInput.id = `hidden-module-${moduleIdentifier.replace(/[^a-zA-Z0-9]/g, '-')}`;
-                        form.appendChild(hiddenInput);
-
-                        if (selectedModulesListDiv.querySelector('p')) {
-                            selectedModulesListDiv.innerHTML = ''; // Clear "Модули не выбраны"
-                        }
-                        const itemDiv = document.createElement('div');
-                        itemDiv.classList.add('module-item-display');
-                        itemDiv.textContent = `${classVal} класс - ${unitVal} - ${moduleVal}`;
-                        itemDiv.dataset.identifier = moduleIdentifier;
-                        
-                        const removeBtn = document.createElement('button');
-                        removeBtn.innerHTML = '<i class="fas fa-times"></i>';
-                        removeBtn.type = 'button';
-                        removeBtn.style.marginLeft = '10px';
-                        removeBtn.style.background = 'var(--danger)';
-                        removeBtn.style.color = 'white';
-                        removeBtn.style.border = 'none';
-                        removeBtn.style.padding = '3px 6px';
-                        removeBtn.style.fontSize = '0.7rem';
-                        removeBtn.style.cursor = 'pointer';
-                        removeBtn.onclick = function() {
-                            selectedModulesForTest = selectedModulesForTest.filter(id => id !== moduleIdentifier);
-                            document.getElementById(`hidden-module-${moduleIdentifier.replace(/[^a-zA-Z0-9]/g, '-')}`).remove();
-                            itemDiv.remove();
-                            if (selectedModulesForTest.length === 0) {
-                                selectedModulesListDiv.innerHTML = '<p><em>Модули не выбраны.</em></p>';
-                            }
-                            if (testTypeSelect.value === 'dictation') fetchWordsForSpecificSelection(); // Re-fetch
-                        };
-                        itemDiv.appendChild(removeBtn);
-                        selectedModulesListDiv.appendChild(itemDiv);
-                        if (testTypeSelect.value === 'dictation') fetchWordsForSpecificSelection(); // Re-fetch
-                    } else {
-                        alert('Этот модуль уже добавлен.');
-                    }
-                } else {
-                    alert('Пожалуйста, выберите класс, юнит и модуль.');
-                }
-            });
-            
-            wordSourceTypeSelect.addEventListener('change', function() {
-                const involvesModules = (this.value === 'modules_only' || this.value === 'modules_and_custom');
-                const involvesCustom = (this.value === 'custom_only' || this.value === 'modules_and_custom');
-
-                moduleSelectionArea.style.display = involvesModules ? 'block' : 'none';
-                customWordsArea.style.display = involvesCustom ? 'block' : 'none';
-                
-                toggleDictationOptions(); // Call to update dictation options visibility
-            });
-            
-            testTypeSelect.addEventListener('change', function() {
-                addLetterModeContainer.style.display = this.value === 'add_letter' ? 'block' : 'none';
-                toggleDictationOptions();
-            });
-
-            // Dictation specific options visibility
-            function toggleDictationOptions() {
-                const isDictation = testTypeSelect.value === 'dictation';
-                const usesModules = wordSourceTypeSelect.value === 'modules_only' || wordSourceTypeSelect.value === 'modules_and_custom';
-                
-                if (isDictation && usesModules) {
-                    dictationOptionsGroup.style.display = 'block';
-                    updateDictationSubOptions();
-                } else {
-                    dictationOptionsGroup.style.display = 'none';
-                    // Ensure sub-options are also hidden if the main group is hidden
-                    if(randomWordCountGroup) randomWordCountGroup.style.display = 'none';
-                    if(specificWordsGroup) specificWordsGroup.style.display = 'none';
-                }
-            }
-
-            function updateDictationSubOptions() {
-                let selectedSource = document.querySelector('input[name="dictation_word_source"]:checked').value;
-                if(randomWordCountGroup) randomWordCountGroup.style.display = (selectedSource === 'random_from_module') ? 'block' : 'none';
-                if(specificWordsGroup) {
-                    specificWordsGroup.style.display = (selectedSource === 'selected_specific') ? 'block' : 'none';
-                    if (selectedSource === 'selected_specific') fetchWordsForSpecificSelection();
-                }
-            }
-            
-            dictationWordSourceRadios.forEach(radio => radio.addEventListener('change', updateDictationSubOptions));
-            
-            function fetchWordsForSpecificSelection() {
-                const currentSelectedModuleIdentifiers = Array.from(document.querySelectorAll('input[name="modules[]"]')).map(cb => cb.value);
-                specificWordsCheckboxContainer.innerHTML = '<p>Загрузка слов...</p>';
-
-                if (currentSelectedModuleIdentifiers.length === 0 && document.querySelector('input[name="dictation_word_source"]:checked').value === 'selected_specific') {
-                    specificWordsCheckboxContainer.innerHTML = '<p>Сначала добавьте модули в тест выше, чтобы увидеть слова для выбора.</p>'; return;
-                }
-                
-                if (currentSelectedModuleIdentifiers.length > 0) {
-                    fetch(`/get_words_for_module_selection?modules=${currentSelectedModuleIdentifiers.join(',')}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        specificWordsCheckboxContainer.innerHTML = ''; 
-                        if (data.words && data.words.length > 0) {
-                            data.words.forEach(word => {
-                                const div = document.createElement('div'); div.classList.add('module-item');
-                                const checkbox = document.createElement('input');
-                                checkbox.type = 'checkbox'; checkbox.name = 'dictation_specific_word_ids[]';
-                                checkbox.value = word.id; checkbox.id = 'dict_word_sel_' + word.id;
-                                const label = document.createElement('label');
-                                label.htmlFor = 'dict_word_sel_' + word.id; label.textContent = word.text;
-                                div.appendChild(checkbox); div.appendChild(label);
-                                specificWordsCheckboxContainer.appendChild(div);
-                            });
-                        } else { specificWordsCheckboxContainer.innerHTML = '<p>Нет слов в выбранных модулях.</p>'; }
-                    })
-                    .catch(error => { console.error('Error fetching words for dictation:', error); specificWordsCheckboxContainer.innerHTML = '<p>Ошибка при загрузке слов.</p>'; });
-                } else if (document.querySelector('input[name="dictation_word_source"]:checked').value === 'selected_specific') {
-                     specificWordsCheckboxContainer.innerHTML = '<p>Сначала добавьте модули в тест выше.</p>';
-                }
-            }
-            
-            // Initial state setup
-            toggleDictationOptions();
-            wordSourceTypeSelect.dispatchEvent(new Event('change')); // Trigger initial visibility for module/custom areas
-            testTypeSelect.dispatchEvent(new Event('change')); // Trigger for add_letter and dictation options
-            
-            // Custom word pair logic
-            document.getElementById('add_custom_word_pair_btn').addEventListener('click', function() {
-                const container = document.getElementById('custom_word_pairs_container');
-                const newPair = document.createElement('div');
-                newPair.classList.add('custom-word-pair');
-                newPair.innerHTML = `
-                    <input type="text" name="custom_words[]" placeholder="Слово">
-                    <input type="text" name="custom_translations[]" placeholder="Перевод">
-                    <button type="button" class="btn-remove-word" onclick="removeWordPair(this)"><i class="fas fa-times"></i></button>
-                `;
-                container.appendChild(newPair);
-            });
-        });
-        function removeWordPair(button) { // Global scope for inline onclick
-            button.closest('.custom-word-pair').remove();
-        }
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/add_tests.js') }}" defer></script>
 </body>
 </html>
