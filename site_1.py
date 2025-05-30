@@ -10,13 +10,24 @@ from datetime import datetime, timedelta
 import json
 import subprocess # Added to run external scripts
 import re # Add this at the top with other imports
+import os # Added for os.makedirs
+
+# Blueprint imports
+from blueprints.auth import auth_bp
+from blueprints.words import words_bp
+from blueprints.words import words_bp
 
 
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+# Create instance folder if it doesn't exist
+try:
+    os.makedirs(app.instance_path, exist_ok=True)
+except OSError as e:
+    print(f"Error creating instance directory {app.instance_path}: {e}")
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.secret_key = 'your-super-secret-key-12345'  # Added secret key for session management
+app.secret_key = os.environ.get('SECRET_KEY', 'a-default-development-secret-key')  # Load secret key from env var
 db = SQLAlchemy(app)
 
 class User(db.Model):
@@ -100,6 +111,30 @@ class TestAnswer(db.Model):
 
     test_word = db.relationship('TestWord', backref=db.backref('answers', lazy=True))
 
+class UserWordReview(db.Model):
+    __tablename__ = 'user_word_reviews'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    word_id = db.Column(db.Integer, db.ForeignKey('words.id'), nullable=False)
+    next_review_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    interval_days = db.Column(db.Integer, default=0) # Current interval in days
+    ease_factor = db.Column(db.Float, default=2.5) # Standard SM-2 starting ease
+    last_reviewed_at = db.Column(db.DateTime, nullable=True)
+    # Add unique constraint for user_id and word_id
+    __table_args__ = (db.UniqueConstraint('user_id', 'word_id', name='_user_word_uc'),)
+
+    user = db.relationship('User', backref=db.backref('reviews', lazy='dynamic'))
+    word = db.relationship('Word', backref=db.backref('reviews', lazy='dynamic'))
+
+class Sentence(db.Model):
+    __tablename__ = 'sentences'
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.String, nullable=False) # The English sentence
+    translation = db.Column(db.String, nullable=True) # Russian translation
+    classs = db.Column(db.String, nullable=False)
+    unit = db.Column(db.String, nullable=False)
+    module = db.Column(db.String, nullable=False)
+    # Potentially add difficulty level later
 
 
 @app.route("/")
@@ -110,19 +145,13 @@ def index():
 def greet(name):
     return f"Hello, {name}!"
 
-@app.route("/profile")
-def profile():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    user = User.query.get(session['user_id'])
-    if not user:
-        # This case should ideally not happen if session is managed correctly
-        session.pop('user_id', None)
-        flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
-        return redirect(url_for('login'))
-        
-    return render_template('profile.html', nick=user.nick, fio=user.fio)
+# Auth routes are now in blueprints.auth
+# @app.route("/profile") ... (moved)
+# @app.route("/edit_profile") ... (moved)
+# @app.route("/save_profile", methods=["POST"]) ... (moved)
+# @app.route('/login', methods=['POST', 'GET']) ... (moved)
+# @app.route("/logout") ... (moved)
+# @app.route('/registration', methods=['POST', 'GET']) ... (moved)
 
 
 @app.route("/add_tests", methods=['POST', 'GET'])
@@ -767,7 +796,7 @@ def test_id(id):
                              test_title=test.title,
                              test_db_id=test.id,
                              is_teacher_preview=is_teacher_preview_mode)
-    elif test.type == 'multiple_choice_multiple':
+    elif test.type == 'multiple_choice_multiple': # Corrected rendering for this type
         words_list = []
         for word in test.test_words:
             options = word.options.split('|') if word.options else []
@@ -816,51 +845,9 @@ def save_profile():
 
     return redirect("/profile")
 
-@app.route("/add_words", methods=['POST', 'GET'])
-def add_words():
-    if request.method == "POST":
-        class_val = request.form.get('classSelect')
-        unit_val = request.form.get('unitSelect')
-        module_val = request.form.get('moduleSelect')  # Changed from 'module'
-
-        if class_val == 'add_new_class':
-            classs = request.form.get('newClassInput', '').strip()
-        else:
-            classs = class_val
-
-        if unit_val == 'add_new_unit':
-            unit = request.form.get('newUnitInput', '').strip()
-        else:
-            unit = unit_val
-
-        if module_val == 'add_new_module':
-            module = request.form.get('newModuleInput', '').strip()
-        else:
-            module = module_val
-
-        # Ensure classs, unit, and module are not None and provide defaults if necessary
-        classs = classs if classs is not None else ""
-        unit = unit if unit is not None else ""
-        module = module if module is not None else ""
-
-        words = []
-        perevods = []
-
-        for key, value in request.form.items():
-            if key.startswith("word"):
-                words.append(value)
-            elif key.startswith("perevod"):
-                perevods.append(value)
-
-        for word, perevod in zip(words, perevods):
-            new_word = Word(word=word, perevod=perevod, classs=classs, unit=unit, module=module)
-            db.session.add(new_word)
-        db.session.commit()
-        return redirect('/words', 302)
-
-    # GET method: query existing classes
-    classes = [str(i) for i in range(1, 12)]
-    return render_template("add_words.html", classes=classes)
+# @app.route("/add_words", methods=['POST', 'GET']) # This route is now handled by words_bp
+# def add_words():
+#     ... (implementation removed) ...
 
 @app.route("/get_units_for_class")
 def get_units_for_class():
@@ -891,247 +878,35 @@ def get_modules_for_unit():
     
     return jsonify([module[0] for module in modules])
 
-@app.route('/words')
-def words():
-    words = Word.query.order_by(Word.classs).all()
-    items = {}
-
-    # Build items by class, unit, module
-    for w in words:
-        if w.classs not in items:
-            items[w.classs] = {}
-        if w.unit not in items[w.classs]:
-            items[w.classs][w.unit] = {}
-        if w.module not in items[w.classs][w.unit]:
-            items[w.classs][w.unit][w.module] = []
-        items[w.classs][w.unit][w.module].append([w.word, w.perevod])
-
-    return render_template("words.html", items=items)
-
-@app.route('/edit_word/<original_word_text>', methods=['GET', 'POST'])
-def edit_word(original_word_text):
-    # Параметры для идентификации оригинального слова (из URL GET запроса)
-    original_class = request.args.get('class')
-    original_unit = request.args.get('unit')
-    original_module = request.args.get('module')
+@app.route("/get_modules_for_sentence_game")
+def get_modules_for_sentence_game():
+    class_name = request.args.get('class_name')
+    unit_name = request.args.get('unit_name')
     
-    # Находим объект слова для редактирования
-    # Важно: Ищем по оригинальным значениям, переданным при открытии формы
-    word_obj = Word.query.filter_by(
-        word=original_word_text, 
-        classs=original_class, 
-        unit=original_unit, 
-        module=original_module
-    ).first()
+    if not class_name or not unit_name:
+        return jsonify([])
     
-    if not word_obj:
-        flash("Слово для редактирования не найдено!", "error")
-        return redirect(url_for('words'))
-
-    if request.method == 'POST':
-        # Получаем данные из формы
-        new_word_text = request.form.get('word')
-        new_perevod = request.form.get('perevod')
-        
-        selected_class = request.form.get('classSelect')
-        selected_unit_option = request.form.get('unitSelect')
-        selected_module_option = request.form.get('moduleSelect')
-
-        new_class = selected_class # Класс всегда выбирается из существующих
-
-        if selected_unit_option == 'add_new_unit':
-            new_unit = request.form.get('newUnitInput', '').strip()
-            if not new_unit: # Если поле нового юнита пустое, но выбрано "добавить"
-                flash("Необходимо указать название нового юнита.", "error")
-                # Перезагружаем форму с уже введенными данными
-                all_classes = [str(i) for i in range(1, 12)]
-                return render_template('edit_word.html', 
-                                   word={'word': new_word_text, 'perevod': new_perevod, 'classs': new_class, 'unit': word_obj.unit, 'module': word_obj.module},
-                                   classs=original_class, 
-                                   unit=original_unit, 
-                                   module=original_module, 
-                                   all_classes=all_classes,
-                                   error="Необходимо указать название нового юнита.")
-        else:
-            new_unit = selected_unit_option
-
-        if selected_module_option == 'add_new_module':
-            new_module = request.form.get('newModuleInput', '').strip()
-            # Если new_module пустой, это означает "нет модуля" или пользователь хочет создать пустой модуль
-        elif selected_module_option == "": # Опция "--- Нет модуля ---"
-             new_module = "" 
-        else:
-            new_module = selected_module_option
-        
-        # Валидация, что класс и юнит не пустые, если они обязательны
-        if not new_class:
-            flash("Класс не может быть пустым.", "error")
-            # Снова рендерим шаблон с ошибкой и данными
-            all_classes = [str(i) for i in range(1, 12)]
-            return render_template('edit_word.html', 
-                               word={'word': new_word_text, 'perevod': new_perevod, 'classs': new_class, 'unit': new_unit, 'module': new_module},
-                               classs=original_class, unit=original_unit, module=original_module, 
-                               all_classes=all_classes, error="Класс не может быть пустым.")
-        if not new_unit:
-            flash("Юнит не может быть пустым.", "error")
-            # Снова рендерим шаблон с ошибкой и данными
-            all_classes = [str(i) for i in range(1, 12)]
-            return render_template('edit_word.html', 
-                               word={'word': new_word_text, 'perevod': new_perevod, 'classs': new_class, 'unit': new_unit, 'module': new_module},
-                               classs=original_class, unit=original_unit, module=original_module, 
-                               all_classes=all_classes, error="Юнит не может быть пустым.")
-
-        # Обновляем объект слова
-        word_obj.word = new_word_text
-        word_obj.perevod = new_perevod
-        word_obj.classs = new_class
-        word_obj.unit = new_unit
-        word_obj.module = new_module if new_module is not None else "" # Гарантируем, что модуль не None
-
-        try:
-            db.session.commit()
-            flash("Слово успешно обновлено!", "success")
-            # Редирект на страницу слов с параметрами, чтобы выделить или отфильтровать измененное слово
-            return redirect(url_for('words', cl=word_obj.classs, un=word_obj.unit, mo=word_obj.module))
-        except Exception as e:
-            db.session.rollback()
-            flash(f"Ошибка при обновлении слова: {str(e)}", "error")
-            # Снова рендерим шаблон с ошибкой и данными
-            all_classes = [str(i) for i in range(1, 12)]
-            return render_template('edit_word.html', 
-                               word=word_obj, # Передаем измененный, но не сохраненный word_obj
-                               classs=original_class, unit=original_unit, module=original_module, 
-                               all_classes=all_classes, error=f"Ошибка БД: {str(e)}")
-
-    # GET-запрос: отображение формы
-    all_classes = [str(i) for i in range(1, 12)]
+    # Get unique modules for the selected class and unit that have sentences
+    modules = db.session.query(Sentence.module).filter(
+        Sentence.classs == class_name,
+        Sentence.unit == unit_name
+    ).distinct().order_by(Sentence.module).all()
     
-    # Передаем оригинальные значения class, unit, module для корректной работы JS при загрузке
-    return render_template('edit_word.html', 
-                       word=word_obj, 
-                       classs=word_obj.classs,  # Используем актуальные данные из word_obj
-                       unit=word_obj.unit,    # для предзаполнения и JS
-                       module=word_obj.module, 
-                       all_classes=all_classes)
+    return jsonify([module[0] for module in modules if module[0]])
 
-@app.route('/delete_word/<word>', methods=['POST'])
-def delete_word(word):
-    # Get the data from the JSON request
-    data = request.get_json()
-    classs = data.get('class')
-    unit = data.get('unit')
-    module = data.get('module')
-    
-    # Find the word in the database
-    word_obj = Word.query.filter_by(word=word, classs=classs, unit=unit, module=module).first()
-    
-    if not word_obj:
-        return jsonify({'success': False, 'error': 'Word not found'}), 404
-    
-    # Delete the word
-    db.session.delete(word_obj)
-    db.session.commit()
-    
-    return jsonify({'success': True})
+# Words routes are now in blueprints.words
+# @app.route('/words/json') ... (moved)
+# @app.route("/get_units_for_class") ... (moved)
+# @app.route("/get_modules_for_unit") ... (moved)
+# @app.route('/words') ... (moved)
+# @app.route("/add_words", methods=['POST', 'GET']) ... (moved)
+# @app.route('/edit_word/<int:word_id>', methods=['GET', 'POST']) ... (moved)
+# @app.route('/delete_word/<int:word_id>', methods=['POST']) ... (moved)
+# @app.route('/class/<class_name>/<unit_name>/<module_name>') ... (moved)
+# @app.route('/quizlet/<class_name>/<unit_name>/<module_name>') ... (moved)
+# Note: Obsolete /edit_word and /update_word routes were already removed or not part of this list.
+# Note: Granular add routes like /add_unit_to_class were already removed or not part of this list.
 
-@app.route('/login', methods=['POST', 'GET'])
-def login():
-    error = None
-    if request.method == "POST":
-        username = request.form['username']
-        password_form = request.form['password']
-
-        if username == 'teacher':
-            teacher_user = User.query.filter_by(nick='teacher').first()
-            if teacher_user and check_password_hash(teacher_user.password, password_form):
-                session['user_id'] = teacher_user.id
-                session.permanent = True  # Make session last for a while
-                app.permanent_session_lifetime = timedelta(days=15)
-                return redirect(url_for('hello'))
-            elif not teacher_user and password_form == 'teacher': # First time teacher login or fallback
-                hashed_password = generate_password_hash('teacher')
-                teacher = User(
-                    fio='Teacher',
-                    nick='teacher',
-                    password=hashed_password,
-                    teacher='yes'
-                )
-                db.session.add(teacher)
-                db.session.commit()
-                session['user_id'] = teacher.id
-                session.permanent = True
-                app.permanent_session_lifetime = timedelta(days=15)
-                return redirect(url_for('hello'))
-            else:
-                error = 'Invalid teacher credentials'
-        else:
-            user = User.query.filter_by(nick=username).first()
-            if user and check_password_hash(user.password, password_form):
-                session['user_id'] = user.id
-                session.permanent = True
-                app.permanent_session_lifetime = timedelta(days=15)
-                return redirect(url_for('hello'))
-            else:
-                error = 'Invalid username/password'
-
-    return render_template('login.html', error=error)
-
-@app.route("/logout")
-def logout():
-    session.pop('user_id', None)
-    flash("Вы успешно вышли из системы.", "info")
-    return redirect(url_for('login'))
-
-@app.route('/registration', methods=['POST', 'GET'])
-def registration():
-    error = None
-    if request.method == 'POST':
-        fio = request.form["fio"]
-        username = request.form['username']
-        password = request.form['password']
-        password_confirm = request.form.get('password_confirm') # New field
-        class_number = request.form.get('class_number')
-
-        if not class_number:
-            error = "Please select a class"
-            return render_template('registration.html', error=error, classes=[str(i) for i in range(1, 12)], fio=fio, username=username)
-
-        if password != password_confirm:
-            error = "Пароли не совпадают"
-            return render_template('registration.html', error=error, fio=fio, username=username, selected_class=class_number, classes=[str(i) for i in range(1, 12)])
-
-        existing_user = User.query.filter_by(nick=username).first()
-        if existing_user:
-            error = "Выбранный вами Username уже занят"
-            return render_template('registration.html', error=error, fio=fio, username=username, selected_class=class_number, classes=[str(i) for i in range(1, 12)])
-
-        fio_in_mass = fio.split(' ')
-        if len(fio_in_mass) != 3: # Assuming FIO should be 3 words
-            error = "ФИО должно состоять из 3 слов"
-            return render_template('registration.html', error=error, fio=fio, username=username, selected_class=class_number, classes=[str(i) for i in range(1, 12)])
-
-        hashed_password = generate_password_hash(password)
-        
-        # Removed max_id logic as primary key should auto-increment by default
-        new_user = User(
-            fio=fio,
-            nick=username,
-            password=hashed_password,
-            teacher='no',
-            class_number=class_number
-        )
-        db.session.add(new_user)
-        db.session.commit()
-        
-        # Log the user in immediately after registration
-        session['user_id'] = new_user.id
-        session.permanent = True
-        app.permanent_session_lifetime = timedelta(days=15)
-        flash("Регистрация прошла успешно! Вы вошли в систему.", "success")
-        return redirect(url_for('hello'))
-
-    classes = [str(i) for i in range(1, 12)]  # Classes 1-11
-    return render_template('registration.html', error=error, classes=classes)
 
 @app.route("/hello")
 def hello():
@@ -1158,68 +933,13 @@ def about():
 
 # Old delete_word route removed in favor of the new route with more precise word identification
 
-@app.route("/edit_word")
-def edit_word_form():
-    # Get word details from URL parameters
-    word = request.args.get("word")
-    perevod = request.args.get("perevod")
-    classs = request.args.get("class")
-    unit = request.args.get("unit")
-    
-    # Find the word by its attributes
-    word_to_edit = db.session.query(Word).filter_by(
-        word=word,
-        perevod=perevod,
-        classs=classs,
-        unit=unit
-    ).first()
-    
-    if not word_to_edit:
-        flash("Word not found!", "error")
-        return redirect(url_for('words'))
+# @app.route("/edit_word") # This route is now handled by words_bp.edit_word
+# def edit_word_form():
+#  ... (implementation removed) ...
 
-    all_classes = [str(i) for i in range(1, 12)] # Assuming classes are 1-11
-    # Units and modules will be loaded dynamically by JS
-    # The word_to_edit object contains current class, unit, module for pre-selection
-    return render_template("edit_word.html", word=word_to_edit, all_classes=all_classes)
-
-@app.route("/update_word", methods=["POST"])
-def update_word():
-    word_id = request.form.get("word_id")
-    word_to_update = Word.query.get(word_id)
-
-    if not word_to_update:
-        flash("Word not found for update!", "error")
-        return redirect(url_for('words'))
-
-    # Get new values, handling 'add_new_...' for unit and module
-    new_class_val = request.form.get('classSelect')
-    new_unit_val = request.form.get('unitSelect')
-    new_module_val = request.form.get('moduleSelect')
-
-    word_to_update.classs = new_class_val # Assuming classSelect directly provides the class
-
-    if new_unit_val == 'add_new_unit':
-        word_to_update.unit = request.form.get('newUnitInput')
-    else:
-        word_to_update.unit = new_unit_val
-
-    if new_module_val == 'add_new_module':
-        word_to_update.module = request.form.get('newModuleInput')
-    else:
-        word_to_update.module = new_module_val
-    
-    word_to_update.word = request.form.get("word")
-    word_to_update.perevod = request.form.get("perevod")
-
-    try:
-        db.session.commit()
-        flash("Word updated successfully!", "success")
-    except Exception as e:
-        db.session.rollback()
-        flash(f"Error updating word: {str(e)}", "error")
-
-    return redirect(url_for('words', classs=word_to_update.classs, unit=word_to_update.unit, module=word_to_update.module))
+# @app.route("/update_word", methods=["POST"]) # This functionality is now part of words_bp.edit_word (POST)
+# def update_word():
+#  ... (implementation removed) ...
 
 @app.route("/add_unit_to_class")
 def add_unit_to_class_form():
@@ -1256,7 +976,7 @@ def save_module():
     db.session.add(dummy_word)
     db.session.commit()
 
-    return redirect("/words")
+    return redirect(url_for('words.words'))
 
 @app.route("/add_word_to_module")
 def add_word_to_module_form():
@@ -1287,7 +1007,7 @@ def save_unit():
     db.session.add(dummy_word)
     db.session.commit()
 
-    return redirect("/words")
+    return redirect(url_for('words.words'))
 
 @app.route("/add_word_to_unit")
 def add_word_to_unit_form():
@@ -1317,13 +1037,13 @@ def add_word():
     # Validate that all required fields are filled out
     if not class_name or not unit_name or not module_name:
         flash("Невозможно добавить слово: необходимо заполнить класс, юнит и модуль", "error")
-        return redirect("/words")
+        return redirect(url_for('words.words'))
 
     new_word = Word(word=word, perevod=perevod, classs=class_name, unit=unit_name, module=module_name)
     db.session.add(new_word)
     db.session.commit()
 
-    return redirect("/words")
+    return redirect(url_for('words.words'))
 
 
 
@@ -1574,8 +1294,44 @@ def create_test():
                     # And custom translation *is* the True/False value
                     correct_answer_for_db = original_translation if original_translation.lower() in ['true', 'false'] else "True"
                 else: # From module
-                    current_word_for_test_word_model = f"{original_word_text} - {original_translation}" # The statement
-                    correct_answer_for_db = "True" # Placeholder: assumes the direct pairing is true.
+                    # Determine if the statement should be true or false
+                    if random.choice([True, False]):
+                        # Make a true statement
+                        current_word_for_test_word_model = f"{original_word_text} - {original_translation}"
+                        correct_answer_for_db = "True"
+                    else:
+                        # Try to make a false statement
+                        # Need to get current class and unit for the original_word_text to find distractors
+                        # This assumes word_entry might have class/unit/module if it's from a module.
+                        # If not, this part needs refinement on how to get context for distractors.
+                        # For now, using the overall test's class_number.
+                        # And assuming unit/module context might be in new_test_params if available,
+                        # otherwise, this might be too broad or too narrow.
+
+                        # Attempt to find a distractor translation from the same class.
+                        # More specific (unit/module) would be better if that context is reliably available here.
+                        distractor_words = Word.query.filter(
+                            Word.classs == new_test_params.get('classs'),
+                            Word.word != original_word_text # Exclude the original word itself
+                        ).all()
+
+                        if distractor_words:
+                            distractor_word_obj = random.choice(distractor_words)
+                            distractor_translation = distractor_word_obj.perevod
+
+                            # Ensure the distractor translation isn't the same as the original,
+                            # which could happen if different words have the same translation.
+                            if distractor_translation != original_translation:
+                                current_word_for_test_word_model = f"{original_word_text} - {distractor_translation}"
+                                correct_answer_for_db = "False"
+                            else:
+                                # Fallback: if distractor is same as original, make it a true statement
+                                current_word_for_test_word_model = f"{original_word_text} - {original_translation}"
+                                correct_answer_for_db = "True"
+                        else:
+                            # Fallback: if no distractors found, make it a true statement
+                            current_word_for_test_word_model = f"{original_word_text} - {original_translation}"
+                            correct_answer_for_db = "True"
                 
                 prompt_for_test_word_model = "Верно или неверно?" 
                 options_db = "True|False"
@@ -2177,15 +1933,19 @@ def submit_test(test_id):
             # For add_letter, TestWord.correct_answer stores the combined missing letters
             is_correct = user_submitted_answer_string.lower() == test_word.correct_answer.lower()
         
-        # TODO: Adapt logic for other test types if they also switch from JSON to form submission.
-        # The following is placeholder logic and assumes other types might send answers via request.form[{test_word.id}] or similar
-        # This section needs careful review if other test types are changed.
-        elif test.type == 'multiple_choice_single': # Example
+        elif test.type == 'multiple_choice_multiple':
+            user_selected_options = sorted(request.form.getlist(f'answer_{test_word.id}'))
+            user_submitted_answer_string = "|".join(user_selected_options)
+
+            correct_options_list = sorted(test_word.correct_answer.split('|'))
+            actual_correct_string_for_comparison = "|".join(correct_options_list)
+
+            is_correct = user_submitted_answer_string.lower() == actual_correct_string_for_comparison.lower()
+
+        elif test.type == 'multiple_choice_single':
             user_submitted_answer_string = request.form.get(f'answer_{test_word.id}', '').strip()
             is_correct = user_submitted_answer_string.lower() == test_word.correct_answer.lower()
-        elif test.type == 'dictation': # Example
-            # OLD: user_submitted_answer_string = request.form.get(f'answer_{test_word.id}', '').strip()
-            # NEW: Reconstruct the answer string from individual character inputs
+        elif test.type == 'dictation':
             current_word_chars_map = {}
             # Collect all characters for this specific test_word.id
             # Key format: dictation_answer_{test_word.id}_{char_index}
@@ -2408,6 +2168,179 @@ def games():
         
     return render_template('games.html', is_teacher=user.teacher == 'yes')
 
+# flashcards_select_module and flashcards_game will be moved to games_bp
+
+@app.route('/games/flashcards/select', methods=['GET'])
+def flashcards_select_module():
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login')) # Corrected url_for
+    # Fetch all unique classes for the first dropdown
+    classes = db.session.query(Word.classs).distinct().order_by(Word.classs).all()
+    classes = [c[0] for c in classes if c[0]] # Ensure not None or empty
+    return render_template('game_flashcards_select.html', classes=classes)
+
+@app.route('/games/flashcards/<class_name>/<unit_name>/<module_name>')
+def flashcards_game(class_name, unit_name, module_name):
+    if 'user_id' not in session:
+        flash("Пожалуйста, войдите в систему для доступа к флэш-карточкам.", "warning")
+        return redirect(url_for('auth.login')) # Corrected url_for
+
+    user_id = session['user_id']
+    words_in_module = Word.query.filter_by(classs=class_name, unit=unit_name, module=module_name).all()
+
+    if not words_in_module:
+        flash(f"Для модуля '{module_name}' (юнит '{unit_name}', класс '{class_name}') не найдено слов.", "warning")
+        return redirect(url_for('flashcards_select_module'))
+
+    augmented_words_list = []
+    now = datetime.utcnow()
+
+    for word_obj in words_in_module:
+        review_data = UserWordReview.query.filter_by(user_id=user_id, word_id=word_obj.id).first()
+
+        is_new = review_data is None
+        next_review_at_iso = None
+        interval = None
+
+        if review_data:
+            next_review_at_iso = review_data.next_review_at.isoformat()
+            interval = review_data.interval_days
+            is_due = review_data.next_review_at <= now
+        else: # New word, always due
+            is_due = True
+            # next_review_at_iso remains None for new cards, they will be sorted first.
+
+        augmented_words_list.append({
+            'id': word_obj.id,
+            'word': word_obj.word,
+            'perevod': word_obj.perevod,
+            'classs': word_obj.classs,
+            'unit': word_obj.unit,
+            'module': word_obj.module,
+            'next_review_at': next_review_at_iso,
+            'interval_days': interval,
+            'is_new': is_new,
+            'is_due': is_due # Helper for sorting
+        })
+
+    # Sort words:
+    # 1. Due words (next_review_at <= now or is_new) first.
+    # 2. Among due words, sort new ones before reviewed ones.
+    # 3. Among reviewed due words, sort by earliest next_review_at.
+    # 4. Among not-due words, sort by earliest next_review_at.
+    # 5. As a final tie-breaker, shuffle or use word ID. For now, word ID for stability.
+
+    augmented_words_list.sort(key=lambda x: (
+        not x['is_due'],  # False (due) comes before True (not due)
+        x['next_review_at'] is None, # New words (None) come before reviewed due words
+        x['next_review_at'] if x['next_review_at'] else now.isoformat(), # Actual review date, use now for None to group them
+        x['id'] # Stable sort by ID as a final tie-breaker
+    ))
+
+
+    if not augmented_words_list: # Should be caught by words_in_module check, but as a safeguard
+        flash(f"Для модуля '{module_name}' (юнит '{unit_name}', класс '{class_name}') не найдено слов.", "warning")
+        return redirect(url_for('flashcards_select_module'))
+
+                           words=augmented_words_list,
+                           class_name=class_name,
+                           unit_name=unit_name,
+                           module_name=module_name)
+
+# word_match_select_module and word_match_game will be moved to games_bp
+
+@app.route('/games/word_match/select', methods=['GET'])
+def word_match_select_module():
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login')) # Corrected url_for
+    classes = db.session.query(Word.classs).distinct().order_by(Word.classs).all()
+    classes = [c[0] for c in classes if c[0]]
+    return render_template('game_word_match_select.html', classes=classes)
+
+@app.route('/games/word_match/<class_name>/<unit_name>/<module_name>')
+def word_match_game(class_name, unit_name, module_name):
+    if 'user_id' not in session:
+        flash("Пожалуйста, войдите в систему.", "warning")
+        return redirect(url_for('auth.login')) # Corrected url_for
+
+    all_words_in_module = Word.query.filter_by(classs=class_name, unit=unit_name, module=module_name).all()
+
+    if not all_words_in_module:
+        flash(f"Для модуля '{module_name}' (юнит '{unit_name}', класс '{class_name}') не найдено слов.", "warning")
+        return redirect(url_for('word_match_select_module'))
+
+    # Determine number of words for the game, e.g., 8 pairs (16 items)
+    # Ensure we don't try to pick more words than available
+    num_pairs = min(len(all_words_in_module), 8)
+
+    if num_pairs < 2: # Need at least 2 pairs for a meaningful game
+        flash(f"Недостаточно слов в модуле '{module_name}' для игры (нужно хотя бы 2).", "warning")
+        return redirect(url_for('word_match_select_module'))
+
+    selected_word_objects = random.sample(all_words_in_module, num_pairs)
+
+    original_words_for_js = [] # For checking answers
+    jumbled_words_list = []
+    jumbled_translations_list = []
+
+    for word_obj in selected_word_objects:
+        original_words_for_js.append({'id': word_obj.id, 'word': word_obj.word, 'translation': word_obj.perevod})
+        jumbled_words_list.append({'id': word_obj.id, 'text': word_obj.word})
+        jumbled_translations_list.append({'id': word_obj.id, 'text': word_obj.perevod})
+
+    random.shuffle(jumbled_words_list)
+    random.shuffle(jumbled_translations_list)
+
+    return render_template('game_word_match.html',
+                           original_words=original_words_for_js,
+                           jumbled_words_list=jumbled_words_list,
+                           jumbled_translations_list=jumbled_translations_list,
+                           class_name=class_name,
+                           unit_name=unit_name,
+                           module_name=module_name)
+
+# sentence_scramble_select_module and sentence_scramble_game will be moved to games_bp
+
+@app.route('/games/sentence_scramble/select', methods=['GET'])
+def sentence_scramble_select_module():
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login')) # Corrected url_for
+    # Fetch all unique classes that have sentences
+    classes = db.session.query(Sentence.classs).distinct().order_by(Sentence.classs).all()
+    classes = [c[0] for c in classes if c[0]]
+    return render_template('game_sentence_scramble_select.html', classes=classes)
+
+@app.route('/games/sentence_scramble/<class_name>/<unit_name>/<module_name>')
+def sentence_scramble_game(class_name, unit_name, module_name):
+    if 'user_id' not in session:
+        flash("Пожалуйста, войдите в систему.", "warning")
+        return redirect(url_for('auth.login')) # Corrected url_for
+
+    sentences_query = Sentence.query.filter_by(classs=class_name, unit=unit_name, module=module_name).all()
+
+    if not sentences_query:
+        flash(f"Для модуля '{module_name}' (юнит '{unit_name}', класс '{class_name}') не найдено предложений.", "warning")
+        return redirect(url_for('sentence_scramble_select_module'))
+
+    sentences_for_js = []
+    for sentence_obj in sentences_query:
+        sentences_for_js.append({
+            'id': sentence_obj.id,
+            'text': sentence_obj.text,
+            'translation': sentence_obj.translation
+            # Add other fields like classs, unit, module if needed by JS, but likely not for the game itself
+        })
+
+    # Shuffle the list of sentences for the game
+    random.shuffle(sentences_for_js)
+
+    return render_template('game_sentence_scramble.html',
+                           sentences=sentences_for_js, # Pass the list of sentence dicts
+                           class_name=class_name,
+                           unit_name=unit_name,
+                           module_name=module_name)
+
+
 @app.route('/test_details_data/<int:test_id>')
 def test_details_data(test_id):
     if 'user_id' not in session:
@@ -2507,10 +2440,113 @@ def test_details_data(test_id):
     }
     return jsonify(data_to_return)
 
+@app.route('/games/flashcards/update_review', methods=['POST'])
+def update_flashcard_review():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized', 'success': False}), 401
+
+    data = request.get_json()
+    word_id = data.get('word_id')
+    quality = data.get('quality') # 0: Again, 1: Hard, 2: Good, 3: Easy
+
+    if word_id is None or quality is None:
+        return jsonify({'error': 'Missing word_id or quality', 'success': False}), 400
+
+    try:
+        quality = int(quality)
+        word_id = int(word_id)
+    except ValueError:
+        return jsonify({'error': 'Invalid word_id or quality format', 'success': False}), 400
+
+    user_id = session['user_id']
+    review_item = UserWordReview.query.filter_by(user_id=user_id, word_id=word_id).first()
+
+    if not review_item:
+        review_item = UserWordReview(user_id=user_id, word_id=word_id)
+        db.session.add(review_item)
+        # For a new card, initial interval is often 1 day for "Good", or more for "Easy"
+        # If "Again" or "Hard" on a new card, it might stay at 0 or 1 day.
+        # Let's initialize with values that will be updated by the logic below.
+
+    # Simplified SM-2 like logic
+    # q (quality): 0-Again, 1-Hard, 2-Good, 3-Easy
+    # EF (ease factor): Default 2.5. Min 1.3.
+    # I(n) (interval after nth repetition):
+    # I(1) = 1 day
+    # I(2) = 6 days
+    # For n > 2, I(n) = I(n-1) * EF
+
+    if quality < 2: # Again (0) or Hard (1)
+        review_item.interval_days = 1 # Reset or set to a short interval
+        # For "Again", some might reset EF, but simplified SM-2 often just resets interval
+        if quality == 0: # Strong "Again" - might penalize EF slightly
+             review_item.ease_factor = max(1.3, review_item.ease_factor - 0.2)
+        elif quality == 1: # "Hard" - penalize EF less
+             review_item.ease_factor = max(1.3, review_item.ease_factor - 0.15)
+
+    elif quality == 2: # Good
+        if review_item.interval_days == 0: # First time seeing or after reset
+            review_item.interval_days = 1
+        elif review_item.interval_days == 1:
+             review_item.interval_days = 6
+        else:
+            review_item.interval_days = round(review_item.interval_days * review_item.ease_factor)
+        # EF is not changed for "Good" in basic SM-2 after initial setting
+        # review_item.ease_factor remains same or small adjustment: ef = ef - 0.0 + 0.1 ....
+        # No change to EF on "Good" after initial setting is common.
+
+    elif quality == 3: # Easy
+        if review_item.interval_days == 0:
+            review_item.interval_days = 4 # Start with a longer interval for "Easy" new cards
+        elif review_item.interval_days == 1:
+             review_item.interval_days = 10 # Jump if it was a short interval
+        else:
+            review_item.interval_days = round(review_item.interval_days * review_item.ease_factor * 1.3) # Boost for easy
+        review_item.ease_factor = min(3.0, review_item.ease_factor + 0.15) # Increase EF for "Easy"
+
+    # Cap interval to avoid excessively long periods (e.g., 1 year)
+    review_item.interval_days = min(review_item.interval_days, 365)
+
+
+    review_item.next_review_at = datetime.utcnow() + timedelta(days=review_item.interval_days)
+    review_item.last_reviewed_at = datetime.utcnow()
+
+    try:
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'next_review_in_days': review_item.interval_days,
+            'next_review_date': review_item.next_review_at.isoformat(),
+            'ease_factor': review_item.ease_factor
+        })
+    except Exception as e:
+        db.session.rollback()
+        # Log the error e
+        return jsonify({'error': 'Database commit failed', 'details': str(e), 'success': False}), 500
+
+# Register Blueprints
+app.register_blueprint(auth_bp)
+app.register_blueprint(words_bp)
+# app.register_blueprint(tests_bp, url_prefix='/tests') # Example for future
+# app.register_blueprint(games_bp, url_prefix='/games') # Example for future
+
+
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-        print("Database tables created. Running test.py...") # Optional: for logging
+        # Add sample sentences if none exist
+        if Sentence.query.count() == 0:
+            sample_sentences = [
+                Sentence(text="This is a simple sentence.", translation="Это простое предложение.", classs="5", unit="1", module="Greetings"),
+                Sentence(text="The cat sleeps on the mat.", translation="Кошка спит на коврике.", classs="5", unit="1", module="Greetings"),
+                Sentence(text="I like to learn English.", translation="Мне нравится учить английский.", classs="5", unit="1", module="School"),
+                Sentence(text="She reads a book every day.", translation="Она читает книгу каждый день.", classs="6", unit="2", module="Hobbies"),
+                Sentence(text="They play football in the park.", translation="Они играют в футбол в парке.", classs="6", unit="2", module="Hobbies")
+            ]
+            db.session.bulk_save_objects(sample_sentences)
+            db.session.commit()
+            print("Added sample sentences.")
+        print("Database tables created (or already exist). Running test.py...") # Optional: for logging
         try:
             subprocess.run(["python", "test.py"], check=True, capture_output=True, text=True)
             print("test.py executed successfully.") # Optional: for logging

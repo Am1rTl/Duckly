@@ -187,7 +187,7 @@
         </div>
 
         <div class="nav-tabs">
-            <a href="{{ url_for('words') }}" class="nav-tab"><i class="fas fa-book"></i>Слова</a>
+            <a href="{{ url_for('words.words') }}" class="nav-tab"><i class="fas fa-book"></i>Слова</a>
             <a href="{{ url_for('tests') }}" class="nav-tab"><i class="fas fa-file-alt"></i>Тесты</a>
             <a href="{{ url_for('games') }}" class="nav-tab active"><i class="fas fa-gamepad"></i>Игры</a>
         </div>
@@ -196,14 +196,30 @@
 
         <div class="games-grid">
             <div class="game-card">
-                <h3>Скоро будет доступно</h3>
-                <p>В разработке находятся увлекательные игры для изучения английских слов.</p>
+                <h3>Флэш-карточки</h3>
+                <p>Практикуйте слова с помощью интерактивных флэш-карточек.</p>
+                <a href="{{ url_for('flashcards_select_module') }}" class="btn btn-primary">Начать</a>
+            </div>
+            <div class="game-card">
+                <h3>Сопоставление Слов</h3>
+                <p>Соедините слова с их правильными переводами.</p>
+                <a href="{{ url_for('word_match_select_module') }}" class="btn btn-primary">Играть</a>
+            </div>
+            <div class="game-card">
+                <h3>Собери Предложение</h3>
+                <p>Расставьте слова в правильном порядке, чтобы получилось предложение.</p>
+                <a href="{{ url_for('sentence_scramble_select_module') }}" class="btn btn-primary">Играть</a>
+            </div>
+            <div class="game-card">
+                <h3>Другая игра (Скоро)</h3>
+                <p>В разработке находятся и другие увлекательные игры.</p>
+                <!-- <a href="#" class="btn btn-primary disabled">Начать</a> -->
             </div>
         </div>
     </div>
 
     <script>
-        document.getElementById("back").onclick = () => location.href = window.location.origin + '/hello';
+        document.getElementById("back").onclick = () => location.href = "{{ url_for('hello') }}";
     </script>
 </body>
 </html> 

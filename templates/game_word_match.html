@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Игра: Сопоставление Слов - {{ module_name }}{% endblock %}
+
+{% block head_extra %}
+<style>
+    .game-match-container {
+        max-width: 800px;
+        margin: 30px auto;
+        padding: 25px;
+        background-color: #fff;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .module-info-match h1 {
+        color: var(--secondary);
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    .module-info-match p {
+        text-align: center;
+        color: var(--text-muted, #6c757d);
+        margin-bottom: 25px;
+    }
+    .match-area {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        min-height: 300px; /* Ensure area has some height */
+    }
+    .match-column {
+        width: 48%;
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background-color: #f8f9fa; /* Light background for columns */
+    }
+    .match-column h3 {
+        text-align: center;
+        color: var(--primary-dark);
+        margin-bottom: 15px;
+        font-size: 1.3rem;
+    }
+    .match-item {
+        padding: 10px 12px;
+        margin-bottom: 10px;
+        background-color: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.2s ease, box-shadow 0.2s ease;
+        font-size: 1rem;
+    }
+    .match-item:hover {
+        background-color: var(--primary-light);
+        color: white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .match-item.selected {
+        background-color: var(--primary) !important;
+        color: white !important;
+        font-weight: 500;
+        box-shadow: 0 0 8px rgba(var(--primary-rgb), 0.5);
+    }
+    .match-item.paired {
+        background-color: var(--success) !important;
+        color: white !important;
+        cursor: default;
+        opacity: 0.7;
+    }
+    .match-item.incorrect-paired {
+        background-color: var(--danger) !important;
+        color: white !important;
+        cursor: default;
+        opacity: 0.7;
+        animation: shake 0.5s;
+    }
+    @keyframes shake {
+        0%, 100% {transform: translateX(0);}
+        25% {transform: translateX(-5px);}
+        75% {transform: translateX(5px);}
+    }
+
+    .game-controls {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    #game-feedback {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+    #score-display {
+        text-align: center;
+        font-size: 1.2rem;
+        color: var(--primary-dark);
+        margin-bottom: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="game-match-container">
+    <div class="module-info-match">
+        <h1>Сопоставление Слов</h1>
+        <p>Класс: {{ class_name }}, Юнит: {{ unit_name }}, Модуль: {{ module_name }}</p>
+    </div>
+
+    <div id="score-display">Счет: <span id="current-score">0</span>/<span id="total-pairs">0</span></div>
+
+    <div class="match-area">
+        <div class="match-column" id="words-column">
+            <h3>Слова</h3>
+            <!-- Words will be populated by JS -->
+        </div>
+        <div class="match-column" id="translations-column">
+            <h3>Переводы</h3>
+            <!-- Translations will be populated by JS -->
+        </div>
+    </div>
+
+    <div id="game-feedback" class="mb-3"></div>
+
+    <div class="game-controls">
+        <button id="checkAnswersBtn" class="btn btn-primary me-2">Проверить</button>
+        <button id="resetGameBtn" class="btn btn-warning">Сброс</button>
+    </div>
+
+    <div class="mt-4 text-center">
+         <a href="{{ url_for('word_match_select_module') }}" class="btn btn-outline-secondary btn-sm">Выбрать другой модуль</a>
+    </div>
+</div>
+
+<script id="wordMatchOriginalData" type="application/json">
+    {{ original_words | tojson | safe }}
+</script>
+<script id="jumbledWords" type="application/json">
+    {{ jumbled_words_list | tojson | safe }}
+</script>
+<script id="jumbledTranslations" type="application/json">
+    {{ jumbled_translations_list | tojson | safe }}
+</script>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+{# Placeholder for game_word_match.js - to be created in next step #}
+{# <script src="{{ url_for('static', filename='js/game_word_match.js') }}" defer></script> #}
+<script>
+// Basic placeholder logic for now, actual game logic in game_word_match.js
+document.addEventListener('DOMContentLoaded', function() {
+    const wordsColumn = document.getElementById('words-column');
+    const translationsColumn = document.getElementById('translations-column');
+    const originalWordsData = JSON.parse(document.getElementById('wordMatchOriginalData').textContent);
+    const jumbledWords = JSON.parse(document.getElementById('jumbledWords').textContent);
+    const jumbledTranslations = JSON.parse(document.getElementById('jumbledTranslations').textContent);
+    const scoreDisplay = document.getElementById('current-score');
+    const totalPairsDisplay = document.getElementById('total-pairs');
+
+    if (totalPairsDisplay) totalPairsDisplay.textContent = originalWordsData.length;
+    if (scoreDisplay) scoreDisplay.textContent = "0";
+
+    function createMatchItem(itemData, type) {
+        const itemDiv = document.createElement('div');
+        itemDiv.classList.add('match-item');
+        itemDiv.textContent = itemData.text;
+        itemDiv.dataset.id = itemData.id;
+        itemDiv.dataset.type = type; // 'word' or 'translation'
+        return itemDiv;
+    }
+
+    if (wordsColumn && jumbledWords) {
+        jumbledWords.forEach(wordItem => {
+            wordsColumn.appendChild(createMatchItem(wordItem, 'word'));
+        });
+    }
+
+    if (translationsColumn && jumbledTranslations) {
+        jumbledTranslations.forEach(transItem => {
+            translationsColumn.appendChild(createMatchItem(transItem, 'translation'));
+        });
+    }
+    // Further JS logic for selection, pairing, checking will go into static/js/game_word_match.js
+    console.log("Original Pairs:", originalWordsData);
+});
+</script>
+{% endblock %}

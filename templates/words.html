@@ -471,16 +471,12 @@
       updateWordsDisplay(); // Update word display
     }
 
-    function getEditUrl(word, classVal, unitVal, moduleVal, perevod) {
-      let baseUrl = `/edit_word/${encodeURIComponent(word)}`;
-      // Ensure all params are properly encoded
-      let params = new URLSearchParams({
-          class: classVal,
-          unit: unitVal,
-          module: moduleVal,
-          perevod: perevod 
-      });
-      return `${baseUrl}?${params.toString()}`;
+    // Using a placeholder for word_id which will be replaced.
+    // Alternatively, construct the URL directly: `/edit_word/${wordId}`
+    const editWordUrlBase = "{{ url_for('words.edit_word', word_id='ID_PLACEHOLDER') }}";
+
+    function getEditUrl(wordId) {
+      return editWordUrlBase.replace('ID_PLACEHOLDER', wordId);
     }
 
     function updateWordsDisplay() {
@@ -490,24 +486,21 @@
 
       let wordsToShow = [];
 
-      // Iterate through wordData to find words matching the filters,
-      // collecting them with their full class, unit, module context.
       for (const classKey in wordData) {
         if (selectedClass && selectedClass !== classKey) continue;
         for (const unitKey in wordData[classKey]) {
           if (selectedUnit && selectedUnit !== unitKey) continue;
           for (const moduleKey in wordData[classKey][unitKey]) {
             if (selectedModule && selectedModule !== moduleKey) continue;
-            wordData[classKey][unitKey][moduleKey].forEach(wordPair => {
-              if (Array.isArray(wordPair) && wordPair.length === 2) { // Ensure it's a valid word pair
-                wordsToShow.push({
-                  word: wordPair[0],
-                  perevod: wordPair[1],
-                  class: classKey,
-                  unit: unitKey,
-                  module: moduleKey
-                });
-              }
+            wordData[classKey][unitKey][moduleKey].forEach(wordObj => { // wordObj is {id, word, perevod}
+              wordsToShow.push({
+                id: wordObj.id, // Keep the ID
+                word: wordObj.word,
+                perevod: wordObj.perevod,
+                class: classKey, // Keep original class/unit/module for display/filtering context
+                unit: unitKey,
+                module: moduleKey
+              });
             });
           }
         }
@@ -519,21 +512,25 @@
 
     function renderCards(words) {
       const container = document.getElementById('cardView');
-      container.innerHTML = ''; // Clear existing cards
+      container.innerHTML = '';
       
       words.forEach(wordObj => {
         const card = document.createElement('div');
         card.className = 'word-card';
-        
+        // The link to module_words uses class/unit/module names, not word ID. This is fine.
+        // The edit link now uses wordObj.id
         card.innerHTML = `
-          <a href="/class/${encodeURIComponent(wordObj.class)}/${encodeURIComponent(wordObj.unit)}/${encodeURIComponent(wordObj.module)}" style="text-decoration: none; color: inherit;">
+          <a href="{{ url_for('words.module_words', class_name='CLASS_PLACEHOLDER', unit_name='UNIT_PLACEHOLDER', module_name='MODULE_PLACEHOLDER') }}"
+             onclick="this.href=this.href.replace('CLASS_PLACEHOLDER', encodeURIComponent('${wordObj.class}')).replace('UNIT_PLACEHOLDER', encodeURIComponent('${wordObj.unit}')).replace('MODULE_PLACEHOLDER', encodeURIComponent('${wordObj.module}')); return true;"
+             style="text-decoration: none; color: inherit;">
             <div class="word-text">${wordObj.word}</div>
             <div class="translation">${wordObj.perevod}</div>
           </a>
           <div class="card-actions">
-            <a href="${getEditUrl(wordObj.word, wordObj.class, wordObj.unit, wordObj.module, wordObj.perevod)}" class="action-btn btn-primary"><i class="fas fa-edit"></i> Изменить</a>
+            <a href="${getEditUrl(wordObj.id)}" class="action-btn btn-primary"><i class="fas fa-edit"></i> Изменить</a>
             <button class="action-btn btn-danger"
-                    data-word="${encodeURIComponent(wordObj.word)}"
+                    data-word-id="${wordObj.id}"
+                    data-word-text="${encodeURIComponent(wordObj.word)}"
                     data-class="${encodeURIComponent(wordObj.class)}"
                     data-unit="${encodeURIComponent(wordObj.unit)}"
                     data-module="${encodeURIComponent(wordObj.module)}"
@@ -548,18 +545,24 @@
 
     function renderTable(words) {
       const tableBody = document.getElementById('table-body');
-      tableBody.innerHTML = ''; // Clear existing rows
+      tableBody.innerHTML = '';
       
       words.forEach(wordObj => {
         const row = document.createElement('tr');
-        
+        // The link to module_words uses class/unit/module names.
+        // The edit link now uses wordObj.id
         row.innerHTML = `
-          <td><a href="/class/${encodeURIComponent(wordObj.class)}/${encodeURIComponent(wordObj.unit)}/${encodeURIComponent(wordObj.module)}">${wordObj.word}</a></td>
+          <td><a href="{{ url_for('words.module_words', class_name='CLASS_PLACEHOLDER', unit_name='UNIT_PLACEHOLDER', module_name='MODULE_PLACEHOLDER') }}"
+                 onclick="this.href=this.href.replace('CLASS_PLACEHOLDER', encodeURIComponent('${wordObj.class}')).replace('UNIT_PLACEHOLDER', encodeURIComponent('${wordObj.unit}')).replace('MODULE_PLACEHOLDER', encodeURIComponent('${wordObj.module}')); return true;">
+                 ${wordObj.word}
+              </a>
+          </td>
           <td>${wordObj.perevod}</td>
           <td>
-            <a href="${getEditUrl(wordObj.word, wordObj.class, wordObj.unit, wordObj.module, wordObj.perevod)}" class="action-btn btn-primary"><i class="fas fa-edit"></i> Изменить</a>
+            <a href="${getEditUrl(wordObj.id)}" class="action-btn btn-primary"><i class="fas fa-edit"></i> Изменить</a>
             <button class="action-btn btn-danger"
-                    data-word="${encodeURIComponent(wordObj.word)}"
+                    data-word-id="${wordObj.id}"
+                    data-word-text="${encodeURIComponent(wordObj.word)}"
                     data-class="${encodeURIComponent(wordObj.class)}"
                     data-unit="${encodeURIComponent(wordObj.unit)}"
                     data-module="${encodeURIComponent(wordObj.module)}"
@@ -568,45 +571,55 @@
             </button>
           </td>
         `;
-        tableBody.appendChild(row); // Добавляем строку в тело таблицы
+        tableBody.appendChild(row);
       });
     }
     
     function handleDeleteWord(button) {
-      const word = decodeURIComponent(button.dataset.word);
-      const classVal = decodeURIComponent(button.dataset.class);
-      const unitVal = decodeURIComponent(button.dataset.unit);
-      const moduleVal = decodeURIComponent(button.dataset.module);
+      const wordId = button.dataset.wordId;
+      const wordText = decodeURIComponent(button.dataset.wordText); // For confirm message
+      const classVal = decodeURIComponent(button.dataset.class); // For local data update and confirm message
+      const unitVal = decodeURIComponent(button.dataset.unit);   // For local data update and confirm message
+      const moduleVal = decodeURIComponent(button.dataset.module); // For local data update and confirm message
 
-      if (confirm(`Вы уверены, что хотите удалить слово "${word}" (Класс: ${classVal}, Юнит: ${unitVal}, Модуль: ${moduleVal})?`)) {
-        fetch(`/delete_word/${encodeURIComponent(word)}`, {
+
+      if (confirm(`Вы уверены, что хотите удалить слово "${wordText}" (ID: ${wordId})?`)) {
+        // The route is /delete_word/<int:word_id> and takes POST
+        fetch(`/delete_word/${wordId}`, { // Adjusted URL
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                // CSRF token might be needed if Flask-WTF is used for forms globally
+                // 'X-CSRFToken': '{{ csrf_token() }}' // If using Flask-WTF CSRF protection
+                'Content-Type': 'application/json', // Though body is not strictly needed by current backend
             },
-            body: JSON.stringify({
-                class: classVal,
-                unit: unitVal,
-                module: moduleVal
-                // 'perevod' is not strictly needed for deletion if word, class, unit, module are enough
-            })
+            // body: JSON.stringify({}) // Body is not strictly needed by current backend for DELETE by ID
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) { // Check for non-2xx responses
+                return response.json().then(errData => {
+                    throw new Error(errData.error || `Server error: ${response.status}`);
+                });
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
-                alert(`Слово "${word}" успешно удалено.`);
-                // Update local data and re-render
-                updateWordDataAfterDeletion(classVal, unitVal, moduleVal, word);
-                updateWordsDisplay(); // Refresh the displayed words
+                alert(`Слово "${wordText}" успешно удалено.`);
+                updateWordDataAfterDeletion(classVal, unitVal, moduleVal, wordId, wordText); // Pass wordId for deletion
+                updateWordsDisplay();
+
                 // Optional: if a filter category becomes empty, update dropdowns
-                if (!wordData[classVal]) { // If class was deleted
-                    // Remove class from dropdown and re-initialize
+                // This logic might need adjustment if wordData structure changes or if IDs are primary keys everywhere
+                if (wordData[classVal] && Object.keys(wordData[classVal]).length === 0) {
+                    delete wordData[classVal]; // Remove class if empty
                     const classOption = classSelect.querySelector(`option[value="${classVal}"]`);
                     if(classOption) classOption.remove();
-                    updateUnits(); // This will also trigger module and word updates
-                } else if (!wordData[classVal][unitVal]) { // If unit was deleted
+                    updateUnits(); // This will re-trigger dependent updates
+                } else if (wordData[classVal] && wordData[classVal][unitVal] && Object.keys(wordData[classVal][unitVal]).length === 0) {
+                    delete wordData[classVal][unitVal]; // Remove unit if empty
                     updateUnits(); // Re-populate units for current class
-                } else if (!wordData[classVal][unitVal][moduleVal]) { // If module was deleted
+                } else if (wordData[classVal] && wordData[classVal][unitVal] && wordData[classVal][unitVal][moduleVal] && wordData[classVal][unitVal][moduleVal].length === 0) {
+                    delete wordData[classVal][unitVal][moduleVal]; // Remove module if empty
                     updateModules(); // Re-populate modules for current unit
                 }
 
@@ -616,15 +629,19 @@
         })
         .catch(error => {
             console.error('Fetch Error:', error);
-            alert('Произошла сетевая ошибка при попытке удаления слова.');
+            alert(`Произошла ошибка при попытке удаления слова: ${error.message}`);
         });
       }
     }
 
-    function updateWordDataAfterDeletion(classVal, unitVal, moduleVal, wordToDelete) {
+    function updateWordDataAfterDeletion(classVal, unitVal, moduleVal, wordIdToDelete, wordTextToDelete) {
+      // wordIdToDelete is now the primary identifier for deletion.
+      // wordTextToDelete is mostly for context or fallback if needed, but ID is better.
         if (wordData[classVal]?.[unitVal]?.[moduleVal]) {
             const wordsInModule = wordData[classVal][unitVal][moduleVal];
-            const index = wordsInModule.findIndex(pair => pair[0] === wordToDelete);
+            // Find by ID now
+            const index = wordsInModule.findIndex(wordObj => wordObj.id === parseInt(wordIdToDelete));
+
             if (index > -1) {
                 wordsInModule.splice(index, 1);
 
@@ -675,11 +692,11 @@
     };
 
     // Navigation
-    document.getElementById("backButton").onclick = () => location.href = '/hello'; // Simplified
-    document.getElementById("wordsTab").onclick = () => location.href = '/words';
-    document.getElementById("testsTab").onclick = () => location.href = '/tests';
-    document.getElementById("gamesTab").onclick = () => location.href = '/games'; // Assuming /games route exists
-    document.getElementById("addWordsButton").onclick = () => location.href = '/add_words';
+    document.getElementById("backButton").onclick = () => location.href = "{{ url_for('hello') }}";
+    document.getElementById("wordsTab").onclick = () => location.href = "{{ url_for('words.words') }}";
+    document.getElementById("testsTab").onclick = () => location.href = "{{ url_for('tests') }}";
+    document.getElementById("gamesTab").onclick = () => location.href = "{{ url_for('games') }}";
+    document.getElementById("addWordsButton").onclick = () => location.href = "{{ url_for('words.add_words') }}";
   </script>
 </body>
 </html>
