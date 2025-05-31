@@ -199,11 +199,11 @@
     };
 
     document.getElementById("editProfile").onclick = function () {
-      location.href = "{{ url_for('auth.edit_profile') }}";
+      location.href = "/edit_profile";
     };
 
     document.getElementById("logout").onclick = function () {
-      location.href = "{{ url_for('auth.logout') }}";
+      location.href = "/logout";
     };
   </script>
 </body>

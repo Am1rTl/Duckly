@@ -1,7 +1,7 @@
 from markupsafe import escape
 from flask import Flask, jsonify, request, render_template, redirect, url_for, flash, make_response, session
-from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash # Added for password hashing
+from flask_session import Session  # Добавляем поддержку сессий на основе файловой системы
 import time
 import sqlite3
 import random
@@ -11,13 +11,10 @@ import json
 import subprocess # Added to run external scripts
 import re # Add this at the top with other imports
 import os # Added for os.makedirs
+import tempfile # Для временных файлов сессии
 
-# Blueprint imports
-from blueprints.auth import auth_bp
-from blueprints.words import words_bp
-from blueprints.words import words_bp
-
-
+# Import models and db
+from models import db, User, Word, Test, TestWord, TestResult, TestAnswer, UserWordReview, Sentence
 
 app = Flask(__name__)
 # Create instance folder if it doesn't exist
@@ -25,116 +22,58 @@ try:
     os.makedirs(app.instance_path, exist_ok=True)
 except OSError as e:
     print(f"Error creating instance directory {app.instance_path}: {e}")
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/app.db'
+
+# Определяем путь к базе данных в зависимости от окружения
+if os.path.exists('/app'):
+    # Запуск в Docker
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////app/instance/app.db'
+else:
+    # Локальный запуск
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(app.instance_path, "app.db")}'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = os.environ.get('SECRET_KEY', 'a-default-development-secret-key')  # Load secret key from env var
-db = SQLAlchemy(app)
 
-class User(db.Model):
-    __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
-    fio = db.Column(db.String, nullable=False)
-    nick = db.Column(db.String, unique=True, nullable=False)
-    password = db.Column(db.String, nullable=False) # Will store hashed password
-    teacher = db.Column(db.String, nullable=True)
-    class_number = db.Column(db.String, nullable=True)  # Added for student class
+# Настройка сессии для работы в Docker
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_PERMANENT'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=15)
+app.config['SESSION_USE_SIGNER'] = True  # Подписываем cookie для безопасности
+app.config['SESSION_KEY_PREFIX'] = 'duckly_'  # Префикс для файлов сессий
 
-class Word(db.Model):
-    __tablename__ = 'words'
-    id = db.Column(db.Integer, primary_key=True)
-    word = db.Column(db.String, nullable=False)
-    perevod = db.Column(db.String, nullable=False)
-    classs = db.Column('class', db.String, nullable=False)
-    unit = db.Column(db.String, nullable=False)
-    module = db.Column(db.String, nullable=False)
+# Определяем директорию для хранения сессий
+if os.path.exists('/app'):
+    # В Docker используем постоянную директорию
+    session_dir = '/app/flask_session'
+    if not os.path.exists(session_dir):
+        os.makedirs(session_dir, exist_ok=True)
+    app.config['SESSION_FILE_DIR'] = session_dir
+else:
+    # Локально используем временную директорию
+    app.config['SESSION_FILE_DIR'] = tempfile.gettempdir()
 
-class Test(db.Model):
-    __tablename__ = 'tests'
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String, nullable=False)
-    classs = db.Column('class', db.String, nullable=False)
-    unit = db.Column(db.String, nullable=True, default="N/A")
-    module = db.Column(db.String, nullable=True, default="N/A")
-    type = db.Column(db.String, nullable=False)  # dictation, add_letter, true_false, multiple_choice_single, multiple_choice_multiple, fill_word
-    link = db.Column(db.String, unique=True, nullable=False)
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    is_active = db.Column(db.Boolean, default=True)
-    time_limit = db.Column(db.Integer, nullable=True)  # Time limit in minutes
-    word_order = db.Column(db.String, nullable=False)  # 'random' or 'sequential'
-    word_count = db.Column(db.Integer, nullable=True)  # For random order
-    test_mode = db.Column(db.String, nullable=True)  # 'random_letters' or 'manual_letters' for add_letter type
-    
-    # New fields for dictation test options
-    dictation_word_source = db.Column(db.String, nullable=True) # e.g., "all_module", "selected_specific", "random_from_module"
-    dictation_selected_words = db.Column(db.Text, nullable=True) # JSON list of word IDs for "selected_specific"
+# Настройка cookie для сессии
+app.config['SESSION_COOKIE_NAME'] = 'duckly_session'
+app.config['SESSION_COOKIE_SECURE'] = False  # Установите True в production с HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_PATH'] = '/'
 
-    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
-    test_words = db.relationship('TestWord', backref='test', lazy=True)
+# Инициализация сессии
+Session(app)
 
-class TestWord(db.Model):
-    __tablename__ = 'test_words'
-    id = db.Column(db.Integer, primary_key=True)
-    test_id = db.Column(db.Integer, db.ForeignKey('tests.id'), nullable=False)
-    word = db.Column(db.String, nullable=False)
-    perevod = db.Column(db.String, nullable=False)
-    missing_letters = db.Column(db.String, nullable=True)  # For add_letter type tests
-    options = db.Column(db.String, nullable=True)  # For multiple choice tests (JSON string)
-    correct_answer = db.Column(db.String, nullable=False)
-    word_order = db.Column(db.Integer, nullable=False)  # To maintain word order in sequential tests
+# Initialize the db with the app
+db.init_app(app)
 
-class TestResult(db.Model):
-    __tablename__ = 'test_results'
-    id = db.Column(db.Integer, primary_key=True)
-    test_id = db.Column(db.Integer, db.ForeignKey('tests.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    score = db.Column(db.Integer, nullable=False, default=0)
-    correct_answers = db.Column(db.Integer, nullable=False, default=0)
-    total_questions = db.Column(db.Integer, nullable=False, default=0)
-    time_taken = db.Column(db.Integer, nullable=False, default=0)  # in minutes
-    started_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
-    completed_at = db.Column(db.DateTime, nullable=True)
-    current_word_index = db.Column(db.Integer, default=0)  # Track progress
-    answers = db.Column(db.String, nullable=True)  # JSON string of answers
+# Import blueprints after app and db initialization to avoid circular imports
+from blueprints.auth import auth_bp
+from blueprints.words import words_bp
 
-    test = db.relationship('Test', backref=db.backref('results', lazy=True))
-    user = db.relationship('User', backref=db.backref('test_results', lazy=True))
-    test_answers = db.relationship('TestAnswer', backref='test_result', lazy=True, cascade='all, delete-orphan')
+# Register blueprints
+app.register_blueprint(auth_bp)
+app.register_blueprint(words_bp)
 
-class TestAnswer(db.Model):
-    __tablename__ = 'test_answers'
-    id = db.Column(db.Integer, primary_key=True)
-    test_result_id = db.Column(db.Integer, db.ForeignKey('test_results.id'), nullable=False)
-    test_word_id = db.Column(db.Integer, db.ForeignKey('test_words.id'), nullable=False)
-    user_answer = db.Column(db.String(255), nullable=True)
-    is_correct = db.Column(db.Boolean, nullable=False, default=False)
-    answered_at = db.Column(db.DateTime, default=db.func.current_timestamp())
-
-    test_word = db.relationship('TestWord', backref=db.backref('answers', lazy=True))
-
-class UserWordReview(db.Model):
-    __tablename__ = 'user_word_reviews'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    word_id = db.Column(db.Integer, db.ForeignKey('words.id'), nullable=False)
-    next_review_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    interval_days = db.Column(db.Integer, default=0) # Current interval in days
-    ease_factor = db.Column(db.Float, default=2.5) # Standard SM-2 starting ease
-    last_reviewed_at = db.Column(db.DateTime, nullable=True)
-    # Add unique constraint for user_id and word_id
-    __table_args__ = (db.UniqueConstraint('user_id', 'word_id', name='_user_word_uc'),)
-
-    user = db.relationship('User', backref=db.backref('reviews', lazy='dynamic'))
-    word = db.relationship('Word', backref=db.backref('reviews', lazy='dynamic'))
-
-class Sentence(db.Model):
-    __tablename__ = 'sentences'
-    id = db.Column(db.Integer, primary_key=True)
-    text = db.Column(db.String, nullable=False) # The English sentence
-    translation = db.Column(db.String, nullable=True) # Russian translation
-    classs = db.Column(db.String, nullable=False)
-    unit = db.Column(db.String, nullable=False)
-    module = db.Column(db.String, nullable=False)
-    # Potentially add difficulty level later
+# Models are now imported from models.py
 
 
 @app.route("/")
@@ -158,14 +97,14 @@ def greet(name):
 def add_tests():
     if 'user_id' not in session:
         flash("Доступ запрещен. Пожалуйста, войдите как учитель.", "warning")
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
 
     user = User.query.get(session['user_id'])
     if not user or user.teacher != 'yes':
         flash("Доступ запрещен. Только учителя могут добавлять тесты.", "warning")
         if not user:
             session.pop('user_id', None)
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     
     if request.method == "POST":
         test_type = request.form.get('test_type')
@@ -399,13 +338,13 @@ def add_tests():
 @app.route("/tests")
 def tests():
     if 'user_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
 
     user = User.query.get(session['user_id'])
     if not user:
         session.pop('user_id', None)
         flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
 
     show_archived = request.args.get('show_archived', 'false') == 'true'
     
@@ -453,6 +392,37 @@ def tests():
 
 
     return render_template('tests.html', tests_data=tests_data, show_archived=show_archived, is_teacher=user.teacher == 'yes')
+
+@app.route("/api/tests_progress")
+def api_tests_progress():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user = User.query.get(session['user_id'])
+    if not user or user.teacher != 'yes':
+        return jsonify({"error": "Forbidden"}), 403
+
+    # We only care about active tests for live progress updates on the main /tests page
+    tests_query = Test.query.filter_by(created_by=user.id, is_active=True).order_by(Test.created_at.desc()).all()
+    
+    progress_data = []
+    for test_item in tests_query:
+        students_in_class = User.query.filter_by(class_number=test_item.classs, teacher='no').count()
+        
+        completed_count = db.session.query(TestResult.id).join(User, TestResult.user_id == User.id).filter(
+            TestResult.test_id == test_item.id,
+            TestResult.completed_at.isnot(None),
+            User.teacher == 'no'
+        ).count()
+
+        progress_data.append({
+            'id': test_item.id,
+            'title': test_item.title, # Optional: for debugging or richer display
+            'students_in_class': students_in_class,
+            'completed_count': completed_count
+        })
+        
+    return jsonify(progress_data)
 
 @app.route("/words/json")
 def get_words_json():
@@ -506,22 +476,83 @@ def get_words_for_module_selection():
             
     return jsonify({"words": words_list})
 
-@app.route("/tests/<id>", methods=['GET', 'POST'])
+@app.route("/test/<id>", methods=['GET', 'POST'])
 def test_id(id):
     if 'user_id' not in session:
-        return redirect(url_for('login'))
+        flash("Пожалуйста, войдите в систему, чтобы пройти тест.", "error")
+        return redirect(url_for('auth.login'))
 
     user = User.query.get(session['user_id'])
     if not user:
         session.pop('user_id', None)
         flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
+        
+    # Отладочная информация о сессии и cookies
+    print(f"DEBUG: test_id route - session data: {dict(session)}")
+    print(f"DEBUG: Current user: {user.nick}, ID: {user.id}")
+    print(f"DEBUG: Cookies: {request.cookies}")
+    
+    if 'active_test_result_id' in session:
+        print(f"DEBUG: active_test_result_id from session: {session['active_test_result_id']}")
+    else:
+        print("DEBUG: No active_test_result_id in session")
+        
+    if 'active_test_result_id' in request.cookies:
+        print(f"DEBUG: active_test_result_id from cookie: {request.cookies.get('active_test_result_id')}")
 
     test = Test.query.filter_by(link=id).first()
     if not test:
         return "Test not found", 404
 
-    is_teacher_preview_mode = False # Flag to indicate teacher preview
+    # Проверяем, является ли это режимом предпросмотра для учителя
+    is_teacher_preview_mode = False
+    if user.teacher == 'yes' and (session.get('is_teacher_preview', False) or session.get('test_link') == id):
+        is_teacher_preview_mode = True
+        print("DEBUG: Teacher preview mode detected")
+    
+    # Получаем активный тест из сессии или cookie для студента
+    test_result = None
+    
+    # Сначала пробуем получить из сессии
+    if 'active_test_result_id' in session:
+        test_result_id = session['active_test_result_id']
+        test_result = TestResult.query.get(test_result_id)
+        print(f"DEBUG: Found test_result from session: {test_result}")
+    
+    # Если не нашли в сессии, пробуем из cookie
+    if not test_result and 'active_test_result_id' in request.cookies:
+        try:
+            test_result_id = int(request.cookies.get('active_test_result_id'))
+            test_result = TestResult.query.get(test_result_id)
+            if test_result:
+                # Если нашли в cookie, сохраняем в сессию для будущих запросов
+                session['active_test_result_id'] = test_result_id
+                session['test_link'] = id
+                session.modified = True
+                print(f"DEBUG: Found test_result from cookie and saved to session: {test_result}")
+        except (ValueError, TypeError):
+            print("DEBUG: Invalid test_result_id in cookie")
+    
+    # Если пользователь не учитель и нет активного теста ни в сессии, ни в cookie,
+    # пробуем найти незавершенный тест для этого пользователя и этого теста
+    if user.teacher == 'no' and not test_result:
+        incomplete_result = TestResult.query.filter_by(
+            test_id=test.id,
+            user_id=user.id,
+            completed_at=None
+        ).first()
+        
+        if incomplete_result:
+            test_result = incomplete_result
+            session['active_test_result_id'] = incomplete_result.id
+            session['test_link'] = id
+            session.modified = True
+            print(f"DEBUG: Found incomplete test result from database: {test_result}")
+        else:
+            print("DEBUG: Student without active test result, redirecting to take_test")
+            flash("Пожалуйста, начните тест с начальной страницы.", "warning")
+            return redirect(url_for('take_test', test_link=id))
 
     # Handle POST requests (submitting answers)
     if request.method == 'POST':
@@ -630,8 +661,9 @@ def test_id(id):
     # Student Test-Taking Logic for GET
     else: # user.teacher == 'no'
         # Check if student has access to this test (class matches)
+        print(f"DEBUG: test.classs={test.classs}, user.class_number={user.class_number}")
         if test.classs != user.class_number:
-            flash("Доступ запрещен: тест предназначен для другого класса.", "error")
+            flash(f"Доступ запрещен: тест предназначен для класса {test.classs}, а вы в классе {user.class_number}.", "error")
             return redirect(url_for('tests'))
 
         # Check if test is active (students cannot take archived tests)
@@ -823,13 +855,13 @@ def test_id(id):
 @app.route("/edit_profile")
 def edit_profile():
     if 'user_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     
     user = User.query.get(session['user_id'])
     if not user:
         session.pop('user_id', None)
         flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
         
     return render_template('edit_profile.html', nick=user.nick, fio=user.fio)
 
@@ -911,13 +943,13 @@ def get_modules_for_sentence_game():
 @app.route("/hello")
 def hello():
     if 'user_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
 
     user = User.query.get(session['user_id'])
     if not user:
         session.pop('user_id', None) # Clean up invalid session
         flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
 
     fio_parts = user.fio.split(' ')
     try:
@@ -1080,14 +1112,14 @@ def generate_test_link():
 def create_test():
     if 'user_id' not in session:
         flash("Доступ запрещен. Пожалуйста, войдите как учитель.", "warning")
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
 
     user = User.query.get(session['user_id'])
     if not user or user.teacher != 'yes':
         flash("Доступ запрещен. Только учителя могут создавать тесты.", "warning")
         if not user: # If user is None (e.g. ID in session is invalid), pop session and redirect
             session.pop('user_id', None)
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     
     if request.method == 'POST':
         test_type = request.form.get('test_type')
@@ -1407,7 +1439,7 @@ def create_test():
 def configure_test_words(test_id):
     if 'user_id' not in session:
         flash("Доступ запрещен. Пожалуйста, войдите.", "warning")
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     
     user = User.query.get(session['user_id'])
     if not user or user.teacher != 'yes':
@@ -1501,13 +1533,13 @@ def configure_test_words(test_id):
 @app.route("/test/<int:test_id>")
 def test_details(test_id):
     if 'user_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
 
     user = User.query.get(session['user_id'])
     if not user:
         session.pop('user_id', None)
         flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
 
     test = Test.query.get_or_404(test_id)
     
@@ -1605,7 +1637,7 @@ def test_details(test_id):
 def archive_test(test_id):
     if 'user_id' not in session:
         flash("Доступ запрещен. Пожалуйста, войдите как учитель.", "warning")
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
 
     user = User.query.get(session['user_id'])
     if not user or user.teacher != 'yes':
@@ -1625,7 +1657,7 @@ def archive_test(test_id):
 def unarchive_test(test_id):
     if 'user_id' not in session:
         flash("Доступ запрещен. Пожалуйста, войдите как учитель.", "warning")
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
 
     user = User.query.get(session['user_id'])
     if not user or user.teacher != 'yes':
@@ -1647,7 +1679,7 @@ def unarchive_test(test_id):
 def clear_test_results(test_id):
     if 'user_id' not in session:
         flash("Доступ запрещен. Пожалуйста, войдите как учитель.", "warning")
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
 
     user = User.query.get(session['user_id'])
     if not user or user.teacher != 'yes':
@@ -1687,7 +1719,7 @@ def clear_test_results(test_id):
 def delete_test_completely(test_id):
     if 'user_id' not in session:
         flash("Доступ запрещен. Пожалуйста, войдите как учитель.", "warning")
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
 
     user = User.query.get(session['user_id'])
     if not user or user.teacher != 'yes':
@@ -1721,15 +1753,20 @@ def delete_test_completely(test_id):
 def take_test(test_link):
     if 'user_id' not in session:
         flash("Пожалуйста, войдите в систему, чтобы пройти тест.", "error")
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
 
     current_user = User.query.get(session['user_id'])
     if not current_user:
         session.pop('user_id', None)
         flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     
     test = Test.query.filter_by(link=test_link).first_or_404()
+
+    # Отладочная информация о сессии
+    print(f"DEBUG: Session data at take_test start: {dict(session)}")
+    print(f"DEBUG: Current user: {current_user.nick}, ID: {current_user.id}")
+    print(f"DEBUG: Test ID: {test.id}, Test Link: {test.link}")
 
     # Check if student belongs to the correct class for the test
     if current_user.teacher == 'no' and test.classs != current_user.class_number:
@@ -1748,7 +1785,12 @@ def take_test(test_link):
             # Teachers starting a test go directly to preview mode via test_id route
             # No TestResult is created for them.
             flash("Начат предпросмотр теста.", "info")
-            return jsonify({'success': True, 'redirect_url': url_for('test_id', id=test.link)})
+            # Явно сохраняем сессию для учителя
+            session['is_teacher_preview'] = True
+            session['test_link'] = test.link
+            session.modified = True
+            print(f"DEBUG: Teacher preview mode activated, session: {dict(session)}")
+            return jsonify({'success': True, 'redirect_url': '/test/' + test.link})
 
         # --- STUDENT LOGIC FOR POST (starting a test) ---
         if test.classs != current_user.class_number:
@@ -1768,7 +1810,16 @@ def take_test(test_link):
         if existing_incomplete_result:
             # If student already has an incomplete test, use that one
             session['active_test_result_id'] = existing_incomplete_result.id
-            return jsonify({'success': True, 'redirect_url': url_for('test_id', id=test.link)})
+            session['test_link'] = test.link
+            # Явно помечаем сессию как измененную
+            session.modified = True
+            print(f"DEBUG: Using existing test result, ID: {existing_incomplete_result.id}, session: {dict(session)}")
+            
+            # Вместо JSON-ответа делаем прямой редирект
+            resp = make_response(redirect('/test/' + test.link))
+            resp.set_cookie('active_test_result_id', str(existing_incomplete_result.id))
+            resp.set_cookie('test_link', test.link)
+            return resp
         else:
             # If no incomplete test, check if they completed it before.
             # Depending on policy, you might prevent retakes or allow new attempts.
@@ -1783,8 +1834,18 @@ def take_test(test_link):
             )
             db.session.add(new_test_result)
             db.session.commit()
+            
             session['active_test_result_id'] = new_test_result.id
-            return jsonify({'success': True, 'redirect_url': url_for('test_id', id=test.link)})
+            session['test_link'] = test.link
+            # Явно помечаем сессию как измененную
+            session.modified = True
+            print(f"DEBUG: Created new test result, ID: {new_test_result.id}, session: {dict(session)}")
+            
+            # Вместо JSON-ответа делаем прямой редирект
+            resp = make_response(redirect('/test/' + test.link))
+            resp.set_cookie('active_test_result_id', str(new_test_result.id))
+            resp.set_cookie('test_link', test.link)
+            return resp
 
     # GET request logic:
     if current_user.teacher == 'yes':
@@ -1802,8 +1863,15 @@ def take_test(test_link):
     if incomplete_result:
         # If student has an incomplete test, take them directly to it to resume
         session['active_test_result_id'] = incomplete_result.id
+        session['test_link'] = test.link
+        # Явно помечаем сессию как измененную
+        session.modified = True
+        print(f"DEBUG: Resuming incomplete test, ID: {incomplete_result.id}, session: {dict(session)}")
         # Redirect to the test interface itself (test_id handles rendering based on type)
-        return redirect(url_for('test_id', id=test.link))
+        resp = make_response(redirect('/test/' + test.link))
+        resp.set_cookie('active_test_result_id', str(incomplete_result.id))
+        resp.set_cookie('test_link', test.link)
+        return resp
 
     # If test is completed, show link to results or message
     completed_result = TestResult.query.filter(
@@ -1824,12 +1892,12 @@ def submit_test(test_id):
     if 'user_id' not in session:
         # For form submissions, redirect is more appropriate than JSON error
         flash("Аутентификация не пройдена. Пожалуйста, войдите снова.", "error")
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
 
     user = User.query.get(session['user_id'])
     if not user:
         flash("Пользователь не найден. Пожалуйста, войдите снова.", "error")
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
 
     test = Test.query.get_or_404(test_id)
     active_test_result = TestResult.query.filter_by(
@@ -2033,13 +2101,13 @@ def submit_test(test_id):
 @app.route('/test_results/<int:test_id>/<int:result_id>')
 def test_results(test_id, result_id):
     if 'user_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
 
     user = User.query.get(session['user_id'])
     if not user:
         session.pop('user_id', None)
         flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
 
     test = Test.query.get_or_404(test_id)
     result = TestResult.query.get_or_404(result_id)
@@ -2158,13 +2226,13 @@ def test_results(test_id, result_id):
 @app.route("/games")
 def games():
     if 'user_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     
     user = User.query.get(session['user_id'])
     if not user:
         session.pop('user_id', None)
         flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
         
     return render_template('games.html', is_teacher=user.teacher == 'yes')
 
@@ -2242,6 +2310,7 @@ def flashcards_game(class_name, unit_name, module_name):
         flash(f"Для модуля '{module_name}' (юнит '{unit_name}', класс '{class_name}') не найдено слов.", "warning")
         return redirect(url_for('flashcards_select_module'))
 
+    return render_template('flashcards_game.html',
                            words=augmented_words_list,
                            class_name=class_name,
                            unit_name=unit_name,
@@ -2524,9 +2593,7 @@ def update_flashcard_review():
         # Log the error e
         return jsonify({'error': 'Database commit failed', 'details': str(e), 'success': False}), 500
 
-# Register Blueprints
-app.register_blueprint(auth_bp)
-app.register_blueprint(words_bp)
+# Blueprints are already registered at the top of the file
 # app.register_blueprint(tests_bp, url_prefix='/tests') # Example for future
 # app.register_blueprint(games_bp, url_prefix='/games') # Example for future
 

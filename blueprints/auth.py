@@ -1,27 +1,9 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import timedelta
 
-# To import from the parent directory (where site_1.py is)
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-# Now import from site_1.py. This assumes site_1.py can be imported directly.
-# If site_1.py is the main app module, these might need to be structured differently
-# e.g. by passing 'app' or using current_app from Flask for app.config items.
-# For models and db, direct import from site_1 might lead to circular issues
-# if site_1 also imports this blueprint.
-# A common pattern is to have models in a separate models.py and db initialized in main app or extensions.py
-# For now, we will try direct import and adjust if circular dependencies arise.
-# This will likely require app context for db operations, so these routes
-# must be registered with the app that has the db configured.
-
-# Placeholder for db and models, assuming they will be accessible via current_app or passed
-# For now, to make it runnable, let's assume they are imported from site_1.
-# This will be fixed once site_1.py is refactored to initialize db and models
-# and then register blueprints.
-from site_1 import db, User, app # app is imported for app.permanent_session_lifetime
+# Import db and User from models
+from models import db, User
 
 auth_bp = Blueprint('auth', __name__,
                     template_folder='../templates',
@@ -40,7 +22,7 @@ def login():
             if teacher_user and check_password_hash(teacher_user.password, password_form):
                 session['user_id'] = teacher_user.id
                 session.permanent = True
-                app.permanent_session_lifetime = timedelta(days=15)
+                current_app.permanent_session_lifetime = timedelta(days=15)
                 return redirect(url_for('hello')) # 'hello' might need to be 'main.hello' if it also moves
             elif not teacher_user and password_form == 'teacher':
                 hashed_password = generate_password_hash('teacher')
@@ -54,7 +36,7 @@ def login():
                 db.session.commit()
                 session['user_id'] = teacher.id
                 session.permanent = True
-                app.permanent_session_lifetime = timedelta(days=15)
+                current_app.permanent_session_lifetime = timedelta(days=15)
                 return redirect(url_for('hello'))
             else:
                 error = 'Invalid teacher credentials'
@@ -63,7 +45,7 @@ def login():
             if user and check_password_hash(user.password, password_form):
                 session['user_id'] = user.id
                 session.permanent = True
-                app.permanent_session_lifetime = timedelta(days=15)
+                current_app.permanent_session_lifetime = timedelta(days=15)
                 return redirect(url_for('hello'))
             else:
                 error = 'Invalid username/password'
@@ -118,7 +100,7 @@ def registration():
 
         session['user_id'] = new_user.id
         session.permanent = True
-        app.permanent_session_lifetime = timedelta(days=15)
+        current_app.permanent_session_lifetime = timedelta(days=15)
         flash("Регистрация прошла успешно! Вы вошли в систему.", "success")
         return redirect(url_for('hello'))
 

@@ -281,98 +281,110 @@
   </div>
 
   <div class="nav-tabs">
-    <a href="{{ url_for('words.words') }}" id="words" class="nav-tab"><i class="fas fa-book"></i>Слова</a>
-    <a href="{{ url_for('tests') }}" id="tests" class="nav-tab active"><i class="fas fa-file-alt"></i>Тесты</a>
-    <a href="{{ url_for('games') }}" id="games" class="nav-tab"><i class="fas fa-gamepad"></i>Игры</a>
+    <a href="/words" id="words" class="nav-tab"><i class="fas fa-book"></i>Слова</a>
+    <a href="{{ "/tests" }}" id="tests" class="nav-tab active"><i class="fas fa-file-alt"></i>Тесты</a>
+    <a href="{{ "/games" }}" id="games" class="nav-tab"><i class="fas fa-gamepad"></i>Игры</a>
   </div>
 
   <h1 class="page-title">Существующие тесты</h1>
 
   <div class="nav-tabs">
-    <a href="{{ url_for('tests', show_archived='false') }}" class="nav-tab {% if not show_archived %}active{% endif %}">
+    <a href="/tests?show_archived=false" id="activeTestsTab" class="nav-tab {% if not show_archived %}active{% endif %}">
       <i class="fas fa-list"></i> Активные тесты
     </a>
-    <a href="{{ url_for('tests', show_archived='true') }}" class="nav-tab {% if show_archived %}active{% endif %}">
+    <a href="/tests?show_archived=true" id="archivedTestsTab" class="nav-tab {% if show_archived %}active{% endif %}">
       <i class="fas fa-archive"></i> Архив
     </a>
   </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Название теста</th>
-        <th>Класс</th>
-        <th>Юнит</th>
-        <th>Модуль</th>
-        <th>Тип</th>
-        <th style="text-align: center;">Действия</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for test_item in tests_data %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle" id="tests-table-teacher">
+      <thead>
         <tr>
-          <td>
-            <a href="{{ url_for('test_details', test_id=test_item.test.id) }}">{{ test_item.test.title }}</a>
-          </td>
-          <td>{{ test_item.test.classs if test_item.test.classs else 'N/A' }}</td>
-          <td>{{ test_item.test.unit if test_item.test.unit else 'N/A' }}</td>
-          <td>{{ test_item.test.module if test_item.test.module else 'N/A' }}</td>
-          <td>{{ test_item.test.type }}</td>
-          <td class="action-buttons" style="text-align: center;">
-            {% if is_teacher %}
-                <a href="{{ url_for('test_details', test_id=test_item.test.id) }}" class="btn btn-primary btn-sm" style="padding: 6px 10px; font-size: 0.9rem;">
-                    <i class="fas fa-eye"></i> Детали
-                </a>
-                <button class="btn-icon" onclick="copyToClipboard('{{ url_for('take_test', test_link=test_item.test.link, _external=True) }}')" title="Скопировать ссылку для ученика">
-                    <i class="fas fa-copy"></i>
-                </button>
-                <!-- Progress Bar for Teachers -->
-                {% if test_item.students_in_class > 0 %}
-                    <div class="progress-bar-container-table" style="margin-top: 5px; height: 10px; background-color: #e0e0e0; border-radius: 5px;">
-                        <div class="progress-bar-table" 
-                             style="width: {{ test_item.progress }}%; height: 100%; background-color: {{ '#4CAF50' if test_item.progress == 100 else ('#FFC107' if test_item.progress > 0 else '#DC3545') }}; border-radius: 5px; text-align: center; color: white; font-size: 0.7em; line-height: 10px;">
-                             {{ test_item.progress }}%
-                        </div>
-                    </div>
-                {% else %}
-                     <div class="progress-bar-container-table" style="margin-top: 5px; height: 10px; background-color: #e0e0e0; border-radius: 5px;">
-                        <div class="progress-bar-table" style="width: 0%; height: 100%; background-color: #DC3545; border-radius: 5px; font-size: 0.7em; line-height: 10px;">0%</div>
-                    </div>
-                {% endif %}
-                 <small style="font-size: 0.75em; color: #666;">{{ test_item.completed_count }}/{{ test_item.students_in_class }}</small>
-            {% else %}
-                {# Student's view of action buttons #}
-                {% if test_item.test.is_active %}
-                    {% if test_item.student_completed_result_id %}
-                        <a href="{{ url_for('test_results', test_id=test_item.test.id, result_id=test_item.student_completed_result_id) }}" class="btn btn-info btn-sm" style="padding: 6px 10px; font-size: 0.9rem; background-color: #17a2b8; border-color: #17a2b8;">
-                            <i class="fas fa-check-circle"></i> Пройден
-                        </a>
-                    {% else %}
-                        <a href="{{ url_for('take_test', test_link=test_item.test.link) }}" class="btn btn-success btn-sm" style="padding: 6px 10px; font-size: 0.9rem; background-color: var(--success-color); border-color: var(--success-color);">
-                            <i class="fas fa-play"></i> Начать/Продолжить
-                        </a>
-                    {% endif %}
-                {% else %}
-                    {# Test is Archived #}
-                    {% if test_item.student_completed_result_id %}
-                        <a href="{{ url_for('test_results', test_id=test_item.test.id, result_id=test_item.student_completed_result_id) }}" class="btn btn-info btn-sm" style="padding: 6px 10px; font-size: 0.9rem; background-color: #17a2b8; border-color: #17a2b8;">
-                            <i class="fas fa-poll"></i> Смотреть результаты
-                        </a>
-                    {% else %}
-                        <span class="btn btn-secondary btn-sm disabled" style="padding: 6px 10px; font-size: 0.9rem; background-color: #6c757d; border-color: #6c757d; color: #fff; cursor: not-allowed;">
-                            <i class="fas fa-archive"></i> Архив (не пройден)
-                        </span>
-                    {% endif %}
-                {% endif %}
-            {% endif %}
-          </td>
+          <th>Название теста</th>
+          <th>Класс</th>
+          <th>Юнит</th>
+          <th>Модуль</th>
+          <th>Тип</th>
+          <th>Прогресс</th>
+          <th style="text-align: center;">Действия</th>
         </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for test_item in tests_data %}
+          <tr>
+            <td>
+              <a href="/test/{{ test_item.test.id }}">{{ test_item.test.title }}</a>
+            </td>
+            <td>{{ test_item.test.classs if test_item.test.classs else 'N/A' }}</td>
+            <td>{{ test_item.test.unit if test_item.test.unit else 'N/A' }}</td>
+            <td>{{ test_item.test.module if test_item.test.module else 'N/A' }}</td>
+            <td>{{ test_item.test.type }}</td>
+            <td>
+              <span id="test-progress-{{ test_item.test.id }}">{{ test_item.completed_count }} / {{ test_item.students_in_class }}</span>
+              ({{ test_item.progress }}%)
+            </td>
+            <td class="action-buttons" style="text-align: center;">
+              {% if is_teacher %}
+                  <a href="/test/{{ test_item.test.id }}" class="btn btn-primary btn-sm" style="padding: 6px 10px; font-size: 0.9rem;">
+                      <i class="fas fa-eye"></i> Детали
+                  </a>
+                  <button class="btn-icon" onclick="copyToClipboard('http://{{ request.host }}/take_test/{{ test_item.test.link }}')" title="Скопировать ссылку для ученика">
+                      <i class="fas fa-copy"></i>
+                  </button>
+                  <!-- Progress Bar for Teachers -->
+                  {% if test_item.students_in_class > 0 %}
+                      <div class="progress-bar-container-table" style="margin-top: 5px; height: 10px; background-color: #e0e0e0; border-radius: 5px;">
+                          <div class="progress-bar-table" 
+                               id="action-progressbar-fill-{{ test_item.test.id }}"
+                               style="width: {{ test_item.progress }}%; height: 100%; background-color: {% if test_item.progress == 100 %}#4CAF50{% elif test_item.progress > 0 %}#FFC107{% else %}#DC3545{% endif %}; border-radius: 5px; text-align: center; color: white; font-size: 0.7em; line-height: 10px;">
+                               {{ test_item.progress }}%
+                          </div>
+                      </div>
+                  {% else %}
+                       <div class="progress-bar-container-table" style="margin-top: 5px; height: 10px; background-color: #e0e0e0; border-radius: 5px;">
+                          <div class="progress-bar-table" 
+                               id="action-progressbar-fill-{{ test_item.test.id }}"
+                               style="width: 0%; height: 100%; background-color: #DC3545; border-radius: 5px; text-align: center; color: white; font-size: 0.7em; line-height: 10px;">0%</div>
+                      </div>
+                  {% endif %}
+                   <small style="font-size: 0.75em; color: #666;" id="action-progress-text-{{ test_item.test.id }}">
+                       {{ test_item.completed_count }}/{{ test_item.students_in_class }}
+                   </small>
+              {% else %}
+                  {# Student's view of action buttons #}
+                  {% if test_item.test.is_active %}
+                      {% if test_item.student_completed_result_id %}
+                          <a href="/test_results/{{ test_item.test.id }}/{{ test_item.student_completed_result_id }}" class="btn btn-info btn-sm" style="padding: 6px 10px; font-size: 0.9rem; background-color: #17a2b8; border-color: #17a2b8;">
+                              <i class="fas fa-check-circle"></i> Пройден
+                          </a>
+                      {% else %}
+                          <a href="/take_test/{{ test_item.test.link }}" class="btn btn-success btn-sm" style="padding: 6px 10px; font-size: 0.9rem; background-color: var(--success-color); border-color: var(--success-color);">
+                              <i class="fas fa-play"></i> Начать/Продолжить
+                          </a>
+                      {% endif %}
+                  {% else %}
+                      {# Test is Archived #}
+                      {% if test_item.student_completed_result_id %}
+                          <a href="/test_results/{{ test_item.test.id }}/{{ test_item.student_completed_result_id }}" class="btn btn-info btn-sm" style="padding: 6px 10px; font-size: 0.9rem; background-color: #17a2b8; border-color: #17a2b8;">
+                              <i class="fas fa-poll"></i> Смотреть результаты
+                          </a>
+                      {% else %}
+                          <span class="btn btn-secondary btn-sm disabled" style="padding: 6px 10px; font-size: 0.9rem; background-color: #6c757d; border-color: #6c757d; color: #fff; cursor: not-allowed;">
+                              <i class="fas fa-archive"></i> Архив (не пройден)
+                          </span>
+                      {% endif %}
+                  {% endif %}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
   {% if is_teacher %}
-  <a href="{{ url_for('add_tests') }}" class="btn btn-primary" id="addTestBtn" style="margin-bottom: 30px;"><i class="fas fa-plus"></i> Добавить тест</a>
+  <a href="{{ "/add_tests" }}" class="btn btn-primary" id="addTestBtn" style="margin-bottom: 30px;"><i class="fas fa-plus"></i> Добавить тест</a>
   {% endif %}
 
   <h1>Scoreboard</h1>
@@ -438,12 +450,82 @@
     var backButton = document.getElementById("back");
     if (backButton) {
         backButton.onclick = function() { 
-            location.href = "{{ url_for('hello') }}";
+            location.href = "{{ "/hello" }}";
         };
     }
     // Navigation links (words, tests, games, addTestBtn) are <a> tags with hrefs.
     // Direct JS click handlers for simple navigation are redundant and can be removed if they cause issues.
+
   </script>
+
+  {% if is_teacher %}
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+      if (!document.getElementById('tests-table-teacher')) {
+          return; 
+      }
+
+      function fetchTestProgress() {
+          fetch('/api/tests_progress')
+              .then(response => {
+                  if (!response.ok) {
+                      console.error('Network response was not ok for /api/tests_progress. Status: ' + response.status);
+                      return null; 
+                  }
+                  return response.json();
+              })
+              .then(data => {
+                  if (!data) {
+                      console.log('No data received from /api/tests_progress');
+                      return;
+                  }
+                  data.forEach(testProgress => {
+                      // Update Progress Column
+                      const progressCell = document.querySelector(`#tests-table-teacher #test-progress-${testProgress.id}`)?.parentElement;
+                      if (progressCell) {
+                          let percentage = 0;
+                          if (testProgress.students_in_class > 0) {
+                              percentage = Math.round((testProgress.completed_count / testProgress.students_in_class) * 100);
+                          }
+                          progressCell.innerHTML = 
+                              `<span id="test-progress-${testProgress.id}">${testProgress.completed_count} / ${testProgress.students_in_class}</span> (${percentage}%)`;
+                      }
+
+                      // Update Action Column Progress Bar and Text
+                      const actionProgressBarFill = document.getElementById(`action-progressbar-fill-${testProgress.id}`);
+                      const actionProgressText = document.getElementById(`action-progress-text-${testProgress.id}`);
+                      
+                      if (actionProgressBarFill) {
+                          let percentage = 0;
+                          if (testProgress.students_in_class > 0) {
+                              percentage = Math.round((testProgress.completed_count / testProgress.students_in_class) * 100);
+                          }
+                          actionProgressBarFill.style.width = percentage + '%';
+                          actionProgressBarFill.textContent = percentage + '%';
+                          if (percentage === 100) {
+                              actionProgressBarFill.style.backgroundColor = '#4CAF50'; // Green
+                          } else if (percentage > 0) {
+                              actionProgressBarFill.style.backgroundColor = '#FFC107'; // Yellow
+                          } else {
+                              actionProgressBarFill.style.backgroundColor = '#DC3545'; // Red
+                          }
+                      }
+                      if (actionProgressText) {
+                          actionProgressText.innerHTML = `${testProgress.completed_count}/${testProgress.students_in_class}`;
+                      }
+                  });
+              })
+              .catch(error => {
+                  console.error('Error fetching test progress:', error);
+              });
+      }
+
+      fetchTestProgress();
+      setInterval(fetchTestProgress, 10000);
+  });
+  </script>
+  {% endif %}
+
 </div> <!-- Close container -->
 </body>
 </html>

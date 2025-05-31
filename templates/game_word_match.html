@@ -128,7 +128,7 @@
     </div>
 
     <div class="mt-4 text-center">
-         <a href="{{ url_for('word_match_select_module') }}" class="btn btn-outline-secondary btn-sm">Выбрать другой модуль</a>
+         <a href="{{ "/word_match_select_module" }}" class="btn btn-outline-secondary btn-sm">Выбрать другой модуль</a>
     </div>
 </div>
 
@@ -147,7 +147,7 @@
 {% block scripts %}
 {{ super() }}
 {# Placeholder for game_word_match.js - to be created in next step #}
-{# <script src="{{ url_for('static', filename='js/game_word_match.js') }}" defer></script> #}
+{# <script src="/static/js/game_word_match.js" defer></script> #}
 <script>
 // Basic placeholder logic for now, actual game logic in game_word_match.js
 document.addEventListener('DOMContentLoaded', function() {

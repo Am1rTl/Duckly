@@ -471,12 +471,9 @@
       updateWordsDisplay(); // Update word display
     }
 
-    // Using a placeholder for word_id which will be replaced.
-    // Alternatively, construct the URL directly: `/edit_word/${wordId}`
-    const editWordUrlBase = "{{ url_for('words.edit_word', word_id='ID_PLACEHOLDER') }}";
-
+    // Construct the URL directly using the blueprint route
     function getEditUrl(wordId) {
-      return editWordUrlBase.replace('ID_PLACEHOLDER', wordId);
+      return `/edit_word/${wordId}`;
     }
 
     function updateWordsDisplay() {
@@ -520,8 +517,8 @@
         // The link to module_words uses class/unit/module names, not word ID. This is fine.
         // The edit link now uses wordObj.id
         card.innerHTML = `
-          <a href="{{ url_for('words.module_words', class_name='CLASS_PLACEHOLDER', unit_name='UNIT_PLACEHOLDER', module_name='MODULE_PLACEHOLDER') }}"
-             onclick="this.href=this.href.replace('CLASS_PLACEHOLDER', encodeURIComponent('${wordObj.class}')).replace('UNIT_PLACEHOLDER', encodeURIComponent('${wordObj.unit}')).replace('MODULE_PLACEHOLDER', encodeURIComponent('${wordObj.module}')); return true;"
+          <a href="javascript:void(0);" class="module-link"
+             onclick="window.location.href = '/class/' + encodeURIComponent('${wordObj.class}') + '/' + encodeURIComponent('${wordObj.unit}') + '/' + encodeURIComponent('${wordObj.module}');"
              style="text-decoration: none; color: inherit;">
             <div class="word-text">${wordObj.word}</div>
             <div class="translation">${wordObj.perevod}</div>
@@ -552,8 +549,8 @@
         // The link to module_words uses class/unit/module names.
         // The edit link now uses wordObj.id
         row.innerHTML = `
-          <td><a href="{{ url_for('words.module_words', class_name='CLASS_PLACEHOLDER', unit_name='UNIT_PLACEHOLDER', module_name='MODULE_PLACEHOLDER') }}"
-                 onclick="this.href=this.href.replace('CLASS_PLACEHOLDER', encodeURIComponent('${wordObj.class}')).replace('UNIT_PLACEHOLDER', encodeURIComponent('${wordObj.unit}')).replace('MODULE_PLACEHOLDER', encodeURIComponent('${wordObj.module}')); return true;">
+          <td><a href="javascript:void(0);" class="module-link"
+                 onclick="window.location.href = '/class/' + encodeURIComponent('${wordObj.class}') + '/' + encodeURIComponent('${wordObj.unit}') + '/' + encodeURIComponent('${wordObj.module}');">
                  ${wordObj.word}
               </a>
           </td>
@@ -589,7 +586,7 @@
             method: 'POST',
             headers: {
                 // CSRF token might be needed if Flask-WTF is used for forms globally
-                // 'X-CSRFToken': '{{ csrf_token() }}' // If using Flask-WTF CSRF protection
+                // 'X-CSRFToken': 'csrf-token-would-go-here' // If using Flask-WTF CSRF protection
                 'Content-Type': 'application/json', // Though body is not strictly needed by current backend
             },
             // body: JSON.stringify({}) // Body is not strictly needed by current backend for DELETE by ID
@@ -692,11 +689,11 @@
     };
 
     // Navigation
-    document.getElementById("backButton").onclick = () => location.href = "{{ url_for('hello') }}";
-    document.getElementById("wordsTab").onclick = () => location.href = "{{ url_for('words.words') }}";
-    document.getElementById("testsTab").onclick = () => location.href = "{{ url_for('tests') }}";
-    document.getElementById("gamesTab").onclick = () => location.href = "{{ url_for('games') }}";
-    document.getElementById("addWordsButton").onclick = () => location.href = "{{ url_for('words.add_words') }}";
+    document.getElementById("backButton").onclick = () => location.href = "/hello";
+    document.getElementById("wordsTab").onclick = () => location.href = "/words";
+    document.getElementById("testsTab").onclick = () => location.href = "/tests";
+    document.getElementById("gamesTab").onclick = () => location.href = "/games";
+    document.getElementById("addWordsButton").onclick = () => location.href = "/add_words";
   </script>
 </body>
 </html>

@@ -166,7 +166,7 @@
       <div class="error-message">{{ error }}</div> <!-- Changed to div for consistency -->
     {% endif %}
 
-    <form action="{{ url_for('auth.login') }}" method="post"> <!-- Used url_for for action -->
+    <form action="/login" method="post">
       <div class="form-group">
         <label for="username">Имя пользователя:</label>
         <input type="text" class="form-control" id="username" name="username" minlength="3" required />
@@ -183,7 +183,7 @@
       <button type="submit" class="btn btn-primary w-100">Войти</button> <!-- Changed input to button -->
     </form>
     <div class="text-center mt-3">
-        <a href="{{ url_for('auth.registration') }}">Нет аккаунта? Зарегистрироваться</a>
+        <a href="/registration">Нет аккаунта? Зарегистрироваться</a>
     </div>
   </div>
 
@@ -211,13 +211,13 @@
       //     // Assuming you want to stay on login if already on login page
       //     // or navigate if this template was part of a single-page auth form
       //     if (!window.location.pathname.endsWith('/login')) {
-      //        location.href = "{{ url_for('login') }}";
+      //        location.href = "/login";
       //     }
       //   };
       // }
       // if (registrationButton) {
       //   registrationButton.onclick = function () {
-      //     location.href = "{{ url_for('registration') }}";
+      //     location.href = "/registration";
       //   };
       // }
     });

@@ -1,9 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 
-# Assuming site_1.py is in the parent directory and contains db, Word models
-# This might need adjustment based on the final project structure (e.g., if models move to models.py)
-from ..site_1 import db, Word # Added User for quizlet_cards check, might remove if not used
-# from ..site_1 import User # If User model is needed for any checks here
+# Import models from models.py
+from models import db, Word, User
 
 words_bp = Blueprint('words', __name__,
                      template_folder='../templates',

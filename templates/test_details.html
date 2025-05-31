@@ -446,7 +446,7 @@
 <body>
     <nav class="navbar">
         <div class="navbar-start">
-            <a href="{{ url_for('tests') }}" class="nav-link"><i class="fas fa-arrow-left"></i> Back to Tests</a>
+            <a href="{{ "/tests" }}" class="nav-link"><i class="fas fa-arrow-left"></i> Back to Tests</a>
         </div>
         <div class="navbar-center">
             <span class="navbar-brand">Test Details</span> 
@@ -472,8 +472,8 @@
 
         {% if is_teacher and test.is_active %}
         <div class="link-section">
-             <input type="text" value="{{ url_for('take_test', test_link=test.link, _external=True) }}" id="testLink" readonly title="Test share link">
-            <button class="btn btn-primary" onclick="copyLink()"><i class="fas fa-copy"></i> Copy Link</button>
+            <input type="text" value="{{ url_for('take_test', test_link=test.link, _external=True) }}" id="testLink" readonly title="Ссылка для учеников">
+            <button class="btn btn-success" onclick="copyLink()"><i class="fas fa-copy"></i> Копировать ссылку</button>
         </div>
         {% endif %}
 
@@ -552,7 +552,7 @@
         </div>
 
         <div class="actions-container">
-            <a href="{{ url_for('tests') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Tests</a>
+            <a href="{{ "/tests" }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Tests</a>
             {% if is_teacher %}
                 {% if test.is_active %}
                     <form action="{{ url_for('archive_test', test_id=test.id) }}" method="POST" style="display: inline-block;">
@@ -579,17 +579,32 @@
             var copyText = document.getElementById("testLink");
             copyText.select();
             copyText.setSelectionRange(0, 99999); /* For mobile devices */
-            navigator.clipboard.writeText(copyText.value).then(function() {
-                alert("Copied the link: " + copyText.value);
-            }, function(err) {
-                // Fallback for older browsers
-                try {
-                    document.execCommand("copy");
-                    alert("Copied the link (fallback): " + copyText.value);
-                } catch (e) {
-                    alert("Failed to copy the link. Please copy it manually.\n" + err);
+            
+            // Сначала пробуем использовать execCommand (работает в большинстве браузеров)
+            try {
+                var successful = document.execCommand('copy');
+                if (successful) {
+                    alert("Ссылка скопирована: " + copyText.value);
+                    return;
                 }
-            });
+            } catch (err) {
+                console.log('execCommand не поддерживается', err);
+            }
+            
+            // Если execCommand не сработал, пробуем Clipboard API
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(copyText.value)
+                    .then(function() {
+                        alert("Ссылка скопирована: " + copyText.value);
+                    })
+                    .catch(function(err) {
+                        console.error('Не удалось скопировать текст: ', err);
+                        alert("Не удалось скопировать ссылку. Пожалуйста, скопируйте её вручную.");
+                    });
+            } else {
+                // Если ни один метод не работает
+                alert("Автоматическое копирование не поддерживается в вашем браузере. Пожалуйста, скопируйте ссылку вручную.");
+            }
         }
         // The progress bar width is set via inline style with Jinja.
         // No additional JS needed for its initial rendering.

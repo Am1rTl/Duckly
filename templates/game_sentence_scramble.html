@@ -128,7 +128,7 @@
     </div>
 
     <div class="mt-3 text-center">
-         <a href="{{ url_for('sentence_scramble_select_module') }}" class="btn btn-outline-secondary btn-sm">Выбрать другой модуль</a>
+         <a href="{{ "/sentence_scramble_select_module" }}" class="btn btn-outline-secondary btn-sm">Выбрать другой модуль</a>
     </div>
 </div>
 
@@ -140,5 +140,5 @@
 
 {% block scripts %}
 {{ super() }}
-<script src="{{ url_for('static', filename='js/game_sentence_scramble.js') }}" defer></script>
+<script src="/static/js/game_sentence_scramble.js" defer></script>
 {% endblock %}

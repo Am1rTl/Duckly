@@ -236,9 +236,6 @@
         {{ words | tojson | safe }}
     </script>
 
-    {% block scripts %}
-    {{ super() }}
-    <script src="{{ url_for('static', filename='js/test_multiple_choice.js') }}" defer></script>
-    {% endblock %}
+    <script src="/static/js/test_multiple_choice.js" defer></script>
 </body>
 </html> 

@@ -177,12 +177,12 @@
 
   <div class="container">
   <div class="header">
-      <button id="back" class="back-btn" onclick="location.href='{{ url_for('auth.profile') }}'"><i class="fas fa-arrow-left"></i>Назад</button>
+      <button id="back" class="back-btn" onclick="location.href='/profile'"><i class="fas fa-arrow-left"></i>Назад</button>
     </div>
 
     <h1>Редактирование профиля</h1>
 
-    <form action="{{ url_for('auth.save_profile') }}" method="POST">
+    <form action="/save_profile" method="POST">
       <div>
         <label for="fio">ФИО:</label>
         <input type="text" id="fio" name="fio" value="{{ fio }}" required />

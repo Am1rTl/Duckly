@@ -186,7 +186,7 @@
 </head>
 <body>
     <div class="top-nav">
-        <a href="{{ url_for('tests') }}" class="btn-back">
+        <a href="{{ "/tests" }}" class="btn-back">
             <i class="fas fa-arrow-left"></i> Назад к тестам
         </a>
     </div>
@@ -196,7 +196,7 @@
             <h1>Создание нового теста</h1>
         </div>
 
-        <form method="POST" action="{{ url_for('create_test') }}">
+        <form method="POST" action="{{ "/create_test" }}">
             <div class="form-grid">
                 <div class="form-group full-width">
                     <label for="title">Название теста</label>

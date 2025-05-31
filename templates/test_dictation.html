@@ -211,7 +211,7 @@
     {% endif %}
 
 
-    <form id="dictationTestForm" method="POST" action="{{ url_for('submit_test', test_id=test_db_id) }}"
+    <form id="dictationTestForm" method="POST" action="/submit_test/{{ test_db_id }}"
           data-time-limit-seconds="{{ time_limit_seconds | default(0) }}"
           data-remaining-time-seconds="{{ remaining_time_seconds | default(-1) }}"
           data-is-teacher-preview="{{ is_teacher_preview | tojson }}"
@@ -241,16 +241,13 @@
             </div>
         {% else %}
              <div class="submit-btn-container" style="border-top: none;">
-                <a href="{{ url_for('tests') }}" class="btn btn-secondary">Вернуться к списку тестов</a>
+                <a href="{{ "/tests" }}" class="btn btn-secondary">Вернуться к списку тестов</a>
             </div>
         {% endif %}
     </form>
 </div>
 
-{% block scripts %}
-{{ super() }} {# Include any scripts from base.html #}
-<script src="{{ url_for('static', filename='js/test_dictation.js') }}" defer></script>
-{% endblock %}
+<script src="/static/js/test_dictation.js" defer></script>
 
 </body>
 </html>

@@ -187,9 +187,9 @@
         </div>
 
         <div class="nav-tabs">
-            <a href="{{ url_for('words.words') }}" class="nav-tab"><i class="fas fa-book"></i>Слова</a>
-            <a href="{{ url_for('tests') }}" class="nav-tab"><i class="fas fa-file-alt"></i>Тесты</a>
-            <a href="{{ url_for('games') }}" class="nav-tab active"><i class="fas fa-gamepad"></i>Игры</a>
+            <a href="/words" class="nav-tab"><i class="fas fa-book"></i>Слова</a>
+            <a href="{{ "/tests" }}" class="nav-tab"><i class="fas fa-file-alt"></i>Тесты</a>
+            <a href="{{ "/games" }}" class="nav-tab active"><i class="fas fa-gamepad"></i>Игры</a>
         </div>
 
         <h1 class="page-title">Игры для изучения слов</h1>
@@ -198,17 +198,17 @@
             <div class="game-card">
                 <h3>Флэш-карточки</h3>
                 <p>Практикуйте слова с помощью интерактивных флэш-карточек.</p>
-                <a href="{{ url_for('flashcards_select_module') }}" class="btn btn-primary">Начать</a>
+                <a href="{{ "/flashcards_select_module" }}" class="btn btn-primary">Начать</a>
             </div>
             <div class="game-card">
                 <h3>Сопоставление Слов</h3>
                 <p>Соедините слова с их правильными переводами.</p>
-                <a href="{{ url_for('word_match_select_module') }}" class="btn btn-primary">Играть</a>
+                <a href="{{ "/word_match_select_module" }}" class="btn btn-primary">Играть</a>
             </div>
             <div class="game-card">
                 <h3>Собери Предложение</h3>
                 <p>Расставьте слова в правильном порядке, чтобы получилось предложение.</p>
-                <a href="{{ url_for('sentence_scramble_select_module') }}" class="btn btn-primary">Играть</a>
+                <a href="{{ "/sentence_scramble_select_module" }}" class="btn btn-primary">Играть</a>
             </div>
             <div class="game-card">
                 <h3>Другая игра (Скоро)</h3>
@@ -219,7 +219,7 @@
     </div>
 
     <script>
-        document.getElementById("back").onclick = () => location.href = "{{ url_for('hello') }}";
+        document.getElementById("back").onclick = () => location.href = "{{ "/hello" }}";
     </script>
 </body>
 </html> 

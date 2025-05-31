@@ -62,7 +62,7 @@
             </div>
             {% endif %}
 
-            <form method="POST" action="{{ url_for('submit_test', test_id=test_db_id) }}" id="fillWordTestForm">
+            <form method="POST" action="/submit_test/{{ test_db_id }}" id="fillWordTestForm">
                 {% for word_item in words %}
                 <div class="question-item shadow-sm">
                     <p class="mb-1"><strong>Вопрос {{ loop.index }}:</strong></p>
@@ -102,5 +102,5 @@
 
 {% block scripts %}
 {{ super() }}
-<script src="{{ url_for('static', filename='js/test_fill_word.js') }}" defer></script>
+<script src="/static/js/test_fill_word.js" defer></script>
 {% endblock %}

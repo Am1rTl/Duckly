@@ -141,7 +141,7 @@
     </div>
 
     <div class="mt-4 text-center">
-         <a href="{{ url_for('flashcards_select_module') }}" class="btn btn-outline-secondary btn-sm">Выбрать другой модуль</a>
+         <a href="{{ "/flashcards_select_module" }}" class="btn btn-outline-secondary btn-sm">Выбрать другой модуль</a>
     </div>
 </div>
 
@@ -157,5 +157,5 @@
 
 {% block scripts %}
 {{ super() }}
-<script src="{{ url_for('static', filename='js/game_flashcards.js') }}" defer></script>
+<script src="/static/js/game_flashcards.js" defer></script>
 {% endblock %}
