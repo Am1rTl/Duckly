@@ -478,6 +478,179 @@ def get_words_for_module_selection():
             
     return jsonify({"words": words_list})
 
+@app.route('/api/test/<int:test_db_id>/dictation_words', methods=['GET'])
+def api_test_dictation_words(test_db_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    user = User.query.get(session['user_id'])
+    if not user:
+        return jsonify({'error': 'User not found'}), 403 # Or 401
+
+    test = Test.query.get(test_db_id)
+    if not test:
+        return jsonify({'error': 'Test not found'}), 404
+
+    if test.type != 'dictation':
+        return jsonify({'error': 'Invalid test type for this endpoint'}), 400
+
+    # Teacher preview or student taking test for their class
+    if user.teacher != 'yes':
+        if test.classs != user.class_number:
+            return jsonify({'error': 'Access denied: Test is for a different class'}), 403
+        if not test.is_active:
+             return jsonify({'error': 'Access denied: Test is not active'}), 403
+
+
+    test_words_query = TestWord.query.filter_by(test_id=test.id)
+
+    if test.word_order == 'random':
+        test_word_objects = list(test_words_query.all()) # Convert to list to shuffle
+        random.shuffle(test_word_objects)
+    else: # 'sequential' or any other case defaults to ordered
+        test_word_objects = test_words_query.order_by(TestWord.word_order).all()
+
+    words_data = []
+    for tw in test_word_objects:
+        words_data.append({
+            'id': tw.id,
+            'word_placeholder': tw.word,  # This is the gapped/empty string for dictation display
+            'prompt': tw.perevod,         # The translation/hint given to the student
+            'correct_answer': tw.correct_answer # The actual word the student needs to type
+            # 'options': tw.options, # Not typically used for dictation
+            # 'missing_letters': tw.missing_letters # Not typically used for dictation
+        })
+
+    return jsonify({'words': words_data, 'test_title': test.title})
+
+# Helper function for fetching test words for various types
+def _get_test_words_api_data(test_db_id, expected_test_type_slug):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    user = User.query.get(session['user_id'])
+    if not user:
+        return jsonify({'error': 'User not found'}), 403
+
+    test = Test.query.get_or_404(test_db_id)
+
+    # Teacher preview or student taking test for their class
+    if user.teacher != 'yes':
+        if test.classs != user.class_number:
+            return jsonify({'error': 'Access denied: Test is for a different class'}), 403
+        if not test.is_active:
+            return jsonify({'error': 'Access denied: Test is not active'}), 403
+
+    # Validate test type if slug implies a specific type (e.g. multiple_choice for multiple_choice_single)
+    db_test_type = test.type
+    if expected_test_type_slug == 'multiple_choice_single_words' and db_test_type != 'multiple_choice':
+        return jsonify({'error': f'Invalid test type for this endpoint. Expected multiple_choice, got {db_test_type}'}), 400
+    elif expected_test_type_slug != 'multiple_choice_single_words' and db_test_type != expected_test_type_slug.replace('_words', ''):
+         return jsonify({'error': f'Invalid test type for this endpoint. Expected {expected_test_type_slug.replace("_words", "")}, got {db_test_type}'}), 400
+
+
+    test_words_query = TestWord.query.filter_by(test_id=test.id)
+
+    if test.word_order == 'random':
+        test_word_objects = list(test_words_query.all()) # Convert to list to shuffle
+        random.shuffle(test_word_objects)
+    else: # 'sequential' or any other case defaults to ordered
+        test_word_objects = test_words_query.order_by(TestWord.word_order).all()
+
+    return test, test_word_objects, user
+
+
+@app.route('/api/test/<int:test_db_id>/add_letter_words', methods=['GET'])
+def api_test_add_letter_words(test_db_id):
+    result = _get_test_words_api_data(test_db_id, 'add_letter_words')
+    if not isinstance(result, tuple): # Error response from helper
+        return result
+    test, test_word_objects, user = result
+
+    words_data = []
+    for tw in test_word_objects:
+        words_data.append({
+            'id': tw.id,
+            'word_gapped': tw.word, # The word with underscores
+            'prompt': tw.perevod,   # Translation or hint
+            'num_inputs': len(tw.correct_answer) if tw.correct_answer else 0,
+            'correct_answer_letters': tw.correct_answer # The actual letters to be filled
+        })
+    return jsonify({'words': words_data, 'test_title': test.title, 'test_type': test.type, 'test_mode': test.test_mode})
+
+@app.route('/api/test/<int:test_db_id>/true_false_words', methods=['GET'])
+def api_test_true_false_words(test_db_id):
+    result = _get_test_words_api_data(test_db_id, 'true_false_words')
+    if not isinstance(result, tuple):
+        return result
+    test, test_word_objects, user = result
+
+    words_data = []
+    for tw in test_word_objects:
+        words_data.append({
+            'id': tw.id,
+            'statement': tw.word, # The statement to be judged
+            'prompt': tw.perevod,  # Usually "Верно или неверно?" or a hint
+            'options': tw.options.split('|') if tw.options else ["True", "False"], # Should be ["True", "False"]
+            'correct_answer': tw.correct_answer # "True" or "False"
+        })
+    return jsonify({'words': words_data, 'test_title': test.title, 'test_type': test.type})
+
+@app.route('/api/test/<int:test_db_id>/multiple_choice_single_words', methods=['GET'])
+def api_test_multiple_choice_single_words(test_db_id):
+    # Note: DB test.type is 'multiple_choice' for this
+    result = _get_test_words_api_data(test_db_id, 'multiple_choice_single_words')
+    if not isinstance(result, tuple):
+        return result
+    test, test_word_objects, user = result
+
+    words_data = []
+    for tw in test_word_objects:
+        words_data.append({
+            'id': tw.id,
+            'question': tw.word, # The question text (e.g., word to translate, or definition)
+            'prompt': tw.perevod, # Supporting prompt like "Выберите правильный перевод:"
+            'options': tw.options.split('|') if tw.options else [],
+            'correct_answer': tw.correct_answer
+        })
+    return jsonify({'words': words_data, 'test_title': test.title, 'test_type': test.type})
+
+
+@app.route('/api/test/<int:test_db_id>/fill_word_words', methods=['GET'])
+def api_test_fill_word_words(test_db_id):
+    result = _get_test_words_api_data(test_db_id, 'fill_word_words')
+    if not isinstance(result, tuple):
+        return result
+    test, test_word_objects, user = result
+
+    words_data = []
+    for tw in test_word_objects:
+        words_data.append({
+            'id': tw.id,
+            'question_prompt': tw.word, # The prompt, e.g., a sentence with a blank or a definition
+            'instruction': tw.perevod, # Specific instruction like "Впишите слово"
+            'correct_answer': tw.correct_answer
+        })
+    return jsonify({'words': words_data, 'test_title': test.title, 'test_type': test.type})
+
+@app.route('/api/test/<int:test_db_id>/multiple_choice_multiple_words', methods=['GET'])
+def api_test_multiple_choice_multiple_words(test_db_id):
+    result = _get_test_words_api_data(test_db_id, 'multiple_choice_multiple_words')
+    if not isinstance(result, tuple):
+        return result
+    test, test_word_objects, user = result
+
+    words_data = []
+    for tw in test_word_objects:
+        words_data.append({
+            'id': tw.id,
+            'question': tw.word, # The question or statement
+            'prompt': tw.perevod, # Supporting prompt like "Выберите все подходящие варианты:"
+            'options': tw.options.split('|') if tw.options else [],
+            'correct_answers_pipe_separated': tw.correct_answer # Correct answers, e.g. "ans1|ans3"
+        })
+    return jsonify({'words': words_data, 'test_title': test.title, 'test_type': test.type})
+
 @app.route("/test/<id>", methods=['GET', 'POST'])
 def test_id(id):
     if 'user_id' not in session:
@@ -732,8 +905,8 @@ def test_id(id):
                     flash("Этот тест (вставить буквы) еще не полностью настроен учителем и пока не доступен для прохождения.", "warning")
                     return redirect(url_for('tests'))
 
-        words_list = []
-        for word in test.test_words:
+        # words_list = []
+        # for word in test.test_words:
             # Debug prints can be removed in production
             # print(f"--- Word Details for Test '{test.title}' (Link: {test.link}) ---")
             # print(f"  TestWord ID: {word.id}")
@@ -744,14 +917,14 @@ def test_id(id):
             #     print(f"  Missing letter positions (1-indexed in original word): '{word.missing_letters}'")
             # print(f"  Number of letters to input: {len(word.correct_answer) if word.correct_answer else 0}")
             # print("-" * 40)
-            words_list.append({
-                'id': word.id,
-                'word': word.word, 
-                'perevod': word.perevod,
-                'num_inputs': len(word.correct_answer) if word.correct_answer else 0
-            })
+            # words_list.append({
+            #     'id': word.id,
+            #     'word': word.word,
+            #     'perevod': word.perevod,
+            #     'num_inputs': len(word.correct_answer) if word.correct_answer else 0
+            # })
         return render_template('test_add_letter.html', 
-                             words=words_list, 
+                             # words=words_list,
                              test_id=id, # link
                              test_result=test_result, # Will be None for teacher preview
                              time_limit=test.time_limit,
@@ -760,6 +933,7 @@ def test_id(id):
                              test_db_id=test.id, # numerical ID
                              is_teacher_preview=is_teacher_preview_mode) # Pass the preview flag
     elif test.type == 'dictation':
+        # This block was modified in the previous step, ensuring it remains correct.
         # Debug prints can be removed
         # print(f"DEBUG: Accessing dictation test with link: {id}")
         # print(f"DEBUG: Test object: {test}")
@@ -768,7 +942,7 @@ def test_id(id):
         #     for i, tw in enumerate(test.test_words):
         #         print(f"DEBUG: TestWord {i}: id={tw.id}, word='{tw.word}', perevod='{tw.perevod}', correct_answer='{tw.correct_answer}'")
         
-        words_list = [(word.word, word.perevod, word.correct_answer, word.id) for word in test.test_words]
+        # words_list = [(word.word, word.perevod, word.correct_answer, word.id) for word in test.test_words]
         
         current_test_result_for_template = test_result # Use the one determined by student/teacher logic
         if is_teacher_preview_mode:
@@ -776,17 +950,17 @@ def test_id(id):
 
         return render_template('test_dictation.html', 
                              test_title=test.title,
-                             words_data=words_list,
+                             # words_data=words_list, # Removed as per requirement
                              test_link_id=id,
                              current_test_result=current_test_result_for_template, # Pass the correct result object
                              time_limit_seconds=test.time_limit * 60 if test.time_limit else 0,
                              remaining_time_seconds=remaining_time_seconds,
                              test_db_id=test.id,
                              is_teacher_preview=is_teacher_preview_mode) # Pass the preview flag
-    elif test.type == 'true_false': # Assuming this was a typo for true_false
-        words_list = [(word.word, word.perevod, word.id) for word in test.test_words] # Added word.id
-        return render_template('test_true_false.html', # Corrected template name
-                             words=words_list, 
+    elif test.type == 'true_false':
+        # words_list = [(word.word, word.perevod, word.id) for word in test.test_words] # Added word.id
+        return render_template('test_true_false.html',
+                             # words=words_list,
                              test_id=id, # link
                              test_result=test_result, # Will be None for teacher preview
                              time_limit=test.time_limit,
@@ -794,18 +968,18 @@ def test_id(id):
                              test_title=test.title,
                              test_db_id=test.id,
                              is_teacher_preview=is_teacher_preview_mode)
-    elif test.type == 'multiple_choice': # Assuming this is multiple_choice_single from context
-        words_list = []
-        for word in test.test_words:
-            options = word.options.split('|') if word.options else []
-            words_list.append({
-                'id': word.id,
-                'word': word.word, # This is the question (e.g., translation)
-                'perevod': word.perevod, # This is the prompt (e.g., "Choose the correct word")
-                'options': options
-            })
+    elif test.type == 'multiple_choice':
+        # words_list = []
+        # for word in test.test_words:
+            # options = word.options.split('|') if word.options else []
+            # words_list.append({
+                # 'id': word.id,
+                # 'word': word.word, # This is the question (e.g., translation)
+                # 'perevod': word.perevod, # This is the prompt (e.g., "Choose the correct word")
+                # 'options': options
+            # })
         return render_template('test_multiple_choice.html', 
-                             words=words_list, 
+                             # words=words_list,
                              test_id=id, # link
                              test_result=test_result, # Will be None for teacher preview
                              time_limit=test.time_limit,
@@ -814,15 +988,15 @@ def test_id(id):
                              test_db_id=test.id,
                              is_teacher_preview=is_teacher_preview_mode)
     elif test.type == 'fill_word':
-        words_list = []
-        for word in test.test_words:
-            words_list.append({
-                'id': word.id,
-                'word': word.word, # This is the question (e.g., translation)
-                'perevod': word.perevod # This is the prompt (e.g., "Fill in the original word")
-            })
-        return render_template('test_fill_word.html', # Assuming a template test_fill_word.html exists
-                             words=words_list,
+        # words_list = []
+        # for word in test.test_words:
+            # words_list.append({
+                # 'id': word.id,
+                # 'word': word.word, # This is the question (e.g., translation)
+                # 'perevod': word.perevod # This is the prompt (e.g., "Fill in the original word")
+            # })
+        return render_template('test_fill_word.html',
+                             # words=words_list,
                              test_id=id, # link
                              test_result=test_result, # Will be None for teacher preview
                              time_limit=test.time_limit,
@@ -830,18 +1004,18 @@ def test_id(id):
                              test_title=test.title,
                              test_db_id=test.id,
                              is_teacher_preview=is_teacher_preview_mode)
-    elif test.type == 'multiple_choice_multiple': # Corrected rendering for this type
-        words_list = []
-        for word in test.test_words:
-            options = word.options.split('|') if word.options else []
-            words_list.append({
-                'id': word.id,
-                'word': word.word,       # Question (e.g., translation/definition)
-                'perevod': word.perevod, # Prompt (e.g., "Select all correct options")
-                'options': options
-            })
-        return render_template('test_multiple_choice_multiple.html', # Assuming this template exists
-                             words=words_list,
+    elif test.type == 'multiple_choice_multiple':
+        # words_list = []
+        # for word in test.test_words:
+            # options = word.options.split('|') if word.options else []
+            # words_list.append({
+                # 'id': word.id,
+                # 'word': word.word,       # Question (e.g., translation/definition)
+                # 'perevod': word.perevod, # Prompt (e.g., "Select all correct options")
+                # 'options': options
+            # })
+        return render_template('test_multiple_choice_multiple.html',
+                             # words=words_list,
                              test_id=id, # link
                              test_result=test_result, # Will be None for teacher preview
                              time_limit=test.time_limit,

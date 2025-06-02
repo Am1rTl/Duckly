@@ -3,6 +3,7 @@
 {% block title %}Тест: Вписать слово - {{ test_title }}{% endblock %}
 
 {% block head_extra %}
+<script src="{{ url_for('static', filename='js/anti_cheat.js') }}"></script>
 <style>
     .question-item {
         background-color: #f8f9fa;
@@ -63,37 +64,18 @@
             {% endif %}
 
             <form method="POST" action="/submit_test/{{ test_db_id }}" id="fillWordTestForm">
-                {% for word_item in words %}
-                <div class="question-item shadow-sm">
-                    <p class="mb-1"><strong>Вопрос {{ loop.index }}:</strong></p>
-                    <p class="prompt">{{ word_item.word }}</p> {# This is the translation/prompt for the student #}
-                    {% if word_item.perevod %}
-                        <small class="instruction"><em>{{ word_item.perevod }}</em></small> {# This is the instruction e.g. "Впишите..." #}
-                    {% endif %}
-
-                    <div class="mt-2">
-                        <input type="text"
-                               name="answer_{{ word_item.id }}"
-                               id="answer_{{ word_item.id }}"
-                               class="form-control"
-                               required
-                               autocomplete="off"
-                               aria-label="Ответ на вопрос {{ loop.index }}">
-                    </div>
+                <div id="test-questions-container">
+                    <p class="loading-message" style="text-align:center; padding: 20px;">Загрузка вопросов...</p>
+                    <!-- Questions will be dynamically inserted here by JavaScript -->
                 </div>
-                {% else %}
-                <div class="alert alert-warning" role="alert">
-                    В этом тесте нет вопросов.
+                <div id="no-words-message-container">
+                    <!-- Message if no words are loaded will be inserted here -->
                 </div>
-                {% endfor %}
-
-                {% if words %} {# Only show submit button if there are words #}
-                <div class="text-center mt-4">
-                    <button type="submit" class="btn btn-primary btn-lg">
+                <div class="text-center mt-4" id="submit-button-area">
+                    <button type="submit" class="btn btn-primary btn-lg" id="submit-test-button" style="display: none;">
                         <i class="fas fa-check-circle"></i> Завершить тест
                     </button>
                 </div>
-                {% endif %}
             </form>
         </div>
     </div>
@@ -102,6 +84,5 @@
 
 {% block scripts %}
 {{ super() }}
-<script src="{{ url_for('static', filename='js/anti_cheat.js') }}" defer></script>
 <script src="/static/js/test_fill_word.js" defer></script>
 {% endblock %}

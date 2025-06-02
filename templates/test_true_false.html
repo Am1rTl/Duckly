@@ -3,6 +3,7 @@
 {% block title %}Тест: Верно/Неверно - {{ test_title }}{% endblock %}
 
 {% block head_extra %}
+<script src="{{ url_for('static', filename='js/anti_cheat.js') }}"></script>
 <style>
     .question-item {
         background-color: #f8f9fa;
@@ -58,38 +59,19 @@
             {% endif %}
 
             <form method="POST" action="/submit_test/{{ test_db_id }}" id="trueFalseTestForm">
-                {% for word_item in words %}
-                <div class="question-item shadow-sm">
-                    <p class="mb-1"><strong>Вопрос {{ loop.index }}:</strong></p>
-                    <p>{{ word_item.word }}</p>
-                    {% if word_item.perevod and word_item.perevod != "Верно или неверно?" %}
-                        <small><em>Подсказка: {{ word_item.perevod }}</em></small>
-                    {% endif %}
-
-                    <div class="mt-2">
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="answer_{{ word_item.id }}" id="answer_{{ word_item.id }}_true" value="True" required>
-                            <label class="form-check-label" for="answer_{{ word_item.id }}_true">Верно</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="answer_{{ word_item.id }}" id="answer_{{ word_item.id }}_false" value="False">
-                            <label class="form-check-label" for="answer_{{ word_item.id }}_false">Неверно</label>
-                        </div>
-                    </div>
+                <div id="test-questions-container">
+                    <p class="loading-message" style="text-align:center; padding: 20px;">Загрузка вопросов...</p>
+                    <!-- Questions will be dynamically inserted here by JavaScript -->
                 </div>
-                {% else %}
-                <div class="alert alert-warning" role="alert">
-                    В этом тесте нет вопросов.
+                <div id="no-words-message-container">
+                    <!-- Message if no words are loaded will be inserted here -->
                 </div>
-                {% endfor %}
-
-                {% if words %} {# Only show submit button if there are words #}
-                <div class="text-center mt-4">
-                    <button type="submit" class="btn btn-primary btn-lg">
+                <div class="text-center mt-4" id="submit-button-area">
+                    <button type="submit" class="btn btn-primary btn-lg" id="submit-test-button" style="display: none;">
                         <i class="fas fa-check-circle"></i> Завершить тест
                     </button>
+                    <!-- A link to go back if no questions, can be added by JS into no-words-message-container or here -->
                 </div>
-                {% endif %}
             </form>
         </div>
     </div>
@@ -98,6 +80,5 @@
 
 {% block scripts %}
 {{ super() }}
-<script src="{{ url_for('static', filename='js/anti_cheat.js') }}" defer></script>
 <script src="/static/js/test_true_false.js" defer></script>
 {% endblock %}

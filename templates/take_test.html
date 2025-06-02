@@ -211,6 +211,7 @@
             margin-bottom: 20px;
         }
     </style>
+    <script src="{{ url_for('static', filename='js/anti_cheat.js') }}"></script>
 </head>
 <body>
     <div class="container">
@@ -241,7 +242,6 @@
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/anti_cheat.js') }}" defer></script>
     <script>
         const testData = {
             id: {{ test.id }},

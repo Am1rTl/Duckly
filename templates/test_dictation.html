@@ -191,6 +191,7 @@
     }
 
   </style>
+  <script src="{{ url_for('static', filename='js/anti_cheat.js') }}"></script>
 </head>
 <body>
 
@@ -219,36 +220,20 @@
         {# CSRF token - if you use Flask-WTF, ensure it's included #}
         {# Example: <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"> #}
         
-        {% for word_data in words_data %}
-            {# word_data is a tuple: (word_placeholder, perevod_prompt, correct_answer_word, test_word_id) #}
-            <div class="dictation-word-container word-item" data-word-id="{{ word_data[3] }}">
-                <p class="lead">{{ word_data[1] }}</p> {# Display the hint/translation #}
-                
-                <div class="char-inputs-wrapper">
-                    {# Start with 3 input boxes per word. JS will add more. #}
-                    {% for i in range(3) %}
-                    <input type="text"                            name="dictation_answer_{{ word_data[3] }}_{{ i }}"                            class="dictation-char-input"                            maxlength="1"                            data-word-id="{{ word_data[3] }}"                            data-char-index="{{ i }}"                           autocomplete="off"                            spellcheck="false"                           aria-label="Character {{ i + 1 }} for word hint {{ word_data[1]|truncate(30) }}">
-                    {% endfor %}
-                </div>
-            </div>
-        {% else %}
-            <p style="text-align:center; color: var(--danger); padding: 20px; font-size: 1.1em;">В этом тесте нет слов для отображения.</p>
-        {% endfor %}
+        <div id="dictation-words-container">
+            <p id="dictation-loading-message" style="text-align:center; padding: 20px; font-size: 1.1em;">Загрузка слов для диктанта...</p>
+            <!-- Words will be dynamically inserted here by JavaScript -->
+        </div>
 
-        {% if words_data %}
-            <div class="submit-btn-container">
-                <button type="submit" class="btn btn-primary btn-lg">Завершить тест</button>
-            </div>
-        {% else %}
-             <div class="submit-btn-container" style="border-top: none;">
-                <a href="{{ "/tests" }}" class="btn btn-secondary">Вернуться к списку тестов</a>
-            </div>
-        {% endif %}
+        <div class="submit-btn-container" id="submit-button-area">
+            <!-- JavaScript will manage this area: show button or "back to tests" link -->
+            <button type="submit" class="btn btn-primary btn-lg" id="submit-test-button" style="display: none;">Завершить тест</button>
+            <a href="{{ url_for('tests') }}" class="btn btn-secondary" id="back-to-tests-link" style="display: none;">Вернуться к списку тестов</a>
+        </div>
     </form>
 </div>
 
-<script src="{{ url_for('static', filename='js/anti_cheat.js') }}" defer></script>
-<script src="/static/js/test_dictation.js" defer></script>
+<script src="{{ url_for('static', filename='js/test_dictation.js') }}" defer></script>
 
 </body>
 </html>
