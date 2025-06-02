@@ -1568,7 +1568,10 @@ def test_details(test_id):
         # Teacher's view: Gather student progress and render details page
         students_in_class = User.query.filter_by(class_number=test.classs, teacher='no').all()
         total_students_in_class = len(students_in_class)
-        all_results_for_test = TestResult.query.filter_by(test_id=test.id).all()
+        all_results_for_test = TestResult.query.filter(
+            TestResult.test_id == test.id,
+            TestResult.started_at >= test.created_at
+        ).all()
 
         completed_students_details = []
         in_progress_students_details = []
@@ -2446,7 +2449,10 @@ def test_details_data(test_id):
 
     students_in_class = User.query.filter_by(class_number=test.classs, teacher='no').all()
     total_students_in_class = len(students_in_class)
-    all_results_for_test = TestResult.query.filter_by(test_id=test.id).all()
+    all_results_for_test = TestResult.query.filter(
+        TestResult.test_id == test.id,
+        TestResult.started_at >= test.created_at
+    ).all()
 
     completed_students_details_json = []
     in_progress_students_details_json = []
