@@ -359,7 +359,8 @@ def tests():
             completed_count = db.session.query(TestResult.id).join(User, TestResult.user_id == User.id).filter(
                 TestResult.test_id == test_item.id,
                 TestResult.completed_at.isnot(None),
-                User.teacher == 'no'  # Ensure only student results are counted
+                User.teacher == 'no',  # Ensure only student results are counted
+                TestResult.started_at >= test_item.created_at # New condition
             ).count()
 
             progress = 0
@@ -412,7 +413,8 @@ def api_tests_progress():
         completed_count = db.session.query(TestResult.id).join(User, TestResult.user_id == User.id).filter(
             TestResult.test_id == test_item.id,
             TestResult.completed_at.isnot(None),
-            User.teacher == 'no'
+            User.teacher == 'no',
+            TestResult.started_at >= test_item.created_at # New condition
         ).count()
 
         progress_data.append({
