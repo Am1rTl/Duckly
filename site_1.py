@@ -1266,7 +1266,25 @@ def create_test():
                 prompt_for_test_word_model = original_translation
                 if test_mode == 'random_letters':
                     if len(original_word_text) > 0:
-                        num_letters_to_remove = random.randint(1, min(2, len(original_word_text)))
+                        word_len = len(original_word_text)
+                        if word_len <= 3:
+                            num_letters_to_remove = 1
+                        elif word_len <= 6:
+                            num_letters_to_remove = random.randint(1, 2)
+                        elif word_len <= 9:
+                            num_letters_to_remove = random.randint(2, 3)
+                        else: # 10+
+                            num_letters_to_remove = random.randint(3, 4)
+
+                        # Ensure num_letters_to_remove does not exceed half the word length
+                        num_letters_to_remove = min(num_letters_to_remove, word_len // 2)
+
+                        # Also ensure that if word_len is 1, num_letters_to_remove is 1 (it should be covered by word_len // 2, but as a safeguard for min(1,0) if previous logic resulted in 0)
+                        if word_len > 0 : # only apply if word is not empty
+                            num_letters_to_remove = max(1, num_letters_to_remove) # Should always remove at least 1 if word_len > 0
+                        else:
+                            num_letters_to_remove = 0 # No letters to remove from empty string
+
                         positions_zero_indexed = sorted(random.sample(range(len(original_word_text)), num_letters_to_remove))
                         
                         actual_missing_letters_list = [original_word_text[pos] for pos in positions_zero_indexed]
