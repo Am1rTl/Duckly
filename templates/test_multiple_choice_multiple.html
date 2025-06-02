@@ -108,5 +108,6 @@
 
 {% block scripts %}
 {{ super() }}
+<script src="{{ url_for('static', filename='js/anti_cheat.js') }}" defer></script>
 <script src="/static/js/test_multiple_choice_multiple.js" defer></script>
 {% endblock %}
