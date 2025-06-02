@@ -182,6 +182,7 @@
             cursor: not-allowed;
         }
     </style>
+    <script src="{{ url_for('static', filename='js/anti_cheat.js') }}"></script>
 </head>
 <body>
     <div class="container">
@@ -194,34 +195,24 @@
         </div>
 
         <div class="progress-bar" id="progress-bar">
-            {% for item in words %}
-            <div class="progress-item" data-index="{{ loop.index0 }}">
-                {{ loop.index }}
-            </div>
-            {% endfor %}
+            <!-- Progress items will be dynamically inserted here by JavaScript -->
         </div>
 
         <form id="test-form" method="POST">
-            {% for item in words %}
-            <div class="word-container" data-index="{{ loop.index0 }}" style="display: {{ 'block' if loop.index0 == 0 else 'none' }};">
-                <div class="question-text">{{ item.perevod }}</div> {# Display translation as the question #}
-                <input type="hidden" name="answer{{ item.id }}" id="answer-input-{{ item.id }}">
-                <div class="options-grid">
-                    {% for option in item.options %}
-                    <button type="button" class="option-btn" data-word-id="{{ item.id }}" data-value="{{ option }}">
-                        {{ option }}
-                    </button>
-                    {% endfor %}
-                </div>
+            <div id="test-questions-container">
+                <p class="loading-message" style="text-align:center; padding: 20px;">Загрузка вопросов...</p>
+                <!-- Questions will be dynamically inserted here by JavaScript -->
             </div>
-            {% endfor %}
+            <div id="no-words-message-container">
+                <!-- Message if no words are loaded will be inserted here -->
+            </div>
 
             <div class="navigation">
-                <button type="button" class="btn btn-secondary" id="prev-btn" disabled>
+                <button type="button" class="btn btn-secondary" id="prev-btn" style="display: none;">
                     <i class="fas fa-arrow-left"></i>
                     Назад
                 </button>
-                <button type="button" class="btn btn-primary" id="next-btn">
+                <button type="button" class="btn btn-primary" id="next-btn" style="display: none;">
                     Далее
                     <i class="fas fa-arrow-right"></i>
                 </button>
@@ -232,11 +223,6 @@
         </form>
     </div>
 
-    <script src="{{ url_for('static', filename='js/anti_cheat.js') }}" defer></script>
-    <script id="mcSingleWordsData" type="application/json">
-        {{ words | tojson | safe }}
-    </script>
-
-    <script src="/static/js/test_multiple_choice.js" defer></script>
+    <script src="{{ url_for('static', filename='js/test_multiple_choice.js') }}" defer></script>
 </body>
 </html> 

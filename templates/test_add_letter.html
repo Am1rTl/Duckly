@@ -3,6 +3,7 @@
 {% block title %}Тест: Вставить буквы{% endblock %}
 
 {% block head_extra %}
+<script src="{{ url_for('static', filename='js/anti_cheat.js') }}"></script>
 <style>
 /* General */
 .container {
@@ -197,33 +198,21 @@ h1 {
             </div>
 
             {# Placeholder for Navigation Panel #}
-            <div class="nav-panel">
-                {% for word_item in words %}
-                <div class="nav-item" data-word-id="{{ word_item.id }}">{{ loop.index }}</div>
-                {% endfor %}
+            <div class="nav-panel" id="navigation-panel-placeholder">
+                <!-- Navigation items will be dynamically inserted here by JavaScript -->
             </div>
 
-            {% for word_item in words %}
-            <div class="word-container mb-4" data-word-id="{{ word_item.id }}">
-                <p class="question-header">Вопрос {{ loop.index }} из {{ words|length }}</p>
-                <p class="prompt-translation">Перевод: {{ word_item.perevod }}</p>
-                <div class="word-display">
-                    {% for char in word_item.word %}
-                        {% if char == '_' %}
-                            <input type="text" name="answer_{{ word_item.id }}_{{ loop.index0 }}" class="letter-input" maxlength="1" size="1" autocomplete="off" data-word-id="{{ word_item.id }}" data-input-idx="{{ loop.index0 }}">
-                        {% else %}
-                            <span class="word-char">{{ char }}</span>
-                        {% endif %}
-                    {% endfor %}
-                </div>
+            <div id="test-questions-container">
+                <p class="loading-message" style="text-align:center; padding: 20px;">Загрузка вопросов...</p>
+                <!-- Questions will be dynamically inserted here by JavaScript -->
             </div>
-            {% else %}
-            <p>Нет слов для этого теста.</p>
-            {% endfor %}
+            <div id="no-words-message-container">
+                <!-- Message if no words are loaded will be inserted here -->
+            </div>
 
             <div class="button-container">
                 <button type="button" id="prevWordBtn" class="btn btn-secondary" style="display: none;">Назад</button>
-                <button type="button" id="nextWordBtn" class="btn btn-primary">Далее</button>
+                <button type="button" id="nextWordBtn" class="btn btn-primary" style="display: none;">Далее</button> {# Initially hide Next button too #}
                 <button type="submit" id="submitTestBtn" class="btn btn-success" style="display: none;">Завершить тест</button>
             </div>
         </form>
@@ -236,6 +225,5 @@ h1 {
 
 {% block scripts %}
 {{ super() }}
-<script src="{{ url_for('static', filename='js/anti_cheat.js') }}" defer></script>
 <script src="/static/js/test_add_letter.js" defer></script>
 {% endblock %}
