@@ -359,7 +359,8 @@ def tests():
             completed_count = db.session.query(TestResult.id).join(User, TestResult.user_id == User.id).filter(
                 TestResult.test_id == test_item.id,
                 TestResult.completed_at.isnot(None),
-                User.teacher == 'no'  # Ensure only student results are counted
+                User.teacher == 'no',  # Ensure only student results are counted
+                TestResult.started_at >= test_item.created_at # New condition
             ).count()
 
             progress = 0
@@ -412,7 +413,8 @@ def api_tests_progress():
         completed_count = db.session.query(TestResult.id).join(User, TestResult.user_id == User.id).filter(
             TestResult.test_id == test_item.id,
             TestResult.completed_at.isnot(None),
-            User.teacher == 'no'
+            User.teacher == 'no',
+            TestResult.started_at >= test_item.created_at # New condition
         ).count()
 
         progress_data.append({
@@ -1265,9 +1267,29 @@ def create_test():
             if test_type == 'add_letter':
                 prompt_for_test_word_model = original_translation
                 if test_mode == 'random_letters':
-                    if len(original_word_text) > 0:
-                        num_letters_to_remove = random.randint(1, min(2, len(original_word_text)))
-                        positions_zero_indexed = sorted(random.sample(range(len(original_word_text)), num_letters_to_remove))
+                    letter_indices = [i for i, char in enumerate(original_word_text) if char != ' ']
+                    num_actual_letters = len(letter_indices)
+
+                    if num_actual_letters > 0:
+                        # Determine base number of letters to remove based on actual letter count
+                        if num_actual_letters <= 3:
+                            val = 1
+                        elif num_actual_letters <= 6:
+                            val = random.randint(1, 2)
+                        elif num_actual_letters <= 9:
+                            val = random.randint(2, 3)
+                        else: # 10+ actual letters
+                            val = random.randint(3, 4)
+
+                        # Adjust num_letters_to_remove
+                        if num_actual_letters == 1: # For a single letter word, always remove that one letter
+                            num_letters_to_remove = 1
+                        else:
+                            # For words with more than one letter, remove at most half, but at least 1
+                            num_letters_to_remove = min(val, num_actual_letters // 2)
+                            num_letters_to_remove = max(1, num_letters_to_remove)
+
+                        positions_zero_indexed = sorted(random.sample(letter_indices, num_letters_to_remove))
                         
                         actual_missing_letters_list = [original_word_text[pos] for pos in positions_zero_indexed]
                         correct_answer_for_db = "".join(actual_missing_letters_list)
@@ -1276,9 +1298,10 @@ def create_test():
                         for pos in positions_zero_indexed:
                             word_with_gaps_list[pos] = '_'
                         current_word_for_test_word_model = "".join(word_with_gaps_list)
-                        missing_letters_positions_db = ','.join(str(pos + 1) for pos in positions_zero_indexed)
-                    else:
-                        current_word_for_test_word_model = ""
+                        missing_letters_positions_db = ','.join(str(pos + 1) for pos in positions_zero_indexed) # Store 1-indexed
+
+                    else: # No actual letters in original_word_text (it's empty or all spaces)
+                        current_word_for_test_word_model = original_word_text
                         correct_answer_for_db = ""
                         missing_letters_positions_db = ""
                 elif test_mode == 'manual_letters':
@@ -1547,7 +1570,10 @@ def test_details(test_id):
         # Teacher's view: Gather student progress and render details page
         students_in_class = User.query.filter_by(class_number=test.classs, teacher='no').all()
         total_students_in_class = len(students_in_class)
-        all_results_for_test = TestResult.query.filter_by(test_id=test.id).all()
+        all_results_for_test = TestResult.query.filter(
+            TestResult.test_id == test.id,
+            TestResult.started_at >= test.created_at
+        ).all()
 
         completed_students_details = []
         in_progress_students_details = []
@@ -2425,7 +2451,10 @@ def test_details_data(test_id):
 
     students_in_class = User.query.filter_by(class_number=test.classs, teacher='no').all()
     total_students_in_class = len(students_in_class)
-    all_results_for_test = TestResult.query.filter_by(test_id=test.id).all()
+    all_results_for_test = TestResult.query.filter(
+        TestResult.test_id == test.id,
+        TestResult.started_at >= test.created_at
+    ).all()
 
     completed_students_details_json = []
     in_progress_students_details_json = []
