@@ -82,7 +82,7 @@ function checkDevTools() {
     const threshold = 160; // Height/width difference threshold
 
     // Check 1: Window size difference
-    if (window.outerWidth - window.innerWidth > threshold ||
+    if (window.outerWidth - window.innerWidth > threshold || 
         window.outerHeight - window.innerHeight > threshold) {
         showDevToolsWarning();
         return true; // Dev tools detected
@@ -92,20 +92,20 @@ function checkDevTools() {
     // This is more of a one-time check or needs careful handling if used in setInterval
     // For now, focusing on the resize event and initial load primarily for this check.
     // A more robust debugger check would involve measuring execution time.
-
+    
     // Fallback for browsers that might not trigger resize or where dimensions are less reliable
     // (e.g., undocked dev tools). We can also check if an element with a specific ID used
     // by dev tools exists, but this is highly browser-dependent and fragile.
-
+    
     // A simple console check (less reliable, as console can be open without full dev tools UI)
-    // console.profile();
+    // console.profile(); 
     // console.profileEnd();
     // if (console.clear) console.clear(); // Attempt to clear, some dev tools might override this.
     // if (console._commandLineAPI || console._inspectorCommandLineAPI) { // Non-standard, might work in some
     //    showDevToolsWarning();
     //    return true;
     // }
-
+    
     return false; // Dev tools not detected by this check
 }
 
@@ -116,7 +116,7 @@ if (checkDevTools()) {
 
 // Periodically check for dev tools
 // More aggressive check:
-// setInterval(checkDevTools, 1000);
+// setInterval(checkDevTools, 1000); 
 
 // Less aggressive check: Listen for resize events which often accompany dev tools opening/closing
 window.addEventListener('resize', () => {
