@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Hide game result
-        gameResult.classList.remove('show');
+        if (gameResult) gameResult.classList.remove('show');
         
         // Update UI
         updateStats();
@@ -102,6 +102,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function createAlphabet() {
+        if (!alphabetGrid) return;
+        
         alphabetGrid.innerHTML = '';
         const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
         
@@ -128,6 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
         correctGuesses = 0;
         wrongGuesses = 0;
         hintUsed = false;
+        gameActive = true; // Активируем игру для нового слова
         
         // Reset hangman
         hangmanParts.forEach(part => {
@@ -136,6 +139,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
+        // Reset hanging animation and overlay
+        const hangmanBody = document.getElementById('hangman-body');
+        const hangmanContainer = document.querySelector('.hangman-container');
+        const gameOverOverlay = document.getElementById('game-over-overlay');
+        if (hangmanBody) hangmanBody.classList.remove('hanging');
+        if (hangmanContainer) hangmanContainer.classList.remove('game-over');
+        if (gameOverOverlay) gameOverOverlay.classList.remove('show');
+        
         // Reset alphabet
         document.querySelectorAll('.letter-btn').forEach(btn => {
             btn.className = 'letter-btn';
@@ -143,24 +154,32 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // Reset hint display
-        wordHint.classList.remove('show');
+        if (wordHint) {
+            wordHint.classList.remove('show');
+        }
         
         // Create word display
         createWordDisplay();
         
         // Show translation as hint
-        wordHint.textContent = `Перевод: ${wordData.translation}`;
-        wordHint.classList.add('show');
+        if (wordHint) {
+            wordHint.textContent = `Перевод: ${wordData.translation}`;
+            wordHint.classList.add('show');
+        }
         
         // Update stats
         updateStats();
         
         // Enable hint button
-        hintBtn.disabled = false;
-        hintBtn.textContent = 'Подсказка';
+        if (hintBtn) {
+            hintBtn.disabled = false;
+            hintBtn.textContent = 'Подсказка';
+        }
     }
     
     function createWordDisplay() {
+        if (!wordDisplay) return;
+        
         wordDisplay.innerHTML = '';
         
         for (let letter of currentWord) {
@@ -183,8 +202,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function guessLetter(letter) {
         if (!gameActive || guessedLetters.includes(letter)) return;
         
-        guessedLetters.push(letter);
         const btn = document.querySelector(`[data-letter="${letter}"]`);
+        if (!btn || btn.disabled) return;
+        
+        guessedLetters.push(letter);
         
         if (currentWord.includes(letter)) {
             // Correct guess
@@ -198,10 +219,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     setTimeout(() => {
                         slot.textContent = letter;
                         slot.classList.add('revealed');
-                        
-                        // Add sparkle effect
-                        createSparkle(slot);
-                    }, index * 100); // Delay each letter slightly
+                    }, index * 150); // Delay each letter slightly for better effect
                     correctGuesses++;
                 }
             });
@@ -245,32 +263,59 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function wordCompleted(success) {
         totalAttempts++;
+        // gameActive = false; // Moved this down after checks to allow interaction if needed by animation trigger
         
         if (success) {
+            gameActive = false; // Deactivate game only on definite success here
             totalCorrectWords++;
             showFeedback('Отлично! Слово угадано!', 'success');
+            createConfetti(50); // Add some confetti on success
             
-            // Add bonus points for fewer wrong guesses
             if (wrongGuesses === 0) {
                 showFeedback('Идеально! Ни одной ошибки!', 'success');
             }
-        } else {
-            showFeedback(`Слово было: ${currentWord}`, 'error');
             
+            setTimeout(() => {
+                currentWordIndex++;
+                if (currentWordIndex >= wordsData.length) {
+                    endGame();
+                } else {
+                    startNewWord();
+                }
+            }, 2000);
+        } else {
+            gameActive = false; // Deactivate game on failure
             // Reveal the word
             document.querySelectorAll('.letter-slot').forEach(slot => {
                 if (slot.dataset.letter && slot.dataset.letter !== ' ') {
                     slot.textContent = slot.dataset.letter;
-                    slot.classList.add('revealed');
+                    slot.classList.add('revealed', 'lost-letter'); // Added 'lost-letter' for potential styling
                 }
             });
+            
+            const uniqueLettersInWord = [...new Set(currentWord.replace(/\s/g, ''))];
+            const correctlyGuessedUniqueLetters = uniqueLettersInWord.filter(l => guessedLetters.includes(l));
+            const guessedRatio = uniqueLettersInWord.length > 0 ? (correctlyGuessedUniqueLetters.length / uniqueLettersInWord.length) : 0;
+
+            let nextWordDelay = 2000; // Default delay for just losing the word
+
+            if (guessedRatio < 0.5) {
+                showFeedback('Меньше половины букв отгадано... Вы проиграли это слово.', 'error', 3000); // Longer feedback display
+                startHangingAnimation();
+                nextWordDelay = 5000; // Longer delay for the animation to play
+            } else {
+                showFeedback(`Слово не угадано: ${currentWord}`, 'error', 3000);
+            }
+            
+            setTimeout(() => {
+                currentWordIndex++;
+                if (currentWordIndex >= wordsData.length) {
+                    endGame();
+                } else {
+                    startNewWord();
+                }
+            }, nextWordDelay);
         }
-        
-        // Move to next word after delay
-        setTimeout(() => {
-            currentWordIndex++;
-            startNewWord();
-        }, 2000);
     }
     
     function updateStats() {
@@ -281,7 +326,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function showHint() {
-        if (hintUsed) return;
+        if (hintUsed || !hintBtn) return;
         
         hintUsed = true;
         hintBtn.disabled = true;
@@ -298,8 +343,10 @@ document.addEventListener('DOMContentLoaded', function() {
             hintText += `\nПример: ${wordData.example}`;
         }
         
-        wordHint.textContent = hintText;
-        wordHint.classList.add('show');
+        if (wordHint) {
+            wordHint.textContent = hintText;
+            wordHint.classList.add('show');
+        }
         showFeedback('Подсказка показана!', 'info');
     }
     
@@ -311,17 +358,23 @@ document.addEventListener('DOMContentLoaded', function() {
         
         setTimeout(() => {
             currentWordIndex++;
-            startNewWord();
+            if (currentWordIndex >= wordsData.length) {
+                endGame();
+            } else {
+                startNewWord();
+            }
         }, 1500);
     }
     
-    function showFeedback(message, type) {
+    function showFeedback(message, type, duration = 2500) {
+        if (!gameFeedback) return;
+        
         gameFeedback.textContent = message;
-        gameFeedback.className = `game-feedback show ${type}`;
+        gameFeedback.className = `game-feedback show feedback-${type}`;
         
         setTimeout(() => {
-            gameFeedback.classList.remove('show');
-        }, 2500);
+            if (gameFeedback) gameFeedback.classList.remove('show');
+        }, duration);
     }
     
     function startTimer() {
@@ -356,27 +409,21 @@ document.addEventListener('DOMContentLoaded', function() {
             const seconds = timeRemaining % 60;
             timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             timerDisplay.className = 'stat-value';
-            timerDisplay.style.color = 'white';
-            timerDisplay.style.fontSize = '1.5rem';
-            timerDisplay.style.fontWeight = 'bold';
+            // Убираем inline стили - используем CSS классы
         } else if (gameSettings.timerDuration > 0) {
             // Timer - show remaining time
             timerDisplay.textContent = timeRemaining + 'с';
             
             // Update timer color based on time remaining
             timerDisplay.className = 'stat-value';
-            timerDisplay.style.fontSize = '1.5rem';
-            timerDisplay.style.fontWeight = 'bold';
             
             if (timeRemaining <= 10) {
-                timerDisplay.style.color = '#ff4444';
+                timerDisplay.classList.remove('warning');
                 timerDisplay.classList.add('danger');
             } else if (timeRemaining <= 30) {
-                timerDisplay.style.color = '#ffaa00';
                 timerDisplay.classList.remove('danger');
                 timerDisplay.classList.add('warning');
             } else {
-                timerDisplay.style.color = 'white';
                 timerDisplay.classList.remove('danger', 'warning');
             }
         }
@@ -395,8 +442,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const accuracyPercentage = totalAttempts > 0 ? Math.round((totalCorrectWords / totalAttempts) * 100) : 0;
         
         // Update result display
-        finalCorrect.textContent = totalCorrectWords;
-        finalAccuracy.textContent = accuracyPercentage + '%';
+        if (finalCorrect) finalCorrect.textContent = totalCorrectWords;
+        if (finalAccuracy) finalAccuracy.textContent = accuracyPercentage + '%';
         
         if (finalTime) {
             if (gameSettings.enableStopwatch) {
@@ -409,19 +456,33 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Set result title
-        if (accuracyPercentage === 100) {
-            resultTitle.textContent = '🎉 Идеальный результат!';
-            createConfetti(100);
-        } else if (accuracyPercentage >= 80) {
-            resultTitle.textContent = '🌟 Отличная работа!';
-        } else if (accuracyPercentage >= 60) {
-            resultTitle.textContent = '👍 Хорошо!';
-        } else {
-            resultTitle.textContent = '💪 Попробуйте еще раз!';
+        if (resultTitle) {
+            if (accuracyPercentage === 100) {
+                resultTitle.textContent = '🎉 Идеальный результат!';
+                createConfetti(100);
+            } else if (accuracyPercentage >= 80) {
+                resultTitle.textContent = '🌟 Отличная работа!';
+            } else if (accuracyPercentage >= 60) {
+                resultTitle.textContent = '👍 Хорошо!';
+            } else {
+                resultTitle.textContent = '💪 Попробуйте еще раз!';
+            }
         }
         
         // Show result
-        gameResult.classList.add('show');
+        if (gameResult) gameResult.classList.add('show');
+        
+        // Add event listeners for result buttons
+        if (playAgainBtn) playAgainBtn.addEventListener('click', initializeGame);
+        if (backToMenuBtn) backToMenuBtn.addEventListener('click', () => {
+            window.location.href = backToMenuBtn.dataset.menuUrl || '/'; // Assuming you might add a data-attribute for the URL
+        });
+        // Ensure backToSettingsBtn is handled if it exists from 'ideas' context
+        if (typeof backToSettingsBtn !== 'undefined' && backToSettingsBtn) {
+            backToSettingsBtn.addEventListener('click', () => {
+                 window.location.href = backToSettingsBtn.dataset.settingsUrl || '/'; // Or appropriate settings URL
+            });
+        }
     }
     
     function createConfetti(count) {
@@ -443,36 +504,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    function createSparkle(element) {
-        const sparkleCount = 5;
-        const rect = element.getBoundingClientRect();
-        
-        for (let i = 0; i < sparkleCount; i++) {
-            const sparkle = document.createElement('div');
-            sparkle.style.position = 'fixed';
-            sparkle.style.left = (rect.left + rect.width / 2) + 'px';
-            sparkle.style.top = (rect.top + rect.height / 2) + 'px';
-            sparkle.style.width = '4px';
-            sparkle.style.height = '4px';
-            sparkle.style.background = '#FFD700';
-            sparkle.style.borderRadius = '50%';
-            sparkle.style.pointerEvents = 'none';
-            sparkle.style.zIndex = '9999';
-            
-            const angle = (i / sparkleCount) * Math.PI * 2;
-            const distance = 30 + Math.random() * 20;
-            const endX = Math.cos(angle) * distance;
-            const endY = Math.sin(angle) * distance;
-            
-            sparkle.style.animation = `sparkle 0.6s ease-out forwards`;
-            sparkle.style.setProperty('--endX', endX + 'px');
-            sparkle.style.setProperty('--endY', endY + 'px');
-            
-            document.body.appendChild(sparkle);
-            
-            setTimeout(() => {
-                sparkle.remove();
-            }, 600);
+    function startHangingAnimation() {
+        const hangmanBody = document.getElementById('hangman-body');
+        const hangmanContainer = document.querySelector('.hangman-container');
+        // const gameOverOverlay = document.getElementById('game-over-overlay'); // This ID is from 'ideas'
+
+        if (hangmanBody && hangmanContainer) {
+            hangmanBody.classList.add('hanging');
+            hangmanContainer.classList.add('game-over'); // This applies the fade-out
+
+            // If you add an element with id 'game-over-overlay' to your game_hangman_improved.html,
+            // you can uncomment and use the following:
+            // if (gameOverOverlay) {
+            //     setTimeout(() => {
+            //         gameOverOverlay.classList.add('show');
+            //     }, 1000); 
+            // }
         }
     }
     

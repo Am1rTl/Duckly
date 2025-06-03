@@ -617,6 +617,95 @@
             max-width: 200px;
         }
     }
+
+    /* Анимации для повешенного человечка из 'ideas' */
+    @keyframes physicsSwing {
+        0% { transform: rotate(0deg); }
+        10% { transform: rotate(8deg); }
+        20% { transform: rotate(-6deg); }
+        30% { transform: rotate(5deg); }
+        40% { transform: rotate(-4deg); }
+        50% { transform: rotate(3deg); }
+        60% { transform: rotate(-2deg); }
+        70% { transform: rotate(1deg); }
+        80% { transform: rotate(0deg); }
+        100% { transform: rotate(0deg); }
+    }
+
+    @keyframes limbTwitch {
+        0%, 100% { transform: rotate(0deg); }
+        20% { transform: rotate(10deg); }
+        40% { transform: rotate(-8deg); }
+        60% { transform: rotate(5deg); }
+        80% { transform: rotate(-3deg); }
+    }
+
+    .hangman-body.hanging {
+        animation: physicsSwing 3s ease-in-out infinite;
+        transform-origin: 50% 0%; /* Swinging from the rope connection point */
+    }
+
+    .hangman-body.hanging #leftArm,
+    .hangman-body.hanging #rightArm {
+        animation: limbTwitch 1.5s ease-in-out infinite;
+        transform-origin: 0% 0%; /* Adjust origin if needed based on SVG arm connection */
+    }
+
+    .hangman-body.hanging #leftLeg,
+    .hangman-body.hanging #rightLeg {
+        animation: limbTwitch 1.8s ease-in-out infinite;
+        transform-origin: 0% 0%; /* Adjust origin if needed based on SVG leg connection */
+    }
+
+    @keyframes sadBrows {
+        0% { } /* Original path will be set by SVG */
+        100% { d: path("M 112 55 Q 115 58 118 55"); } /* More pronounced sadness */
+    }
+    
+    .hangman-body.hanging #leftBrow {
+        animation: sadBrows 0.8s ease-in-out forwards;
+        d: path("M 112 53 Q 115 50 118 53"); /* Initial state for left brow */
+    }
+    .hangman-body.hanging #rightBrow {
+        animation: sadBrows 0.8s ease-in-out forwards; /* Assuming same animation for right */
+        d: path("M 122 53 Q 125 50 128 53"); /* Initial state for right brow */
+        animation-name: sadBrowsRight; /* Use a different name if paths are different or mirror transform */
+    }
+    
+    @keyframes sadBrowsRight { /* Example if right brow needs different path */
+        0% { }
+        100% { d: path("M 122 55 Q 125 58 128 55"); }
+    }
+
+    @keyframes sadMouth {
+        0% { } /* Original path will be set by SVG */
+        100% { d: path("M 115 65 Q 120 62 125 65"); } /* Sad mouth */
+    }
+
+    .hangman-body.hanging #mouth {
+        animation: sadMouth 0.8s ease-in-out forwards;
+        d: path("M 115 63 Q 120 66 125 63"); /* Initial smiling mouth from ideas SVG */
+    }
+
+    @keyframes hangmanFadeOut {
+        0% { 
+            opacity: 1;
+            filter: brightness(1);
+        }
+        70% { 
+            opacity: 0.8;
+            filter: brightness(0.7);
+        }
+        100% { 
+            opacity: 0.6;
+            filter: brightness(0.5) sepia(0.8) hue-rotate(-15deg); /* More dramatic fade */
+        }
+    }
+
+    .hangman-container.game-over { /* This class will be added by JS */
+        animation: hangmanFadeOut 2s ease-in-out forwards;
+    }
+    /* Конец добавленных CSS анимаций */
 </style>
 {% endblock %}
 
@@ -669,19 +758,82 @@
         <!-- Hangman Drawing -->
         <div class="hangman-container">
             <svg class="hangman-svg" viewBox="0 0 200 250">
-                <!-- Gallows -->
-                <line x1="10" y1="230" x2="150" y2="230" stroke="#8B4513" stroke-width="4"/>
-                <line x1="30" y1="230" x2="30" y2="20" stroke="#8B4513" stroke-width="4"/>
-                <line x1="30" y1="20" x2="120" y2="20" stroke="#8B4513" stroke-width="4"/>
-                <line x1="120" y1="20" x2="120" y2="50" stroke="#8B4513" stroke-width="4"/>
+                <!-- Gallows with improved design -->
+                <!-- Base -->
+                <ellipse cx="30" cy="235" rx="25" ry="8" fill="#654321" stroke="#5D4037" stroke-width="2"/>
+                <!-- Main post -->
+                <rect x="25" y="20" width="10" height="215" fill="#8B4513" stroke="#5D4037" stroke-width="2" rx="2"/>
+                <!-- Top beam -->
+                <rect x="30" y="15" width="95" height="10" fill="#8B4513" stroke="#5D4037" stroke-width="2" rx="2"/>
+                <!-- Noose support -->
+                <rect x="115" y="20" width="10" height="35" fill="#8B4513" stroke="#5D4037" stroke-width="2" rx="2"/>
+                <!-- Support beam -->
+                <line x1="35" y1="40" x2="50" y2="25" stroke="#8B4513" stroke-width="3"/>
+                <!-- Rope -->
+                <line x1="120" y1="50" x2="120" y2="48" stroke="#D2691E" stroke-width="3"/>
+                <!-- Wood grain effect -->
+                <line x1="27" y1="30" x2="27" y2="220" stroke="#A0522D" stroke-width="1" opacity="0.5"/>
+                <line x1="33" y1="35" x2="33" y2="225" stroke="#A0522D" stroke-width="1" opacity="0.5"/>
+                <line x1="32" y1="17" x2="120" y2="17" stroke="#A0522D" stroke-width="1" opacity="0.5"/>
+                <line x1="32" y1="23" x2="120" y2="23" stroke="#A0522D" stroke-width="1" opacity="0.5"/>
                 
                 <!-- Body parts (initially hidden) -->
-                <circle id="head" class="hangman-part" cx="120" cy="60" r="10" stroke="#ff4757" stroke-width="3" fill="none"/>
-                <line id="body" class="hangman-part" x1="120" y1="70" x2="120" y2="150" stroke="#ff4757" stroke-width="3"/>
-                <line id="leftArm" class="hangman-part" x1="120" y1="100" x2="90" y2="120" stroke="#ff4757" stroke-width="3"/>
-                <line id="rightArm" class="hangman-part" x1="120" y1="100" x2="150" y2="120" stroke="#ff4757" stroke-width="3"/>
-                <line id="leftLeg" class="hangman-part" x1="120" y1="150" x2="90" y2="180" stroke="#ff4757" stroke-width="3"/>
-                <line id="rightLeg" class="hangman-part" x1="120" y1="150" x2="150" y2="180" stroke="#ff4757" stroke-width="3"/>
+                <g id="hangman-body" class="hangman-body">
+                    <!-- Head with improved face -->
+                    <g id="head" class="hangman-part">
+                        <circle cx="120" cy="60" r="12" stroke="#2C3E50" stroke-width="3" fill="#F4D1AE"/>
+                        <!-- Eyes -->
+                        <circle cx="115" cy="57" r="1.5" fill="#2C3E50"/>
+                        <circle cx="125" cy="57" r="1.5" fill="#2C3E50"/>
+                        <!-- Eyebrows -->
+                        <path d="M 112 53 Q 115 50 118 53" stroke="#2C3E50" stroke-width="1" fill="none" id="leftBrow"/>
+                        <path d="M 122 53 Q 125 50 128 53" stroke="#2C3E50" stroke-width="1" fill="none" id="rightBrow"/>
+                        <!-- Smiling mouth -->
+                        <path d="M 115 63 Q 120 66 125 63" stroke="#2C3E50" stroke-width="1" fill="none" id="mouth"/>
+                        <!-- Hair -->
+                        <path d="M 108 52 Q 120 48 132 52" stroke="#8B4513" stroke-width="2" fill="none"/>
+                    </g>
+                    
+                    <!-- Improved body proportions -->
+                    <g id="body" class="hangman-part">
+                        <ellipse cx="120" cy="110" rx="15" ry="40" stroke="#2C3E50" stroke-width="3" fill="#3498DB"/>
+                        <!-- Shirt details -->
+                        <line x1="105" y1="85" x2="135" y2="85" stroke="#2980B9" stroke-width="2"/>
+                        <circle cx="115" cy="95" r="2" fill="#2980B9"/>
+                        <circle cx="125" cy="95" r="2" fill="#2980B9"/>
+                        <circle cx="120" cy="105" r="2" fill="#2980B9"/>
+                    </g>
+                    
+                    <!-- Left Arm with physics -->
+                    <g id="leftArm" class="hangman-part">
+                        <line x1="105" y1="90" x2="85" y2="115" stroke="#F4D1AE" stroke-width="4" id="leftArmLine"/>
+                        <line x1="105" y1="90" x2="90" y2="105" stroke="#3498DB" stroke-width="3"/>
+                        <!-- Hand -->
+                        <circle cx="85" cy="115" r="4" fill="#F4D1AE" stroke="#2C3E50" stroke-width="1" id="leftHand"/>
+                    </g>
+                    
+                    <!-- Right Arm with physics -->
+                    <g id="rightArm" class="hangman-part">
+                        <line x1="135" y1="90" x2="155" y2="115" stroke="#F4D1AE" stroke-width="4" id="rightArmLine"/>
+                        <line x1="135" y1="90" x2="150" y2="105" stroke="#3498DB" stroke-width="3"/>
+                        <!-- Hand -->
+                        <circle cx="155" cy="115" r="4" fill="#F4D1AE" stroke="#2C3E50" stroke-width="1" id="rightHand"/>
+                    </g>
+                    
+                    <!-- Left Leg with physics -->
+                    <g id="leftLeg" class="hangman-part">
+                        <line x1="110" y1="150" x2="95" y2="185" stroke="#2C3E50" stroke-width="4" id="leftLegLine"/>
+                        <!-- Shoe -->
+                        <ellipse cx="95" cy="185" rx="8" ry="4" fill="#34495E" id="leftShoe"/>
+                    </g>
+                    
+                    <!-- Right Leg with physics -->
+                    <g id="rightLeg" class="hangman-part">
+                        <line x1="130" y1="150" x2="145" y2="185" stroke="#2C3E50" stroke-width="4" id="rightLegLine"/>
+                        <!-- Shoe -->
+                        <ellipse cx="145" cy="185" rx="8" ry="4" fill="#34495E" id="rightShoe"/>
+                    </g>
+                </g>
             </svg>
         </div>
 

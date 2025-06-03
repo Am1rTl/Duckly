@@ -46,20 +46,77 @@
     <div class="game-content">
         <!-- Hangman Drawing -->
         <div class="hangman-container">
-            <svg class="hangman-svg" viewBox="0 0 200 250">
-                <!-- Gallows -->
-                <line x1="10" y1="230" x2="150" y2="230" stroke="#8B4513" stroke-width="4"/>
-                <line x1="30" y1="230" x2="30" y2="20" stroke="#8B4513" stroke-width="4"/>
-                <line x1="30" y1="20" x2="120" y2="20" stroke="#8B4513" stroke-width="4"/>
-                <line x1="120" y1="20" x2="120" y2="50" stroke="#8B4513" stroke-width="4"/>
+            <svg class="hangman-svg" viewBox="0 0 200 280">
+                <!-- Обновлённая виселица -->
+                <ellipse cx="30" cy="265" rx="30" ry="10" fill="#654321" stroke="#5D4037" stroke-width="3"/>
+                <rect x="25" y="20" width="15" height="240" fill="#8B4513" stroke="#5D4037" stroke-width="3" rx="3"/>
+                <rect x="35" y="15" width="100" height="15" fill="#8B4513" stroke="#5D4037" stroke-width="3" rx="3"/>
+                <rect x="125" y="25" width="15" height="40" fill="#8B4513" stroke="#5D4037" stroke-width="3" rx="3"/>
+                <line x1="40" y1="40" x2="60" y2="25" stroke="#8B4513" stroke-width="4"/>
+                <line x1="132.5" y1="60" x2="132.5" y2="70" stroke="#D2691E" stroke-width="4"/>
                 
-                <!-- Body parts (initially hidden) -->
-                <circle id="head" cx="120" cy="60" r="10" stroke="#000" stroke-width="2" fill="none" class="hangman-part"/>
-                <line id="body" x1="120" y1="70" x2="120" y2="150" stroke="#000" stroke-width="2" class="hangman-part"/>
-                <line id="leftArm" x1="120" y1="100" x2="90" y2="120" stroke="#000" stroke-width="2" class="hangman-part"/>
-                <line id="rightArm" x1="120" y1="100" x2="150" y2="120" stroke="#000" stroke-width="2" class="hangman-part"/>
-                <line id="leftLeg" x1="120" y1="150" x2="90" y2="180" stroke="#000" stroke-width="2" class="hangman-part"/>
-                <line id="rightLeg" x1="120" y1="150" x2="150" y2="180" stroke="#000" stroke-width="2" class="hangman-part"/>
+                <!-- Полностью переработанный человечек -->
+                <g id="hangman-body" class="hangman-body">
+                    <!-- Голова с детализированным лицом -->
+                    <g id="head" class="hangman-part">
+                        <circle cx="132.5" cy="85" r="15" stroke="#2C3E50" stroke-width="3" fill="#F4D1AE"/>
+                        <!-- Глаза -->
+                        <circle cx="127.5" cy="82" r="2" fill="#2C3E50"/>
+                        <circle cx="137.5" cy="82" r="2" fill="#2C3E50"/>
+                        <!-- Брови -->
+                        <line x1="125" y1="78" x2="130" y2="79" stroke="#2C3E50" stroke-width="1"/>
+                        <line x1="135" y1="79" x2="140" y2="78" stroke="#2C3E50" stroke-width="1"/>
+                        <!-- Рот -->
+                        <path d="M 128 89 Q 132.5 92 137 89" stroke="#2C3E50" stroke-width="1.5" fill="none"/>
+                        <!-- Волосы -->
+                        <path d="M 118 75 Q 132.5 70 147 75" stroke="#8B4513" stroke-width="3" fill="none"/>
+                    </g>
+                    
+                    <!-- Шея -->
+                    <line x1="132.5" y1="100" x2="132.5" y2="110" stroke="#F4D1AE" stroke-width="5"/>
+                    
+                    <!-- Тело -->
+                    <g id="body" class="hangman-part">
+                        <rect x="117.5" y="110" width="30" height="60" rx="8" ry="8" stroke="#2C3E50" stroke-width="3" fill="#3498DB"/>
+                        <!-- Детали одежды -->
+                        <line x1="120" y1="125" x2="145" y2="125" stroke="#2980B9" stroke-width="2"/>
+                        <circle cx="125" cy="135" r="2" fill="#2980B9"/>
+                        <circle cx="140" cy="135" r="2" fill="#2980B9"/>
+                        <circle cx="132.5" cy="145" r="2" fill="#2980B9"/>
+                    </g>
+                    
+                    <!-- Левая рука -->
+                    <g id="leftArm" class="hangman-part">
+                        <line x1="117.5" y1="120" x2="90" y2="150" stroke="#3498DB" stroke-width="7" stroke-linecap="round"/>
+                        <line x1="90" y1="150" x2="70" y2="170" stroke="#F4D1AE" stroke-width="7" stroke-linecap="round"/>
+                        <!-- Кисть -->
+                        <circle cx="70" cy="170" r="5" fill="#F4D1AE" stroke="#2C3E50" stroke-width="1.5"/>
+                    </g>
+                    
+                    <!-- Правая рука -->
+                    <g id="rightArm" class="hangman-part">
+                        <line x1="147.5" y1="120" x2="175" y2="150" stroke="#3498DB" stroke-width="7" stroke-linecap="round"/>
+                        <line x1="175" y1="150" x2="195" y2="170" stroke="#F4D1AE" stroke-width="7" stroke-linecap="round"/>
+                        <!-- Кисть -->
+                        <circle cx="195" cy="170" r="5" fill="#F4D1AE" stroke="#2C3E50" stroke-width="1.5"/>
+                    </g>
+                    
+                    <!-- Левая нога -->
+                    <g id="leftLeg" class="hangman-part">
+                        <line x1="122.5" y1="170" x2="110" y2="205" stroke="#2C3E50" stroke-width="8" stroke-linecap="round"/>
+                        <line x1="110" y1="205" x2="100" y2="240" stroke="#2C3E50" stroke-width="8" stroke-linecap="round"/>
+                        <!-- Обувь -->
+                        <rect x="90" y="235" width="25" height="10" rx="4" ry="4" fill="#34495E"/>
+                    </g>
+                    
+                    <!-- Правая нога -->
+                    <g id="rightLeg" class="hangman-part">
+                        <line x1="142.5" y1="170" x2="155" y2="205" stroke="#2C3E50" stroke-width="8" stroke-linecap="round"/>
+                        <line x1="155" y1="205" x2="165" y2="240" stroke="#2C3E50" stroke-width="8" stroke-linecap="round"/>
+                        <!-- Обувь -->
+                        <rect x="150" y="235" width="25" height="10" rx="4" ry="4" fill="#34495E"/>
+                    </g>
+                </g>
             </svg>
         </div>
 
@@ -83,6 +140,9 @@
 
     <!-- Game Feedback -->
     <div id="game-feedback" class="game-feedback"></div>
+    
+    <!-- Game Over Overlay -->
+    <div id="game-over-overlay" class="game-over-overlay"></div>
 
     <!-- Game Controls -->
     <div class="game-controls">
@@ -192,16 +252,21 @@
 
 .stat-item {
     text-align: center;
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
     padding: 15px;
-    min-width: 100px;
+    min-width: 120px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
 .stat-label {
-    font-size: 0.9rem;
-    opacity: 0.8;
-    margin-bottom: 5px;
+    font-size: 1rem;
+    color: white;
+    margin-bottom: 8px;
+    font-weight: 600;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
 }
 
 .stat-value {
@@ -263,36 +328,50 @@
 }
 
 .letter-slot.revealed {
-    color: #4CAF50;
+    color: #fff;
     border-color: #4CAF50;
-    animation: letterReveal 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    background: rgba(76, 175, 80, 0.1);
-    box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+    background: linear-gradient(45deg, #4CAF50, #81C784, #4CAF50, #66BB6A);
+    background-size: 300% 300%;
+    animation: letterReveal 1s cubic-bezier(0.68, -0.55, 0.265, 1.55), gradientShift 2s ease-in-out infinite;
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.2);
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 @keyframes letterReveal {
     0% { 
-        transform: scale(0.3) rotateY(180deg); 
+        transform: scale(0.3) rotateZ(0deg); 
         opacity: 0;
-        color: transparent;
+        background: linear-gradient(45deg, transparent, transparent);
     }
     25% {
-        transform: scale(0.6) rotateY(90deg);
-        opacity: 0.5;
+        transform: scale(0.7) rotateZ(90deg);
+        opacity: 0.3;
+        background: linear-gradient(45deg, #4CAF50, #81C784);
     }
     50% { 
-        transform: scale(1.3) rotateY(0deg); 
-        opacity: 0.8;
-        color: #4CAF50;
+        transform: scale(1.2) rotateZ(180deg); 
+        opacity: 0.7;
+        background: linear-gradient(45deg, #4CAF50, #81C784, #4CAF50);
     }
     75% {
-        transform: scale(0.95);
+        transform: scale(0.95) rotateZ(270deg);
         opacity: 0.9;
+        background: linear-gradient(45deg, #4CAF50, #81C784, #4CAF50, #66BB6A);
     }
     100% { 
-        transform: scale(1); 
+        transform: scale(1) rotateZ(360deg); 
         opacity: 1;
-        color: #4CAF50;
+        background: linear-gradient(45deg, #4CAF50, #81C784, #4CAF50, #66BB6A);
+    }
+}
+
+@keyframes gradientShift {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
     }
 }
 
@@ -490,75 +569,106 @@
 }
 
 .back-button {
-    background: rgba(255, 255, 255, 0.2) !important;
-    color: white !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    color: #333 !important;
     border: 2px solid white !important;
     padding: 15px 30px !important;
     font-size: 1.1rem !important;
     font-weight: bold !important;
     border-radius: 25px !important;
     backdrop-filter: blur(10px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     transition: all 0.3s ease;
+    text-decoration: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
 }
 
 .back-button:hover {
-    background: rgba(255, 255, 255, 0.3) !important;
-    color: white !important;
+    background: white !important;
+    color: #333 !important;
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    text-decoration: none !important;
 }
 
 .stat-value {
-    font-size: 1.5rem !important;
+    font-size: 1.8rem !important;
     font-weight: bold !important;
     color: white !important;
+    text-shadow: 0 0 8px rgba(0,0,0,0.8), 0 0 3px #000, 2px 2px 4px rgba(0,0,0,0.7) !important;
+    background: rgba(0, 0, 0, 0.3) !important;
+    padding: 8px 15px !important;
+    border-radius: 10px !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    min-height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    backdrop-filter: blur(5px) !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
 }
 
 .stat-value.danger {
     color: #ff4444 !important;
+    background: rgba(255, 68, 68, 0.3) !important;
+    border-color: rgba(255, 68, 68, 0.6) !important;
+    animation: dangerPulse 1s ease-in-out infinite !important;
 }
 
 .stat-value.warning {
     color: #ffaa00 !important;
+    background: rgba(255, 170, 0, 0.3) !important;
+    border-color: rgba(255, 170, 0, 0.6) !important;
+}
+
+@keyframes dangerPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3), 0 0 0 0 rgba(255, 68, 68, 0.7);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 0 10px rgba(255, 68, 68, 0);
+    }
 }
 
 /* Hangman parts animation */
 .hangman-part {
     opacity: 0;
-    transition: opacity 0.5s ease;
+    transition: opacity 0.6s ease;
 }
 
 .hangman-part.show {
     opacity: 1;
-    animation: hangmanAppear 0.5s ease;
+    animation: hangmanAppear 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 @keyframes hangmanAppear {
     0% { 
         opacity: 0; 
-        transform: scale(0.5);
+        transform: scale(0.3) rotate(-10deg);
+        filter: blur(2px);
     }
-    50% { 
-        transform: scale(1.2);
+    30% { 
+        opacity: 0.7;
+        transform: scale(1.3) rotate(5deg);
+        filter: blur(1px);
+    }
+    60% {
+        opacity: 0.9;
+        transform: scale(0.9) rotate(-2deg);
+        filter: blur(0px);
     }
     100% { 
         opacity: 1; 
-        transform: scale(1);
+        transform: scale(1) rotate(0deg);
+        filter: blur(0px);
     }
 }
 
-/* Sparkle animation */
-@keyframes sparkle {
-    0% {
-        transform: translate(0, 0) scale(1);
-        opacity: 1;
-    }
-    100% {
-        transform: translate(var(--endX), var(--endY)) scale(0);
-        opacity: 0;
-    }
-}
+
 
 /* Shake animation for hangman */
 @keyframes shake {
@@ -581,6 +691,142 @@
 
 .stat-value.danger {
     animation: timerPulse 1s infinite;
+}
+
+/* Физика для человечка при проигрыше */
+@keyframes hangingSwing {
+    0% { 
+        transform-origin: 132.5px 70px;
+        transform: rotate(0deg) translate(0, 0);
+    }
+    10% { 
+        transform: rotate(12deg) translate(2px, -1px);
+    }
+    20% { 
+        transform: rotate(8deg) translate(-3px, 2px);
+    }
+    30% { 
+        transform: rotate(-10deg) translate(1px, -2px);
+    }
+    40% { 
+        transform: rotate(-7deg) translate(-2px, 1px);
+    }
+    50% { 
+        transform: rotate(8deg) translate(3px, -1px);
+    }
+    60% { 
+        transform: rotate(5deg) translate(-1px, 3px);
+    }
+    70% { 
+        transform: rotate(-6deg) translate(2px, -2px);
+    }
+    80% { 
+        transform: rotate(-3deg) translate(-3px, 1px);
+    }
+    85% { 
+        transform: rotate(4deg) translate(1px, -1px);
+    }
+    95% { 
+        transform: rotate(-2deg) translate(0, 0);
+    }
+    100% { 
+        transform: rotate(0deg) translate(0, 0);
+    }
+}
+
+.hangman-body.hanging {
+    animation: hangingSwing 2.5s ease-out infinite;
+    transform-origin: 132.5px 70px;
+}
+
+/* Fade out animation for the whole hangman */
+@keyframes hangmanFadeOut {
+    0% { 
+        opacity: 1;
+        filter: brightness(1);
+    }
+    70% { 
+        opacity: 0.8;
+        filter: brightness(0.7);
+    }
+    100% { 
+        opacity: 0.6;
+        filter: brightness(0.5) sepia(1) hue-rotate(0deg);
+    }
+}
+
+.hangman-container.game-over {
+    animation: hangmanFadeOut 2s ease-in-out forwards;
+}
+
+/* Анимация грустного лица при проигрыше */
+.hangman-body.hanging #head circle:nth-child(2),
+.hangman-body.hanging #head circle:nth-child(3) {
+    animation: sadEyes 0.5s ease-in-out forwards;
+}
+
+.hangman-body.hanging #head path {
+    animation: sadMouth 0.5s ease-in-out forwards;
+}
+
+@keyframes sadEyes {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(3px); }
+}
+
+@keyframes sadMouth {
+    0% { d: path("M 128 89 Q 132.5 92 137 89"); }
+    100% { d: path("M 128 92 Q 132.5 88 137 92"); }
+}
+
+/* Game over overlay */
+.game-over-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.5s ease;
+    pointer-events: none;
+}
+
+.game-over-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Dramatic text effect */
+.dramatic-text {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3rem;
+    font-weight: bold;
+    color: #ff4444;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    z-index: 1001;
+    opacity: 0;
+    animation: dramaticAppear 1s ease-out forwards;
+}
+
+@keyframes dramaticAppear {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+    }
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.2);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
 }
 
 .game-result {
@@ -697,21 +943,7 @@
     }
 }
 
-/* Timer color classes */
-.stat-value.warning {
-    color: #ffc107;
-}
-
-.stat-value.danger {
-    color: #dc3545;
-    animation: pulse 1s infinite;
-}
-
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
-}
+/* Удалены дублирующиеся стили - они уже определены выше */
 
 /* Confetti animation */
 .confetti {
