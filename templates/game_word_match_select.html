@@ -3,68 +3,354 @@
 {% block title %}Игра: Сопоставление - Выбор модуля{% endblock %}
 
 {% block head_extra %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+  :root {
+    --primary: #4A90E2;
+    --primary-dark: #357ABD;
+    --secondary: #2C3E50;
+    --text: #34495E;
+    --bg: #F5F7FA;
+    --white: #FFFFFF;
+    --radius: 12px;
+    --shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  }
+
+  body {
+    background-color: var(--bg);
+    font-family: 'Inter', sans-serif;
+  }
+
+  .form-container {
+    max-width: 680px;
+    margin: 60px auto;
+    padding: 40px;
+    background-color: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+  }
+
+  .form-container:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+  }
+
+  .form-container h1 {
+    color: var(--secondary);
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 1.8rem;
+  }
+
+  .form-label {
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .form-select, .btn-primary, .form-control {
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+  }
+
+  .form-select:focus, .form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+  }
+
+  .btn-primary {
+    background-color: var(--primary);
+    border: none;
+    padding: 12px 24px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    width: 100%;
+    transition: background-color 0.3s ease;
+  }
+
+  .btn-primary:hover {
+    background-color: var(--primary-dark);
+  }
+
+  .game-options {
+    background-color: #F8F9FA;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 25px;
+    border: 1px solid #E9ECEF;
+    display: none;
+    animation: fadeIn 0.3s ease forwards;
+  }
+
+  .game-options h3 {
+    color: var(--primary);
+    font-size: 1.25rem;
+    margin-bottom: 20px;
+    font-weight: 600;
+  }
+
+  .range-container {
+    position: relative;
+    padding-bottom: 30px;
+  }
+
+  .range-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+    font-size: 0.85rem;
+    color: #6C757D;
+  }
+
+  .form-range::-webkit-slider-thumb {
+    background: var(--primary);
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  .form-range::-moz-range-thumb {
+    background: var(--primary);
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  .value-display {
+    position: absolute;
+    bottom: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-weight: 600;
+    color: var(--primary);
+    font-size: 0.95rem;
+  }
+
+  .toggle-options {
+    cursor: pointer;
+    color: var(--primary);
+    text-decoration: underline;
+    display: inline-block;
+    margin-bottom: 10px;
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+
+  .toggle-options:hover {
+    color: var(--primary-dark);
+  }
+
+  .options-icon {
+    margin-right: 5px;
+  }
+
+  .selection-mode {
+    background-color: #F8F9FA;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid #E9ECEF;
+  }
+
+  .selection-mode h4 {
+    color: var(--primary);
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+    font-weight: 600;
+  }
+
+  .form-check {
+    margin-bottom: 10px;
+  }
+
+  .form-check-input:checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+  }
+
+  .card-count-input {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 10px;
+  }
+
+  .card-count-input input[type="number"] {
+    width: 80px;
+    text-align: center;
+  }
+
+  .timer-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .timer-option {
+    padding: 8px 12px;
+    border: 2px solid #E9ECEF;
+    border-radius: 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: white;
+  }
+
+  .timer-option:hover {
+    border-color: var(--primary);
+    background-color: rgba(74, 144, 226, 0.1);
+  }
+
+  .timer-option.selected {
+    border-color: var(--primary);
+    background-color: var(--primary);
+    color: white;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 576px) {
     .form-container {
-        max-width: 600px;
-        margin: 40px auto;
-        padding: 30px;
-        background-color: #fff;
-        border-radius: 12px;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+      margin: 30px 20px;
+      padding: 25px;
     }
-    .form-container h1 {
-        color: var(--secondary);
-        text-align: center;
-        margin-bottom: 25px;
-    }
-    .form-label {
-        font-weight: 500;
-        color: var(--text);
-    }
-    .form-select, .btn-primary {
-        border-radius: 8px;
-    }
-    .btn-primary {
-        padding: 10px 20px;
-        font-size: 1.05rem;
-    }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container">
-    <div class="form-container">
-        <h1>Выберите модуль для игры "Сопоставление"</h1>
-        <form id="selectModuleFormWordMatch">
-            <div class="mb-3">
-                <label for="class_select_wm" class="form-label">Класс:</label>
-                <select id="class_select_wm" name="class_select_wm" class="form-select" required>
-                    <option value="">Выберите класс...</option>
-                    {% for class_item in classes %}
-                    <option value="{{ class_item }}">{{ class_item }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+  <div class="form-container">
+    <h1>Выберите модуль для игры "Сопоставление"</h1>
+    <form id="selectModuleFormWordMatch">
+      <!-- Режим выбора -->
+      <div class="selection-mode">
+        <h4>Режим выбора:</h4>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="selectionMode" id="modeSpecific" value="specific" checked>
+          <label class="form-check-label" for="modeSpecific">
+            Выбрать конкретный модуль
+          </label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="selectionMode" id="modeUnit" value="unit">
+          <label class="form-check-label" for="modeUnit">
+            Выбрать весь юнит
+          </label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="selectionMode" id="modeClass" value="class">
+          <label class="form-check-label" for="modeClass">
+            Выбрать весь класс
+          </label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="selectionMode" id="modeMultiple" value="multiple">
+          <label class="form-check-label" for="modeMultiple">
+            Выбрать несколько модулей
+          </label>
+        </div>
+      </div>
 
-            <div class="mb-3">
-                <label for="unit_select_wm" class="form-label">Юнит:</label>
-                <select id="unit_select_wm" name="unit_select_wm" class="form-select" required disabled>
-                    <option value="">Сначала выберите класс...</option>
-                </select>
-            </div>
+      <div class="mb-3">
+        <label for="class_select_wm" class="form-label">Класс:</label>
+        <select id="class_select_wm" name="class_select_wm" class="form-select" required>
+          <option value="">Выберите класс...</option>
+          {% for class_item in classes %}
+          <option value="{{ class_item }}">{{ class_item }}</option>
+          {% endfor %}
+        </select>
+      </div>
 
-            <div class="mb-3">
-                <label for="module_select_wm" class="form-label">Модуль:</label>
-                <select id="module_select_wm" name="module_select_wm" class="form-select" required disabled>
-                    <option value="">Сначала выберите юнит...</option>
-                </select>
-            </div>
+      <div class="mb-3" id="unitContainer">
+        <label for="unit_select_wm" class="form-label">Юнит:</label>
+        <select id="unit_select_wm" name="unit_select_wm" class="form-select" required disabled>
+          <option value="">Сначала выберите класс...</option>
+        </select>
+      </div>
 
-            <div class="d-grid">
-                <button type="submit" class="btn btn-primary">Начать игру!</button>
+      <div class="mb-3" id="moduleContainer">
+        <label for="module_select_wm" class="form-label">Модуль:</label>
+        <select id="module_select_wm" name="module_select_wm" class="form-select" required disabled>
+          <option value="">Сначала выберите юнит...</option>
+        </select>
+      </div>
+
+      <!-- Множественный выбор модулей -->
+      <div class="mb-3" id="multipleModulesContainer" style="display: none;">
+        <label class="form-label">Выберите модули:</label>
+        <div id="moduleCheckboxes"></div>
+      </div>
+
+      <div class="mb-3">
+        <span class="toggle-options" id="toggleOptions">
+          <i class="fas fa-cog options-icon"></i> Настройки игры
+        </span>
+      </div>
+
+      <div class="game-options mb-4" id="gameOptions">
+        <h3>Настройки игры</h3>
+        
+        <div class="mb-4">
+          <label for="cardCount" class="form-label">Количество карточек:</label>
+          <div class="range-container">
+            <input type="range" class="form-range" id="cardCount" name="cardCount" min="4" max="20" step="1" value="8">
+            <div class="range-labels">
+              <span>4</span>
+              <span id="maxCardsLabel">20</span>
             </div>
-        </form>
-    </div>
+            <div class="value-display" id="cardCountDisplay">8 карточек</div>
+          </div>
+          <div class="card-count-input">
+            <label for="cardCountInput">Или введите точное число:</label>
+            <input type="number" class="form-control" id="cardCountInput" min="4" max="20" value="8">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="enableTimer" name="enableTimer">
+            <label class="form-check-label" for="enableTimer">Включить таймер</label>
+          </div>
+        </div>
+
+        <div class="mb-3" id="timerSettingsContainer" style="display: none;">
+          <label class="form-label">Время на игру:</label>
+          <div class="timer-options">
+            <div class="timer-option" data-value="30">30 сек</div>
+            <div class="timer-option" data-value="60">1 мин</div>
+            <div class="timer-option selected" data-value="120">2 мин</div>
+            <div class="timer-option" data-value="180">3 мин</div>
+            <div class="timer-option" data-value="300">5 мин</div>
+            <div class="timer-option" data-value="600">10 мин</div>
+          </div>
+          <input type="hidden" id="timerDuration" name="timerDuration" value="120">
+        </div>
+
+        <div class="mb-3">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="enableStopwatch" name="enableStopwatch">
+            <label class="form-check-label" for="enableStopwatch">Включить секундомер</label>
+          </div>
+        </div>
+
+        <div class="d-grid">
+          <button type="submit" class="btn btn-primary">Начать игру!</button>
+        </div>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}
 
@@ -76,6 +362,128 @@ document.addEventListener('DOMContentLoaded', function() {
     const unitSelect = document.getElementById('unit_select_wm');
     const moduleSelect = document.getElementById('module_select_wm');
     const selectForm = document.getElementById('selectModuleFormWordMatch');
+    const toggleOptions = document.getElementById('toggleOptions');
+    const gameOptions = document.getElementById('gameOptions');
+    const enableTimer = document.getElementById('enableTimer');
+    const enableStopwatch = document.getElementById('enableStopwatch');
+    const timerSettingsContainer = document.getElementById('timerSettingsContainer');
+    const cardCount = document.getElementById('cardCount');
+    const cardCountInput = document.getElementById('cardCountInput');
+    const cardCountDisplay = document.getElementById('cardCountDisplay');
+    const timerDuration = document.getElementById('timerDuration');
+    const maxCardsLabel = document.getElementById('maxCardsLabel');
+    
+    // Selection mode elements
+    const selectionModeRadios = document.querySelectorAll('input[name="selectionMode"]');
+    const unitContainer = document.getElementById('unitContainer');
+    const moduleContainer = document.getElementById('moduleContainer');
+    const multipleModulesContainer = document.getElementById('multipleModulesContainer');
+    const moduleCheckboxes = document.getElementById('moduleCheckboxes');
+    
+    let availableModulesCount = 0;
+    let allModulesData = [];
+
+    // Toggle game options
+    toggleOptions.addEventListener('click', function() {
+        gameOptions.style.display = gameOptions.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // Timer/Stopwatch conflict resolution
+    enableTimer.addEventListener('change', function() {
+        if (this.checked) {
+            enableStopwatch.checked = false;
+            timerSettingsContainer.style.display = 'block';
+        } else {
+            timerSettingsContainer.style.display = 'none';
+        }
+    });
+
+    enableStopwatch.addEventListener('change', function() {
+        if (this.checked) {
+            enableTimer.checked = false;
+            timerSettingsContainer.style.display = 'none';
+        }
+    });
+
+    // Timer options selection
+    document.querySelectorAll('.timer-option').forEach(option => {
+        option.addEventListener('click', function() {
+            document.querySelectorAll('.timer-option').forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+            timerDuration.value = this.dataset.value;
+        });
+    });
+
+    // Card count synchronization
+    cardCount.addEventListener('input', function() {
+        const value = parseInt(this.value);
+        cardCountInput.value = value;
+        updateCardCountDisplay(value);
+    });
+
+    cardCountInput.addEventListener('input', function() {
+        const value = parseInt(this.value);
+        if (value >= 4 && value <= availableModulesCount) {
+            cardCount.value = value;
+            updateCardCountDisplay(value);
+        }
+    });
+
+    function updateCardCountDisplay(value) {
+        cardCountDisplay.textContent = value + ' карточек';
+    }
+
+    function updateCardCountLimits(maxCards) {
+        availableModulesCount = maxCards;
+        cardCount.max = maxCards;
+        cardCountInput.max = maxCards;
+        maxCardsLabel.textContent = maxCards;
+        
+        // Adjust current value if it exceeds the new limit
+        if (parseInt(cardCount.value) > maxCards) {
+            cardCount.value = maxCards;
+            cardCountInput.value = maxCards;
+            updateCardCountDisplay(maxCards);
+        }
+    }
+
+    // Selection mode handling
+    selectionModeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            const mode = this.value;
+            
+            switch(mode) {
+                case 'specific':
+                    unitContainer.style.display = 'block';
+                    moduleContainer.style.display = 'block';
+                    multipleModulesContainer.style.display = 'none';
+                    unitSelect.required = true;
+                    moduleSelect.required = true;
+                    break;
+                case 'unit':
+                    unitContainer.style.display = 'block';
+                    moduleContainer.style.display = 'none';
+                    multipleModulesContainer.style.display = 'none';
+                    unitSelect.required = true;
+                    moduleSelect.required = false;
+                    break;
+                case 'class':
+                    unitContainer.style.display = 'none';
+                    moduleContainer.style.display = 'none';
+                    multipleModulesContainer.style.display = 'none';
+                    unitSelect.required = false;
+                    moduleSelect.required = false;
+                    break;
+                case 'multiple':
+                    unitContainer.style.display = 'block';
+                    moduleContainer.style.display = 'none';
+                    multipleModulesContainer.style.display = 'block';
+                    unitSelect.required = true;
+                    moduleSelect.required = false;
+                    break;
+            }
+        });
+    });
 
     classSelect.addEventListener('change', function() {
         const className = this.value;
@@ -83,6 +491,7 @@ document.addEventListener('DOMContentLoaded', function() {
         unitSelect.disabled = true;
         moduleSelect.innerHTML = '<option value="">Сначала выберите юнит...</option>';
         moduleSelect.disabled = true;
+        moduleCheckboxes.innerHTML = '';
 
         if (className) {
             fetch(`/get_units_for_class?class_name=${encodeURIComponent(className)}`)
@@ -95,7 +504,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                     unitSelect.disabled = units.length === 0;
                     if (units.length === 0) {
-                         unitSelect.innerHTML = '<option value="">Нет юнитов для этого класса</option>';
+                        unitSelect.innerHTML = '<option value="">Нет юнитов для этого класса</option>';
                     }
                 })
                 .catch(error => {
@@ -112,19 +521,38 @@ document.addEventListener('DOMContentLoaded', function() {
         const unitName = this.value;
         moduleSelect.innerHTML = '<option value="">Загрузка модулей...</option>';
         moduleSelect.disabled = true;
+        moduleCheckboxes.innerHTML = '';
 
         if (className && unitName) {
             fetch(`/get_modules_for_unit?class_name=${encodeURIComponent(className)}&unit_name=${encodeURIComponent(unitName)}`)
                 .then(response => response.json())
                 .then(modules => {
+                    allModulesData = modules;
                     moduleSelect.innerHTML = '<option value="">Выберите модуль...</option>';
+                    
+                    // Populate regular select
                     modules.forEach(module => {
                         const option = new Option(module, module);
                         moduleSelect.add(option);
                     });
+                    
+                    // Populate checkboxes for multiple selection
+                    moduleCheckboxes.innerHTML = '';
+                    modules.forEach((module, index) => {
+                        const checkboxDiv = document.createElement('div');
+                        checkboxDiv.className = 'form-check';
+                        checkboxDiv.innerHTML = `
+                            <input class="form-check-input module-checkbox" type="checkbox" value="${module}" id="module_${index}">
+                            <label class="form-check-label" for="module_${index}">${module}</label>
+                        `;
+                        moduleCheckboxes.appendChild(checkboxDiv);
+                    });
+                    
                     moduleSelect.disabled = modules.length === 0;
-                     if (modules.length === 0) {
-                         moduleSelect.innerHTML = '<option value="">Нет модулей для этого юнита</option>';
+                    updateCardCountLimits(modules.length);
+                    
+                    if (modules.length === 0) {
+                        moduleSelect.innerHTML = '<option value="">Нет модулей для этого юнита</option>';
                     }
                 })
                 .catch(error => {
@@ -136,18 +564,79 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Update card count when module is selected
+    moduleSelect.addEventListener('change', function() {
+        if (this.value) {
+            // For single module, we can get word count from server if needed
+            // For now, we'll use the default limit
+        }
+    });
+
     selectForm.addEventListener('submit', function(event) {
         event.preventDefault();
         const selectedClass = classSelect.value;
         const selectedUnit = unitSelect.value;
         const selectedModule = moduleSelect.value;
+        const selectionMode = document.querySelector('input[name="selectionMode"]:checked').value;
 
-        if (selectedClass && selectedUnit && selectedModule) {
-            const gameUrl = `/games/word_match/${encodeURIComponent(selectedClass)}/${encodeURIComponent(selectedUnit)}/${encodeURIComponent(selectedModule)}`;
-            window.location.href = gameUrl;
-        } else {
-            alert('Пожалуйста, выберите класс, юнит и модуль.');
+        if (!selectedClass) {
+            alert('Пожалуйста, выберите класс.');
+            return;
         }
+
+        let gameUrl = '';
+        const params = new URLSearchParams();
+        
+        // Add game settings
+        params.append('cards', cardCountInput.value);
+        if (enableTimer.checked) {
+            params.append('timer', timerDuration.value);
+        }
+        if (enableStopwatch.checked) {
+            params.append('stopwatch', 'true');
+        }
+
+        switch(selectionMode) {
+            case 'specific':
+                if (!selectedUnit || !selectedModule) {
+                    alert('Пожалуйста, выберите юнит и модуль.');
+                    return;
+                }
+                gameUrl = `/games/word_match/${encodeURIComponent(selectedClass)}/${encodeURIComponent(selectedUnit)}/${encodeURIComponent(selectedModule)}`;
+                break;
+                
+            case 'unit':
+                if (!selectedUnit) {
+                    alert('Пожалуйста, выберите юнит.');
+                    return;
+                }
+                gameUrl = `/games/word_match/${encodeURIComponent(selectedClass)}/${encodeURIComponent(selectedUnit)}`;
+                params.append('mode', 'unit');
+                break;
+                
+            case 'class':
+                gameUrl = `/games/word_match/${encodeURIComponent(selectedClass)}`;
+                params.append('mode', 'class');
+                break;
+                
+            case 'multiple':
+                if (!selectedUnit) {
+                    alert('Пожалуйста, выберите юнит.');
+                    return;
+                }
+                const selectedModules = Array.from(document.querySelectorAll('.module-checkbox:checked')).map(cb => cb.value);
+                if (selectedModules.length === 0) {
+                    alert('Пожалуйста, выберите хотя бы один модуль.');
+                    return;
+                }
+                gameUrl = `/games/word_match/${encodeURIComponent(selectedClass)}/${encodeURIComponent(selectedUnit)}`;
+                params.append('mode', 'multiple');
+                params.append('modules', selectedModules.join(','));
+                break;
+        }
+
+        gameUrl += '?' + params.toString();
+        window.location.href = gameUrl;
     });
 });
 </script>

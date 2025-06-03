@@ -1,0 +1,611 @@
+{% extends "base.html" %}
+
+{% block title %}Виселица - Выбор модуля{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow-lg border-0">
+        <div class="card-header bg-gradient-primary text-white text-center py-4">
+          <h2 class="mb-0">
+            <i class="fas fa-skull-crossbones me-2"></i>
+            Игра "Виселица"
+          </h2>
+          <p class="mb-0 mt-2 opacity-75">Угадайте английское слово по буквам!</p>
+        </div>
+        
+        <div class="card-body p-4">
+          <form id="selectModuleFormHangman" method="post">
+            <!-- Selection Mode -->
+            <div class="mb-4">
+              <label class="form-label fw-bold">
+                <i class="fas fa-crosshairs me-2"></i>Режим выбора слов
+              </label>
+              <div class="row g-2">
+                <div class="col-md-6">
+                  <div class="form-check form-check-card">
+                    <input class="form-check-input" type="radio" name="selectionMode" id="specific" value="specific" checked>
+                    <label class="form-check-label" for="specific">
+                      <i class="fas fa-bullseye"></i>
+                      <strong>Конкретный модуль</strong>
+                      <small>Выберите класс → юнит → модуль</small>
+                    </label>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-check form-check-card">
+                    <input class="form-check-input" type="radio" name="selectionMode" id="unit" value="unit">
+                    <label class="form-check-label" for="unit">
+                      <i class="fas fa-layer-group"></i>
+                      <strong>Весь юнит</strong>
+                      <small>Все модули из выбранного юнита</small>
+                    </label>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-check form-check-card">
+                    <input class="form-check-input" type="radio" name="selectionMode" id="class" value="class">
+                    <label class="form-check-label" for="class">
+                      <i class="fas fa-globe"></i>
+                      <strong>Весь класс</strong>
+                      <small>Все слова из выбранного класса</small>
+                    </label>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-check form-check-card">
+                    <input class="form-check-input" type="radio" name="selectionMode" id="multiple" value="multiple">
+                    <label class="form-check-label" for="multiple">
+                      <i class="fas fa-check-double"></i>
+                      <strong>Несколько модулей</strong>
+                      <small>Выберите несколько модулей из юнита</small>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Class Selection -->
+            <div class="mb-3">
+              <label for="class_select_hm" class="form-label fw-bold">
+                <i class="fas fa-graduation-cap me-2"></i>Класс
+              </label>
+              <select class="form-select form-select-lg" id="class_select_hm" name="class_name" required>
+                <option value="">Выберите класс...</option>
+                {% for class_name in classes %}
+                  <option value="{{ class_name }}">{{ class_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Unit Selection -->
+            <div class="mb-3" id="unitContainer">
+              <label for="unit_select_hm" class="form-label fw-bold">
+                <i class="fas fa-book me-2"></i>Юнит
+              </label>
+              <select class="form-select form-select-lg" id="unit_select_hm" name="unit_name" disabled>
+                <option value="">Сначала выберите класс...</option>
+              </select>
+            </div>
+
+            <!-- Module Selection -->
+            <div class="mb-3" id="moduleContainer">
+              <label for="module_select_hm" class="form-label fw-bold">
+                <i class="fas fa-puzzle-piece me-2"></i>Модуль
+              </label>
+              <select class="form-select form-select-lg" id="module_select_hm" name="module_name" disabled>
+                <option value="">Сначала выберите юнит...</option>
+              </select>
+            </div>
+
+            <!-- Multiple Modules Selection -->
+            <div class="mb-3" id="multipleModulesContainer" style="display: none;">
+              <label class="form-label fw-bold">
+                <i class="fas fa-list-check me-2"></i>Выберите модули
+              </label>
+              <div class="border rounded p-3 bg-light" id="moduleCheckboxes">
+                <!-- Checkboxes will be populated by JavaScript -->
+              </div>
+            </div>
+
+            <!-- Game Options Toggle -->
+            <div class="mb-3">
+              <button type="button" class="btn btn-outline-secondary w-100" id="toggleOptions">
+                <i class="fas fa-cog me-2"></i>Настройки игры
+                <i class="fas fa-chevron-down ms-2"></i>
+              </button>
+            </div>
+
+            <!-- Game Options -->
+            <div id="gameOptions" style="display: none;">
+              <!-- Difficulty Selection -->
+              <div class="mb-4">
+                <label class="form-label fw-bold">
+                  <i class="fas fa-chart-line me-2"></i>Сложность
+                </label>
+                <div class="row g-2">
+                  <div class="col-md-4">
+                    <div class="form-check form-check-card">
+                      <input class="form-check-input" type="radio" name="difficulty" id="easy" value="easy">
+                      <label class="form-check-label" for="easy">
+                        <i class="fas fa-smile text-success"></i>
+                        <strong>Легко</strong>
+                        <small>3-5 букв</small>
+                      </label>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="form-check form-check-card">
+                      <input class="form-check-input" type="radio" name="difficulty" id="medium" value="medium" checked>
+                      <label class="form-check-label" for="medium">
+                        <i class="fas fa-meh text-warning"></i>
+                        <strong>Средне</strong>
+                        <small>4-8 букв</small>
+                      </label>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="form-check form-check-card">
+                      <input class="form-check-input" type="radio" name="difficulty" id="hard" value="hard">
+                      <label class="form-check-label" for="hard">
+                        <i class="fas fa-frown text-danger"></i>
+                        <strong>Сложно</strong>
+                        <small>6+ букв</small>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Number of Words -->
+              <div class="mb-4">
+                <label for="wordCount" class="form-label fw-bold">
+                  <i class="fas fa-hashtag me-2"></i>Количество слов: 
+                  <span id="wordCountDisplay" class="text-primary">10 слов</span>
+                </label>
+                <div class="row align-items-center">
+                  <div class="col-8">
+                    <input type="range" class="form-range" id="wordCount" min="5" max="50" value="10" step="1">
+                    <div class="d-flex justify-content-between text-muted small">
+                      <span>5</span>
+                      <span>Максимум: <span id="maxWordsLabel">50</span></span>
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <input type="number" class="form-control" id="wordCountInput" min="5" max="50" value="10">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Timer Settings -->
+              <div class="mb-4">
+                <label class="form-label fw-bold">
+                  <i class="fas fa-clock me-2"></i>Настройки времени
+                </label>
+                <div class="row g-2 mb-3">
+                  <div class="col-md-6">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="enableTimer">
+                      <label class="form-check-label" for="enableTimer">
+                        <i class="fas fa-hourglass-half me-1"></i>Включить таймер
+                      </label>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="enableStopwatch">
+                      <label class="form-check-label" for="enableStopwatch">
+                        <i class="fas fa-stopwatch me-1"></i>Включить секундомер
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Timer Duration Selection -->
+                <div id="timerSettingsContainer" style="display: none;">
+                  <label class="form-label">Продолжительность таймера:</label>
+                  <div class="row g-2">
+                    <div class="col-4 col-md-2">
+                      <button type="button" class="btn btn-outline-primary timer-option w-100" data-value="60">1 мин</button>
+                    </div>
+                    <div class="col-4 col-md-2">
+                      <button type="button" class="btn btn-outline-primary timer-option w-100" data-value="120">2 мин</button>
+                    </div>
+                    <div class="col-4 col-md-2">
+                      <button type="button" class="btn btn-outline-primary timer-option w-100" data-value="180">3 мин</button>
+                    </div>
+                    <div class="col-4 col-md-2">
+                      <button type="button" class="btn btn-outline-primary timer-option w-100" data-value="300">5 мин</button>
+                    </div>
+                    <div class="col-4 col-md-2">
+                      <button type="button" class="btn btn-outline-primary timer-option w-100" data-value="600">10 мин</button>
+                    </div>
+                    <div class="col-4 col-md-2">
+                      <button type="button" class="btn btn-outline-primary timer-option w-100" data-value="900">15 мин</button>
+                    </div>
+                  </div>
+                  <input type="hidden" id="timerDuration" value="180">
+                </div>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-play me-2"></i>Начать игру
+              </button>
+              <a href="{{ url_for('games') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Назад к играм
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.form-check-card {
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  padding: 12px;
+  transition: all 0.3s ease;
+  height: 100%;
+}
+
+.form-check-card:hover {
+  border-color: #0d6efd;
+  background-color: #f8f9ff;
+}
+
+.form-check-card .form-check-input:checked ~ .form-check-label {
+  color: #0d6efd;
+}
+
+.form-check-card .form-check-input:checked {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+.form-check-card .form-check-label {
+  display: block;
+  width: 100%;
+  cursor: pointer;
+}
+
+.form-check-card .form-check-label i {
+  font-size: 1.2em;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.form-check-card .form-check-label small {
+  display: block;
+  color: #6c757d;
+  font-size: 0.85em;
+  margin-top: 4px;
+}
+
+.timer-option {
+  transition: all 0.3s ease;
+}
+
+.timer-option:hover {
+  transform: translateY(-2px);
+}
+
+.timer-option.selected {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: white;
+}
+
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #6f42c1, #0d6efd);
+}
+
+#gameOptions {
+  border-top: 2px solid #e9ecef;
+  padding-top: 20px;
+  margin-top: 20px;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const classSelect = document.getElementById('class_select_hm');
+    const unitSelect = document.getElementById('unit_select_hm');
+    const moduleSelect = document.getElementById('module_select_hm');
+    const selectForm = document.getElementById('selectModuleFormHangman');
+    const toggleOptions = document.getElementById('toggleOptions');
+    const gameOptions = document.getElementById('gameOptions');
+    const enableTimer = document.getElementById('enableTimer');
+    const enableStopwatch = document.getElementById('enableStopwatch');
+    const timerSettingsContainer = document.getElementById('timerSettingsContainer');
+    const wordCount = document.getElementById('wordCount');
+    const wordCountInput = document.getElementById('wordCountInput');
+    const wordCountDisplay = document.getElementById('wordCountDisplay');
+    const timerDuration = document.getElementById('timerDuration');
+    const maxWordsLabel = document.getElementById('maxWordsLabel');
+    
+    // Selection mode elements
+    const selectionModeRadios = document.querySelectorAll('input[name="selectionMode"]');
+    const unitContainer = document.getElementById('unitContainer');
+    const moduleContainer = document.getElementById('moduleContainer');
+    const multipleModulesContainer = document.getElementById('multipleModulesContainer');
+    const moduleCheckboxes = document.getElementById('moduleCheckboxes');
+    
+    let availableWordsCount = 0;
+    let allModulesData = [];
+
+    // Toggle game options
+    toggleOptions.addEventListener('click', function() {
+        const isVisible = gameOptions.style.display !== 'none';
+        gameOptions.style.display = isVisible ? 'none' : 'block';
+        const icon = this.querySelector('.fa-chevron-down, .fa-chevron-up');
+        icon.className = isVisible ? 'fas fa-chevron-down ms-2' : 'fas fa-chevron-up ms-2';
+    });
+
+    // Timer/Stopwatch conflict resolution
+    enableTimer.addEventListener('change', function() {
+        if (this.checked) {
+            enableStopwatch.checked = false;
+            timerSettingsContainer.style.display = 'block';
+        } else {
+            timerSettingsContainer.style.display = 'none';
+        }
+    });
+
+    enableStopwatch.addEventListener('change', function() {
+        if (this.checked) {
+            enableTimer.checked = false;
+            timerSettingsContainer.style.display = 'none';
+        }
+    });
+
+    // Timer options selection
+    document.querySelectorAll('.timer-option').forEach(option => {
+        option.addEventListener('click', function() {
+            document.querySelectorAll('.timer-option').forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+            timerDuration.value = this.dataset.value;
+        });
+    });
+
+    // Word count synchronization
+    wordCount.addEventListener('input', function() {
+        const value = parseInt(this.value);
+        wordCountInput.value = value;
+        updateWordCountDisplay(value);
+    });
+
+    wordCountInput.addEventListener('input', function() {
+        const value = parseInt(this.value);
+        if (value >= 5 && value <= availableWordsCount) {
+            wordCount.value = value;
+            updateWordCountDisplay(value);
+        }
+    });
+
+    function updateWordCountDisplay(value) {
+        wordCountDisplay.textContent = value + ' слов';
+    }
+
+    function updateWordCountLimits(maxWords) {
+        availableWordsCount = maxWords;
+        wordCount.max = maxWords;
+        wordCountInput.max = maxWords;
+        maxWordsLabel.textContent = maxWords;
+        
+        // Adjust current value if it exceeds the new limit
+        if (parseInt(wordCount.value) > maxWords) {
+            wordCount.value = maxWords;
+            wordCountInput.value = maxWords;
+            updateWordCountDisplay(maxWords);
+        }
+    }
+
+    // Selection mode handling
+    selectionModeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            const mode = this.value;
+            
+            switch(mode) {
+                case 'specific':
+                    unitContainer.style.display = 'block';
+                    moduleContainer.style.display = 'block';
+                    multipleModulesContainer.style.display = 'none';
+                    unitSelect.required = true;
+                    moduleSelect.required = true;
+                    break;
+                case 'unit':
+                    unitContainer.style.display = 'block';
+                    moduleContainer.style.display = 'none';
+                    multipleModulesContainer.style.display = 'none';
+                    unitSelect.required = true;
+                    moduleSelect.required = false;
+                    break;
+                case 'class':
+                    unitContainer.style.display = 'none';
+                    moduleContainer.style.display = 'none';
+                    multipleModulesContainer.style.display = 'none';
+                    unitSelect.required = false;
+                    moduleSelect.required = false;
+                    break;
+                case 'multiple':
+                    unitContainer.style.display = 'block';
+                    moduleContainer.style.display = 'none';
+                    multipleModulesContainer.style.display = 'block';
+                    unitSelect.required = true;
+                    moduleSelect.required = false;
+                    break;
+            }
+        });
+    });
+
+    classSelect.addEventListener('change', function() {
+        const className = this.value;
+        unitSelect.innerHTML = '<option value="">Загрузка юнитов...</option>';
+        unitSelect.disabled = true;
+        moduleSelect.innerHTML = '<option value="">Сначала выберите юнит...</option>';
+        moduleSelect.disabled = true;
+        moduleCheckboxes.innerHTML = '';
+
+        if (className) {
+            fetch(`/get_units_for_class?class_name=${encodeURIComponent(className)}`)
+                .then(response => response.json())
+                .then(units => {
+                    unitSelect.innerHTML = '<option value="">Выберите юнит...</option>';
+                    units.forEach(unit => {
+                        const option = new Option(unit, unit);
+                        unitSelect.add(option);
+                    });
+                    unitSelect.disabled = units.length === 0;
+                    if (units.length === 0) {
+                        unitSelect.innerHTML = '<option value="">Нет юнитов для этого класса</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching units:', error);
+                    unitSelect.innerHTML = '<option value="">Ошибка загрузки юнитов</option>';
+                });
+        } else {
+            unitSelect.innerHTML = '<option value="">Сначала выберите класс...</option>';
+        }
+    });
+
+    unitSelect.addEventListener('change', function() {
+        const className = classSelect.value;
+        const unitName = this.value;
+        moduleSelect.innerHTML = '<option value="">Загрузка модулей...</option>';
+        moduleSelect.disabled = true;
+        moduleCheckboxes.innerHTML = '';
+
+        if (className && unitName) {
+            fetch(`/get_modules_for_unit?class_name=${encodeURIComponent(className)}&unit_name=${encodeURIComponent(unitName)}`)
+                .then(response => response.json())
+                .then(modules => {
+                    allModulesData = modules;
+                    moduleSelect.innerHTML = '<option value="">Выберите модуль...</option>';
+                    
+                    // Populate regular select
+                    modules.forEach(module => {
+                        const option = new Option(module, module);
+                        moduleSelect.add(option);
+                    });
+                    
+                    // Populate checkboxes for multiple selection
+                    moduleCheckboxes.innerHTML = '';
+                    modules.forEach((module, index) => {
+                        const checkboxDiv = document.createElement('div');
+                        checkboxDiv.className = 'form-check';
+                        checkboxDiv.innerHTML = `
+                            <input class="form-check-input module-checkbox" type="checkbox" value="${module}" id="module_${index}">
+                            <label class="form-check-label" for="module_${index}">${module}</label>
+                        `;
+                        moduleCheckboxes.appendChild(checkboxDiv);
+                    });
+                    
+                    moduleSelect.disabled = modules.length === 0;
+                    updateWordCountLimits(modules.length * 10); // Estimate
+                    
+                    if (modules.length === 0) {
+                        moduleSelect.innerHTML = '<option value="">Нет модулей для этого юнита</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching modules:', error);
+                    moduleSelect.innerHTML = '<option value="">Ошибка загрузки модулей</option>';
+                });
+        } else {
+            moduleSelect.innerHTML = '<option value="">Сначала выберите юнит...</option>';
+        }
+    });
+
+    selectForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        const selectedClass = classSelect.value;
+        const selectedUnit = unitSelect.value;
+        const selectedModule = moduleSelect.value;
+        const selectionMode = document.querySelector('input[name="selectionMode"]:checked').value;
+
+        if (!selectedClass) {
+            alert('Пожалуйста, выберите класс.');
+            return;
+        }
+
+        let gameUrl = '';
+        const params = new URLSearchParams();
+        
+        // Add game settings
+        params.append('words', wordCountInput.value);
+        params.append('difficulty', document.querySelector('input[name="difficulty"]:checked').value);
+        if (enableTimer.checked) {
+            params.append('timer', timerDuration.value);
+        }
+        if (enableStopwatch.checked) {
+            params.append('stopwatch', 'true');
+        }
+
+        switch(selectionMode) {
+            case 'specific':
+                if (!selectedUnit || !selectedModule) {
+                    alert('Пожалуйста, выберите юнит и модуль.');
+                    return;
+                }
+                gameUrl = `/games/hangman/${encodeURIComponent(selectedClass)}/${encodeURIComponent(selectedUnit)}/${encodeURIComponent(selectedModule)}`;
+                break;
+                
+            case 'unit':
+                if (!selectedUnit) {
+                    alert('Пожалуйста, выберите юнит.');
+                    return;
+                }
+                gameUrl = `/games/hangman/${encodeURIComponent(selectedClass)}/${encodeURIComponent(selectedUnit)}/all`;
+                params.append('mode', 'unit');
+                break;
+                
+            case 'class':
+                gameUrl = `/games/hangman/${encodeURIComponent(selectedClass)}/all/all`;
+                params.append('mode', 'class');
+                break;
+                
+            case 'multiple':
+                if (!selectedUnit) {
+                    alert('Пожалуйста, выберите юнит.');
+                    return;
+                }
+                const selectedModules = Array.from(document.querySelectorAll('.module-checkbox:checked')).map(cb => cb.value);
+                if (selectedModules.length === 0) {
+                    alert('Пожалуйста, выберите хотя бы один модуль.');
+                    return;
+                }
+                gameUrl = `/games/hangman/${encodeURIComponent(selectedClass)}/${encodeURIComponent(selectedUnit)}/multiple`;
+                params.append('mode', 'multiple');
+                params.append('modules', selectedModules.join(','));
+                break;
+        }
+
+        gameUrl += '?' + params.toString();
+        window.location.href = gameUrl;
+    });
+});
+</script>
+{% endblock %}

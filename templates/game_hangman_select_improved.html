@@ -1,0 +1,950 @@
+{% extends "base.html" %}
+
+{% block title %}Улучшенная Виселица - Выбор модуля{% endblock %}
+
+{% block head_extra %}
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --warning-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    --danger-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    --light-bg: #f8f9fa;
+    --white: #ffffff;
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
+    --shadow-md: 0 4px 8px rgba(0,0,0,0.12);
+    --shadow-lg: 0 8px 16px rgba(0,0,0,0.15);
+    --border-radius: 16px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: var(--primary-gradient);
+    min-height: 100vh;
+    color: #333;
+  }
+
+  .form-container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    animation: slideIn 0.6s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .form-header {
+    background: var(--primary-gradient);
+    color: white;
+    padding: 30px;
+    text-align: center;
+  }
+
+  .form-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+  }
+
+  .form-header p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin: 0;
+  }
+
+  .form-body {
+    padding: 40px;
+  }
+
+  .section-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .selection-mode {
+    margin-bottom: 30px;
+  }
+
+  .mode-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+  }
+
+  .mode-card {
+    position: relative;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: var(--transition);
+    background: white;
+  }
+
+  .mode-card:hover {
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .mode-card input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+  }
+
+  .mode-card input[type="radio"]:checked + .mode-content {
+    color: white;
+  }
+
+  .mode-card input[type="radio"]:checked ~ * {
+    color: white;
+  }
+
+  .mode-card.selected {
+    background: var(--primary-gradient);
+    border-color: #667eea;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .mode-content {
+    transition: var(--transition);
+  }
+
+  .mode-icon {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .mode-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+  }
+
+  .mode-description {
+    font-size: 0.9rem;
+    opacity: 0.8;
+  }
+
+  .form-group {
+    margin-bottom: 25px;
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .form-select, .form-control {
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 1rem;
+    transition: var(--transition);
+    background: white;
+  }
+
+  .form-select:focus, .form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    outline: none;
+  }
+
+  .game-settings {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 25px;
+    margin-top: 30px;
+  }
+
+  .settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 25px;
+    margin-top: 20px;
+  }
+
+  .setting-group {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .setting-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .difficulty-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .difficulty-option {
+    padding: 10px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+    background: white;
+    font-size: 0.9rem;
+  }
+
+  .difficulty-option:hover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+  }
+
+  .difficulty-option.selected {
+    border-color: #667eea;
+    background: var(--primary-gradient);
+    color: white;
+  }
+
+  .timer-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .timer-option {
+    padding: 8px 12px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+    background: white;
+    font-size: 0.85rem;
+  }
+
+  .timer-option:hover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+  }
+
+  .timer-option.selected {
+    border-color: #667eea;
+    background: var(--primary-gradient);
+    color: white;
+  }
+
+  .range-container {
+    position: relative;
+    margin-top: 15px;
+  }
+
+  .form-range {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: #e9ecef;
+    outline: none;
+    -webkit-appearance: none;
+  }
+
+  .form-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary-gradient);
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .form-range::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary-gradient);
+    cursor: pointer;
+    border: none;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .range-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: #666;
+  }
+
+  .range-value {
+    text-align: center;
+    margin-top: 10px;
+    font-weight: 600;
+    color: #667eea;
+    font-size: 1.1rem;
+  }
+
+  .form-switch {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 15px;
+  }
+
+  .form-switch input[type="checkbox"] {
+    width: 50px;
+    height: 25px;
+    border-radius: 25px;
+    background: #e9ecef;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    position: relative;
+    transition: var(--transition);
+    -webkit-appearance: none;
+  }
+
+  .form-switch input[type="checkbox"]:checked {
+    background: var(--primary-gradient);
+  }
+
+  .form-switch input[type="checkbox"]::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 21px;
+    height: 21px;
+    border-radius: 50%;
+    background: white;
+    transition: var(--transition);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .form-switch input[type="checkbox"]:checked::before {
+    transform: translateX(25px);
+  }
+
+  .multiple-modules {
+    display: none;
+    margin-top: 20px;
+  }
+
+  .modules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 15px;
+  }
+
+  .module-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: var(--transition);
+    background: white;
+  }
+
+  .module-checkbox:hover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+  }
+
+  .module-checkbox input[type="checkbox"]:checked + span {
+    color: #667eea;
+    font-weight: 600;
+  }
+
+  .submit-section {
+    margin-top: 40px;
+    text-align: center;
+  }
+
+  .btn-start {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 15px 40px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--shadow-md);
+    min-width: 200px;
+  }
+
+  .btn-start:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .btn-start:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Адаптивность */
+  @media (max-width: 768px) {
+    .form-container {
+      margin: 20px;
+    }
+
+    .form-header,
+    .form-body {
+      padding: 25px;
+    }
+
+    .form-header h1 {
+      font-size: 2rem;
+    }
+
+    .mode-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .settings-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .difficulty-options {
+      grid-template-columns: 1fr;
+    }
+
+    .timer-options {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="form-container">
+    <div class="form-header">
+      <h1>
+        <i class="fas fa-skull-crossbones"></i>
+        Виселица
+      </h1>
+      <p>Угадайте английское слово по буквам!</p>
+    </div>
+    
+    <div class="form-body">
+      <form id="hangmanForm">
+        <!-- Режим выбора -->
+        <div class="selection-mode">
+          <div class="section-title">
+            <i class="fas fa-crosshairs"></i>
+            Режим выбора слов
+          </div>
+          <div class="mode-grid">
+            <div class="mode-card" data-mode="specific">
+              <input type="radio" name="selectionMode" value="specific" checked>
+              <div class="mode-content">
+                <i class="fas fa-bullseye mode-icon"></i>
+                <div class="mode-title">Конкретный модуль</div>
+                <div class="mode-description">Выберите класс → юнит → модуль</div>
+              </div>
+            </div>
+            <div class="mode-card" data-mode="unit">
+              <input type="radio" name="selectionMode" value="unit">
+              <div class="mode-content">
+                <i class="fas fa-layer-group mode-icon"></i>
+                <div class="mode-title">Весь юнит</div>
+                <div class="mode-description">Все модули из выбранного юнита</div>
+              </div>
+            </div>
+            <div class="mode-card" data-mode="class">
+              <input type="radio" name="selectionMode" value="class">
+              <div class="mode-content">
+                <i class="fas fa-globe mode-icon"></i>
+                <div class="mode-title">Весь класс</div>
+                <div class="mode-description">Все слова из выбранного класса</div>
+              </div>
+            </div>
+            <div class="mode-card" data-mode="multiple">
+              <input type="radio" name="selectionMode" value="multiple">
+              <div class="mode-content">
+                <i class="fas fa-check-double mode-icon"></i>
+                <div class="mode-title">Несколько модулей</div>
+                <div class="mode-description">Выберите несколько модулей из юнита</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Выбор класса -->
+        <div class="form-group">
+          <label for="classSelect" class="form-label">
+            <i class="fas fa-graduation-cap"></i>
+            Класс
+          </label>
+          <select class="form-select" id="classSelect" required>
+            <option value="">Выберите класс...</option>
+            {% for class_name in classes %}
+            <option value="{{ class_name }}">{{ class_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Выбор юнита -->
+        <div class="form-group" id="unitGroup">
+          <label for="unitSelect" class="form-label">
+            <i class="fas fa-book"></i>
+            Юнит
+          </label>
+          <select class="form-select" id="unitSelect" disabled>
+            <option value="">Сначала выберите класс...</option>
+          </select>
+        </div>
+
+        <!-- Выбор модуля -->
+        <div class="form-group" id="moduleGroup">
+          <label for="moduleSelect" class="form-label">
+            <i class="fas fa-puzzle-piece"></i>
+            Модуль
+          </label>
+          <select class="form-select" id="moduleSelect" disabled>
+            <option value="">Сначала выберите юнит...</option>
+          </select>
+        </div>
+
+        <!-- Множественный выбор модулей -->
+        <div class="multiple-modules" id="multipleModules">
+          <label class="form-label">
+            <i class="fas fa-check-square"></i>
+            Выберите модули
+          </label>
+          <div class="modules-grid" id="modulesGrid">
+            <!-- Модули будут добавлены через JavaScript -->
+          </div>
+        </div>
+
+        <!-- Настройки игры -->
+        <div class="game-settings">
+          <div class="section-title">
+            <i class="fas fa-cog"></i>
+            Настройки игры
+          </div>
+          
+          <div class="settings-grid">
+            <!-- Количество слов -->
+            <div class="setting-group">
+              <div class="setting-title">
+                <i class="fas fa-hashtag"></i>
+                Количество слов
+              </div>
+              <div class="range-container">
+                <input type="range" class="form-range" id="wordsCount" min="5" max="50" value="10">
+                <div class="range-labels">
+                  <span>5</span>
+                  <span>50</span>
+                </div>
+                <div class="range-value" id="wordsCountValue">10 слов</div>
+              </div>
+            </div>
+
+            <!-- Сложность -->
+            <div class="setting-group">
+              <div class="setting-title">
+                <i class="fas fa-chart-line"></i>
+                Сложность
+              </div>
+              <div class="difficulty-options">
+                <div class="difficulty-option" data-difficulty="easy">
+                  <strong>Легко</strong><br>
+                  <small>3-5 букв</small>
+                </div>
+                <div class="difficulty-option selected" data-difficulty="medium">
+                  <strong>Средне</strong><br>
+                  <small>4-8 букв</small>
+                </div>
+                <div class="difficulty-option" data-difficulty="hard">
+                  <strong>Сложно</strong><br>
+                  <small>6+ букв</small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Таймер -->
+            <div class="setting-group">
+              <div class="setting-title">
+                <i class="fas fa-clock"></i>
+                Время
+              </div>
+              <div class="form-switch">
+                <input type="checkbox" id="enableTimer">
+                <label for="enableTimer">Включить таймер</label>
+              </div>
+              <div class="timer-options" id="timerOptions" style="display: none;">
+                <div class="timer-option" data-time="60">1 мин</div>
+                <div class="timer-option" data-time="120">2 мин</div>
+                <div class="timer-option selected" data-time="300">5 мин</div>
+                <div class="timer-option" data-time="600">10 мин</div>
+                <div class="timer-option" data-time="900">15 мин</div>
+                <div class="timer-option" data-time="1800">30 мин</div>
+              </div>
+              <div class="form-switch" style="margin-top: 15px;">
+                <input type="checkbox" id="enableStopwatch">
+                <label for="enableStopwatch">Включить секундомер</label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Кнопка запуска -->
+        <div class="submit-section">
+          <button type="submit" class="btn-start" id="startGameBtn">
+            <i class="fas fa-play"></i>
+            Начать игру!
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // DOM Elements
+    const modeCards = document.querySelectorAll('.mode-card');
+    const classSelect = document.getElementById('classSelect');
+    const unitSelect = document.getElementById('unitSelect');
+    const moduleSelect = document.getElementById('moduleSelect');
+    const unitGroup = document.getElementById('unitGroup');
+    const moduleGroup = document.getElementById('moduleGroup');
+    const multipleModules = document.getElementById('multipleModules');
+    const modulesGrid = document.getElementById('modulesGrid');
+    const wordsCount = document.getElementById('wordsCount');
+    const wordsCountValue = document.getElementById('wordsCountValue');
+    const difficultyOptions = document.querySelectorAll('.difficulty-option');
+    const enableTimer = document.getElementById('enableTimer');
+    const enableStopwatch = document.getElementById('enableStopwatch');
+    const timerOptions = document.getElementById('timerOptions');
+    const timerOptionBtns = document.querySelectorAll('.timer-option');
+    const hangmanForm = document.getElementById('hangmanForm');
+    
+    let selectedMode = 'specific';
+    let selectedDifficulty = 'medium';
+    let selectedTimer = 300;
+    let availableModules = [];
+
+    // Initialize
+    updateModeSelection();
+    updateDifficultySelection();
+    updateTimerSelection();
+
+    // Mode selection
+    modeCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const mode = this.dataset.mode;
+            const radio = this.querySelector('input[type="radio"]');
+            radio.checked = true;
+            selectedMode = mode;
+            updateModeSelection();
+            updateFormVisibility();
+        });
+    });
+
+    function updateModeSelection() {
+        modeCards.forEach(card => {
+            const radio = card.querySelector('input[type="radio"]');
+            if (radio.checked) {
+                card.classList.add('selected');
+                selectedMode = radio.value;
+            } else {
+                card.classList.remove('selected');
+            }
+        });
+    }
+
+    function updateFormVisibility() {
+        switch(selectedMode) {
+            case 'specific':
+                unitGroup.style.display = 'block';
+                moduleGroup.style.display = 'block';
+                multipleModules.style.display = 'none';
+                unitSelect.required = true;
+                moduleSelect.required = true;
+                break;
+            case 'unit':
+                unitGroup.style.display = 'block';
+                moduleGroup.style.display = 'none';
+                multipleModules.style.display = 'none';
+                unitSelect.required = true;
+                moduleSelect.required = false;
+                break;
+            case 'class':
+                unitGroup.style.display = 'none';
+                moduleGroup.style.display = 'none';
+                multipleModules.style.display = 'none';
+                unitSelect.required = false;
+                moduleSelect.required = false;
+                break;
+            case 'multiple':
+                unitGroup.style.display = 'block';
+                moduleGroup.style.display = 'none';
+                multipleModules.style.display = 'block';
+                unitSelect.required = true;
+                moduleSelect.required = false;
+                break;
+        }
+    }
+
+    // Words count slider
+    wordsCount.addEventListener('input', function() {
+        wordsCountValue.textContent = this.value + ' слов';
+    });
+
+    // Difficulty selection
+    difficultyOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            difficultyOptions.forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+            selectedDifficulty = this.dataset.difficulty;
+        });
+    });
+
+    function updateDifficultySelection() {
+        difficultyOptions.forEach(option => {
+            if (option.dataset.difficulty === selectedDifficulty) {
+                option.classList.add('selected');
+            }
+        });
+    }
+
+    // Timer controls
+    enableTimer.addEventListener('change', function() {
+        if (this.checked) {
+            enableStopwatch.checked = false;
+            timerOptions.style.display = 'grid';
+        } else {
+            timerOptions.style.display = 'none';
+        }
+    });
+
+    enableStopwatch.addEventListener('change', function() {
+        if (this.checked) {
+            enableTimer.checked = false;
+            timerOptions.style.display = 'none';
+        }
+    });
+
+    timerOptionBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            timerOptionBtns.forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+            selectedTimer = parseInt(this.dataset.time);
+        });
+    });
+
+    function updateTimerSelection() {
+        timerOptionBtns.forEach(btn => {
+            if (parseInt(btn.dataset.time) === selectedTimer) {
+                btn.classList.add('selected');
+            }
+        });
+    }
+
+    // Class selection
+    classSelect.addEventListener('change', function() {
+        const className = this.value;
+        unitSelect.innerHTML = '<option value="">Загрузка юнитов...</option>';
+        unitSelect.disabled = true;
+        moduleSelect.innerHTML = '<option value="">Сначала выберите юнит...</option>';
+        moduleSelect.disabled = true;
+        modulesGrid.innerHTML = '';
+
+        if (className) {
+            fetch(`/get_units_for_class?class_name=${encodeURIComponent(className)}`)
+                .then(response => response.json())
+                .then(units => {
+                    unitSelect.innerHTML = '<option value="">Выберите юнит...</option>';
+                    units.forEach(unit => {
+                        const option = new Option(unit, unit);
+                        unitSelect.add(option);
+                    });
+                    unitSelect.disabled = units.length === 0;
+                    if (units.length === 0) {
+                        unitSelect.innerHTML = '<option value="">Нет юнитов для этого класса</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching units:', error);
+                    unitSelect.innerHTML = '<option value="">Ошибка загрузки юнитов</option>';
+                });
+        } else {
+            unitSelect.innerHTML = '<option value="">Сначала выберите класс...</option>';
+        }
+    });
+
+    // Unit selection
+    unitSelect.addEventListener('change', function() {
+        const className = classSelect.value;
+        const unitName = this.value;
+        moduleSelect.innerHTML = '<option value="">Загрузка модулей...</option>';
+        moduleSelect.disabled = true;
+        modulesGrid.innerHTML = '';
+
+        if (className && unitName) {
+            fetch(`/get_modules_for_unit?class_name=${encodeURIComponent(className)}&unit_name=${encodeURIComponent(unitName)}`)
+                .then(response => response.json())
+                .then(modules => {
+                    availableModules = modules;
+                    
+                    // Populate regular select
+                    moduleSelect.innerHTML = '<option value="">Выберите модуль...</option>';
+                    modules.forEach(module => {
+                        const option = new Option(module, module);
+                        moduleSelect.add(option);
+                    });
+                    moduleSelect.disabled = modules.length === 0;
+                    
+                    // Populate checkboxes for multiple selection
+                    modulesGrid.innerHTML = '';
+                    modules.forEach((module, index) => {
+                        const checkboxDiv = document.createElement('div');
+                        checkboxDiv.className = 'module-checkbox';
+                        checkboxDiv.innerHTML = `
+                            <input type="checkbox" value="${module}" id="module_${index}">
+                            <span>${module}</span>
+                        `;
+                        modulesGrid.appendChild(checkboxDiv);
+                        
+                        // Add click handler for the entire div
+                        checkboxDiv.addEventListener('click', function() {
+                            const checkbox = this.querySelector('input[type="checkbox"]');
+                            checkbox.checked = !checkbox.checked;
+                        });
+                    });
+                    
+                    if (modules.length === 0) {
+                        moduleSelect.innerHTML = '<option value="">Нет модулей для этого юнита</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching modules:', error);
+                    moduleSelect.innerHTML = '<option value="">Ошибка загрузки модулей</option>';
+                });
+        } else {
+            moduleSelect.innerHTML = '<option value="">Сначала выберите юнит...</option>';
+        }
+    });
+
+    // Form submission
+    hangmanForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const className = classSelect.value;
+        if (!className) {
+            alert('Пожалуйста, выберите класс.');
+            return;
+        }
+
+        let gameUrl = '';
+        const params = new URLSearchParams();
+        
+        // Add game settings
+        params.append('words', wordsCount.value);
+        params.append('difficulty', selectedDifficulty);
+        
+        if (enableTimer.checked) {
+            params.append('timer', selectedTimer);
+        }
+        if (enableStopwatch.checked) {
+            params.append('stopwatch', 'true');
+        }
+
+        // Build URL based on selection mode
+        switch(selectedMode) {
+            case 'specific':
+                const unitName = unitSelect.value;
+                const moduleName = moduleSelect.value;
+                if (!unitName || !moduleName) {
+                    alert('Пожалуйста, выберите юнит и модуль.');
+                    return;
+                }
+                gameUrl = `/games/hangman/${encodeURIComponent(className)}/${encodeURIComponent(unitName)}/${encodeURIComponent(moduleName)}`;
+                break;
+                
+            case 'unit':
+                const selectedUnit = unitSelect.value;
+                if (!selectedUnit) {
+                    alert('Пожалуйста, выберите юнит.');
+                    return;
+                }
+                gameUrl = `/games/hangman/${encodeURIComponent(className)}/${encodeURIComponent(selectedUnit)}/dummy`;
+                params.append('mode', 'unit');
+                break;
+                
+            case 'class':
+                gameUrl = `/games/hangman/${encodeURIComponent(className)}/dummy/dummy`;
+                params.append('mode', 'class');
+                break;
+                
+            case 'multiple':
+                const selectedUnitMultiple = unitSelect.value;
+                if (!selectedUnitMultiple) {
+                    alert('Пожалуйста, выберите юнит.');
+                    return;
+                }
+                const selectedModules = Array.from(document.querySelectorAll('#modulesGrid input[type="checkbox"]:checked')).map(cb => cb.value);
+                if (selectedModules.length === 0) {
+                    alert('Пожалуйста, выберите хотя бы один модуль.');
+                    return;
+                }
+                gameUrl = `/games/hangman/${encodeURIComponent(className)}/${encodeURIComponent(selectedUnitMultiple)}/dummy`;
+                params.append('mode', 'multiple');
+                params.append('modules', selectedModules.join(','));
+                break;
+        }
+
+        gameUrl += '?' + params.toString();
+        window.location.href = gameUrl;
+    });
+
+    // Initialize form visibility
+    updateFormVisibility();
+});
+</script>
+{% endblock %}

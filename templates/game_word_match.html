@@ -4,112 +4,536 @@
 
 {% block head_extra %}
 <style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #4361ee, #3a0ca3);
+        --secondary-gradient: linear-gradient(135deg, #f72585, #b5179e);
+        --success-gradient: linear-gradient(135deg, #4cc9f0, #4895ef);
+        --warning-gradient: linear-gradient(135deg, #f8961e, #f3722c);
+        --danger-gradient: linear-gradient(135deg, #f94144, #d00000);
+        --light-gradient: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        --dark-gradient: linear-gradient(135deg, #212529, #343a40);
+    }
+
     .game-match-container {
-        max-width: 800px;
+        max-width: 1000px;
         margin: 30px auto;
-        padding: 25px;
-        background-color: #fff;
-        border-radius: 12px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        padding: 30px;
+        background: var(--light-gradient);
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        position: relative;
+        overflow: hidden;
     }
-    .module-info-match h1 {
-        color: var(--secondary);
-        text-align: center;
-        margin-bottom: 10px;
+
+    .game-match-container::before {
+        content: "";
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        z-index: 0;
     }
-    .module-info-match p {
+
+    .module-info-match {
+        position: relative;
+        z-index: 2;
         text-align: center;
-        color: var(--text-muted, #6c757d);
         margin-bottom: 25px;
     }
+
+    .module-info-match h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .module-info-match p {
+        font-size: 1.1rem;
+        color: #6c757d;
+        margin-bottom: 0;
+    }
+
+    .game-stats {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 40px;
+        margin-bottom: 30px;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 15px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        position: relative;
+        z-index: 2;
+        backdrop-filter: blur(5px);
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 120px;
+    }
+
+    .stat-label {
+        font-size: 1rem;
+        color: #6c757d;
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    #timer-display {
+        padding: 8px 20px;
+        border-radius: 30px;
+        background: var(--primary-gradient);
+        color: white;
+        font-weight: 700;
+        font-size: 1.3rem;
+        box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3);
+        transition: all 0.3s;
+    }
+
+    #timer-display.warning {
+        background: var(--warning-gradient);
+        animation: pulse 1.2s infinite;
+    }
+
+    #timer-display.danger {
+        background: var(--danger-gradient);
+        animation: pulse 0.7s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { 
+            transform: scale(1.03); 
+            box-shadow: 0 0 15px rgba(67, 97, 238, 0.6); 
+        }
+        50% { 
+            transform: scale(1.05); 
+            box-shadow: 0 0 25px rgba(67, 97, 238, 0.8); 
+        }
+    }
+
     .match-area {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 30px;
-        min-height: 300px; /* Ensure area has some height */
+        margin-bottom: 40px;
+        min-height: 350px;
+        position: relative;
+        gap: 30px;
     }
+    
+    .connections-svg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 5;
+    }
+    
+    .connection-curve {
+        stroke-width: 4;
+        stroke-linecap: round;
+        fill: none;
+        transition: all 0.4s ease;
+        opacity: 0;
+        animation: connectionAppear 0.5s ease forwards;
+    }
+    
+    .connection-curve.correct {
+        stroke: url(#correct-gradient);
+        filter: drop-shadow(0 0 8px rgba(76, 201, 240, 0.6));
+    }
+    
+    .connection-curve.incorrect {
+        stroke: url(#incorrect-gradient);
+        filter: drop-shadow(0 0 8px rgba(249, 65, 68, 0.6));
+    }
+    
+    @keyframes connectionAppear {
+        0% {
+            opacity: 0;
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+        }
+        100% {
+            opacity: 1;
+            stroke-dasharray: 0;
+            stroke-dashoffset: 0;
+        }
+    }
+
     .match-column {
         width: 48%;
-        padding: 10px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        background-color: #f8f9fa; /* Light background for columns */
+        padding: 20px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.85);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        position: relative;
+        z-index: 2;
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(0,0,0,0.05);
+        transition: transform 0.3s ease;
     }
+
+    .match-column:hover {
+        transform: translateY(-5px);
+    }
+
     .match-column h3 {
         text-align: center;
-        color: var(--primary-dark);
-        margin-bottom: 15px;
-        font-size: 1.3rem;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+        padding-bottom: 12px;
+        border-bottom: 2px solid rgba(67, 97, 238, 0.2);
+        color: #3a0ca3;
+        font-weight: 600;
     }
+
     .match-item {
-        padding: 10px 12px;
-        margin-bottom: 10px;
-        background-color: var(--card-bg);
-        border: 1px solid var(--border);
-        border-radius: 6px;
+        padding: 15px 20px;
+        margin-bottom: 15px;
+        background: white;
+        border-radius: 12px;
         cursor: pointer;
-        transition: background-color 0.2s ease, box-shadow 0.2s ease;
-        font-size: 1rem;
-    }
-    .match-item:hover {
-        background-color: var(--primary-light);
-        color: white;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .match-item.selected {
-        background-color: var(--primary) !important;
-        color: white !important;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        font-size: 1.1rem;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+        position: relative;
+        overflow: hidden;
+        border: none;
+        text-align: center;
         font-weight: 500;
-        box-shadow: 0 0 8px rgba(var(--primary-rgb), 0.5);
     }
+
+    .match-item::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--primary-gradient);
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: -1;
+    }
+
+    .match-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+        color: white;
+    }
+
+    .match-item:hover::before {
+        opacity: 1;
+    }
+
+    .match-item.selected {
+        transform: scale(1.03);
+        box-shadow: 0 0 20px rgba(67, 97, 238, 0.6);
+        color: white;
+        z-index: 10;
+        animation: pulse 1.5s infinite;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .match-item.selected::before {
+        opacity: 1;
+    }
+
     .match-item.paired {
-        background-color: var(--success) !important;
-        color: white !important;
-        cursor: default;
-        opacity: 0.7;
+        cursor: pointer; /* Позволяем кликать для разрыва связи */
+        opacity: 0.9;
+        transform: none;
     }
+
+    .match-item.correct-paired {
+        background: var(--success-gradient);
+        color: white;
+    }
+
     .match-item.incorrect-paired {
-        background-color: var(--danger) !important;
-        color: white !important;
-        cursor: default;
-        opacity: 0.7;
-        animation: shake 0.5s;
+        background: var(--danger-gradient);
+        color: white;
     }
-    @keyframes shake {
-        0%, 100% {transform: translateX(0);}
-        25% {transform: translateX(-5px);}
-        75% {transform: translateX(5px);}
-    }
+
+
 
     .game-controls {
         text-align: center;
-        margin-bottom: 20px;
+        margin: 30px 0;
+        position: relative;
+        z-index: 2;
     }
+
+    .game-controls .btn {
+        padding: 12px 30px;
+        font-size: 1.2rem;
+        border-radius: 12px;
+        margin: 0 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        transition: all 0.3s;
+        border: none;
+        font-weight: 600;
+        min-width: 200px;
+    }
+
+    .game-controls .btn:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+    }
+
+    .btn-primary {
+        background: var(--primary-gradient);
+    }
+
+    .btn-warning {
+        background: var(--warning-gradient);
+    }
+
+    .btn-success {
+        background: var(--success-gradient);
+    }
+
+    .btn-outline-primary {
+        background: transparent;
+        border: 2px solid #4361ee;
+        color: #4361ee;
+    }
+
+    .btn-outline-primary:hover {
+        background: #4361ee;
+        color: white;
+    }
+
     #game-feedback {
         text-align: center;
-        margin-top: 20px;
+        margin: 25px 0;
+        padding: 15px;
+        font-size: 1.2rem;
+        font-weight: 600;
+        border-radius: 12px;
+        transition: all 0.4s;
+        position: relative;
+        z-index: 2;
+        max-width: 80%;
+        margin-left: auto;
+        margin-right: auto;
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    #game-feedback.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .feedback-success {
+        background: rgba(76, 201, 240, 0.15);
+        color: #4895ef;
+        border: 2px solid rgba(76, 201, 240, 0.3);
+    }
+
+    .feedback-error {
+        background: rgba(249, 65, 68, 0.15);
+        color: #f72585;
+        border: 2px solid rgba(249, 65, 68, 0.3);
+    }
+
+    .feedback-info {
+        background: rgba(67, 97, 238, 0.15);
+        color: #3a0ca3;
+        border: 2px solid rgba(67, 97, 238, 0.3);
+    }
+
+    .game-result {
+        text-align: center;
+        padding: 30px;
+        margin: 30px 0;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(0,0,0,0.05);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+        position: relative;
+        z-index: 2;
+        backdrop-filter: blur(5px);
+        display: none;
+        transform: scale(0.9);
+        opacity: 0;
+        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .game-result.show {
+        display: block;
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    .game-result h2 {
+        color: #3a0ca3;
+        margin-bottom: 25px;
+        font-size: 2.2rem;
+        font-weight: 700;
+    }
+
+    .result-stats {
+        display: flex;
+        justify-content: center;
+        gap: 50px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+    }
+
+    .result-stat {
+        text-align: center;
+        min-width: 150px;
+    }
+
+    .result-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        display: block;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 5px;
+    }
+
+    .result-label {
         font-size: 1.1rem;
+        color: #6c757d;
         font-weight: 500;
     }
-    #score-display {
-        text-align: center;
-        font-size: 1.2rem;
-        color: var(--primary-dark);
-        margin-bottom: 15px;
+
+    .confetti {
+        position: fixed;
+        width: 12px;
+        height: 12px;
+        background-color: #f00;
+        opacity: 0;
+        top: 0;
+        z-index: 1000;
+        animation: fall linear forwards;
+        border-radius: 50%;
+    }
+
+    @keyframes fall {
+        0% {
+            opacity: 1;
+            top: -10px;
+            transform: translateX(0) rotate(0deg);
+        }
+        100% {
+            opacity: 0;
+            top: 100vh;
+            transform: translateX(calc((var(--random-x) - 0.5) * 200px)) rotate(calc(var(--random-rot) * 360deg));
+        }
+    }
+
+    /* Анимации */
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+
+    @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+        40% {transform: translateY(-20px);}
+        60% {transform: translateY(-10px);}
+    }
+
+    /* Адаптивность */
+    @media (max-width: 768px) {
+        .match-area {
+            flex-direction: column;
+        }
+        
+        .match-column {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        
+        .game-stats {
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .game-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .game-controls .btn {
+            width: 100%;
+            margin: 5px 0;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="game-match-container">
+    <div class="text-start mb-3">
+        <a href="{{ "/games" }}" class="btn btn-primary"><i class="fas fa-arrow-left"></i> Назад</a>
+    </div>
+    
     <div class="module-info-match">
         <h1>Сопоставление Слов</h1>
-        <p>Класс: {{ class_name }}, Юнит: {{ unit_name }}, Модуль: {{ module_name }}</p>
+        <p>{{ display_info if display_info else (class_name + ", " + unit_name + ", " + module_name) }}</p>
     </div>
 
-    <div id="score-display">Счет: <span id="current-score">0</span>/<span id="total-pairs">0</span></div>
+    <div class="game-stats">
+        <div class="stat-item">
+            <div class="stat-label">Счет</div>
+            <div class="stat-value"><span id="current-score">0</span>/<span id="total-pairs">{{ num_pairs }}</span></div>
+        </div>
+        
+        {% if timer_duration > 0 or enable_stopwatch %}
+        <div class="stat-item">
+            <div class="stat-label">
+                {% if timer_duration > 0 %}Время{% else %}Секундомер{% endif %}
+            </div>
+            <div class="stat-value" id="timer-display">
+                {% if timer_duration > 0 %}{{ timer_duration }}с{% else %}00:00{% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
 
     <div class="match-area">
+        <svg class="connections-svg" id="connections-svg">
+            <!-- Градиенты для связей -->
+            <defs>
+                <linearGradient id="correct-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#4cc9f0"/>
+                    <stop offset="100%" stop-color="#4895ef"/>
+                </linearGradient>
+                <linearGradient id="incorrect-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#f94144"/>
+                    <stop offset="100%" stop-color="#d00000"/>
+                </linearGradient>
+            </defs>
+        </svg>
+        
         <div class="match-column" id="words-column">
             <h3>Слова</h3>
             <!-- Words will be populated by JS -->
@@ -120,15 +544,42 @@
         </div>
     </div>
 
-    <div id="game-feedback" class="mb-3"></div>
+    <div id="game-feedback"></div>
 
     <div class="game-controls">
-        <button id="checkAnswersBtn" class="btn btn-primary me-2">Проверить</button>
-        <button id="resetGameBtn" class="btn btn-warning">Сброс</button>
+        <button id="checkAnswersBtn" class="btn btn-primary">Показать результаты</button>
+        <button id="resetGameBtn" class="btn btn-warning">Начать заново</button>
+    </div>
+
+    <div class="game-result" id="gameResult">
+        <h2>Результаты игры</h2>
+        <div class="result-stats">
+            <div class="result-stat">
+                <span class="result-value" id="finalScore">0</span>
+                <span class="result-label">Правильных пар</span>
+            </div>
+            <div class="result-stat">
+                <span class="result-value" id="finalAccuracy">0%</span>
+                <span class="result-label">Точность</span>
+            </div>
+            {% if timer_duration > 0 or enable_stopwatch %}
+            <div class="result-stat">
+                <span class="result-value" id="finalTime">0</span>
+                <span class="result-label">
+                    {% if timer_duration > 0 %}Время (сек){% else %}Время игры{% endif %}
+                </span>
+            </div>
+            {% endif %}
+        </div>
+        <div class="mt-4">
+            <button id="playAgainBtn" class="btn btn-success me-2">Играть снова</button>
+            <button id="backToSettingsBtn" class="btn btn-outline-primary me-2">Изменить настройки</button>
+            <a href="{{ url_for('word_match_select_module') }}" class="btn btn-outline-secondary">Выбрать другой модуль</a>
+        </div>
     </div>
 
     <div class="mt-4 text-center">
-         <a href="{{ "/word_match_select_module" }}" class="btn btn-outline-secondary btn-sm">Выбрать другой модуль</a>
+         <a href="{{ url_for('word_match_select_module') }}" class="btn btn-outline-secondary">Выбрать другой модуль</a>
     </div>
 </div>
 
@@ -141,49 +592,504 @@
 <script id="jumbledTranslations" type="application/json">
     {{ jumbled_translations_list | tojson | safe }}
 </script>
+<script id="gameSettings" type="application/json">
+    {
+        "timerDuration": {{ timer_duration }},
+        "enableStopwatch": {{ enable_stopwatch|tojson }},
+        "totalPairs": {{ num_pairs }},
+        "gameMode": "{{ game_mode }}"
+    }
+</script>
 
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
-{# Placeholder for game_word_match.js - to be created in next step #}
-{# <script src="/static/js/game_word_match.js" defer></script> #}
 <script>
-// Basic placeholder logic for now, actual game logic in game_word_match.js
 document.addEventListener('DOMContentLoaded', function() {
+    // DOM Elements
+    const matchArea = document.querySelector('.match-area');
     const wordsColumn = document.getElementById('words-column');
     const translationsColumn = document.getElementById('translations-column');
-    const originalWordsData = JSON.parse(document.getElementById('wordMatchOriginalData').textContent);
-    const jumbledWords = JSON.parse(document.getElementById('jumbledWords').textContent);
-    const jumbledTranslations = JSON.parse(document.getElementById('jumbledTranslations').textContent);
+    const connectionsSvg = document.getElementById('connections-svg');
     const scoreDisplay = document.getElementById('current-score');
     const totalPairsDisplay = document.getElementById('total-pairs');
+    const timerDisplay = document.getElementById('timer-display');
+    const gameFeedback = document.getElementById('game-feedback');
+    const checkAnswersBtn = document.getElementById('checkAnswersBtn');
+    const resetGameBtn = document.getElementById('resetGameBtn');
+    const gameResult = document.getElementById('gameResult');
+    const finalScore = document.getElementById('finalScore');
+    const finalAccuracy = document.getElementById('finalAccuracy');
+    const finalTime = document.getElementById('finalTime');
+    const playAgainBtn = document.getElementById('playAgainBtn');
+    
+    // SVG namespace
+    const svgNS = 'http://www.w3.org/2000/svg';
 
-    if (totalPairsDisplay) totalPairsDisplay.textContent = originalWordsData.length;
-    if (scoreDisplay) scoreDisplay.textContent = "0";
+    // Game Data
+    const originalWordsData = JSON.parse(document.getElementById('wordMatchOriginalData').textContent);
+    let jumbledWords = JSON.parse(document.getElementById('jumbledWords').textContent);
+    let jumbledTranslations = JSON.parse(document.getElementById('jumbledTranslations').textContent);
+    const gameSettings = JSON.parse(document.getElementById('gameSettings').textContent);
+    
+    // Функция для перемешивания массива (Fisher-Yates алгоритм)
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
 
+    // Перемешиваем карточки перед началом игры
+    jumbledWords = shuffleArray(jumbledWords);
+    jumbledTranslations = shuffleArray(jumbledTranslations);
+    
+    // Game State
+    let selectedWordItem = null;
+    let selectedTranslationItem = null;
+    let currentScore = 0;
+    let totalPairs = gameSettings.totalPairs;
+    let timerInterval = null;
+    let timeRemaining = gameSettings.timerDuration;
+    let gameActive = true;
+    let attemptCount = 0;
+    let correctPairs = 0;
+    let gameStartTime = Date.now();
+    let gameEndTime = null;
+    let connections = []; // Массив для хранения SVG связей
+    let gameCompleted = false;
+    
+    // Initialize game
+    initializeGame();
+    
+    function initializeGame() {
+        // Reset game state
+        selectedWordItem = null;
+        selectedTranslationItem = null;
+        currentScore = 0;
+        attemptCount = 0;
+        correctPairs = 0;
+        gameActive = true;
+        gameStartTime = Date.now();
+        gameEndTime = null;
+        connections = [];
+        gameCompleted = false;
+        
+        // Update UI
+        if (scoreDisplay) scoreDisplay.textContent = "0";
+        if (totalPairsDisplay) totalPairsDisplay.textContent = totalPairs;
+        
+        // Clear columns
+        wordsColumn.innerHTML = '<h3>Слова</h3>';
+        translationsColumn.innerHTML = '<h3>Переводы</h3>';
+        
+        // Remove all SVG connections
+        clearAllConnections();
+        
+        // Перемешиваем карточки перед каждой новой игрой
+        jumbledWords = shuffleArray([...jumbledWords]);
+        jumbledTranslations = shuffleArray([...jumbledTranslations]);
+        
+        // Populate columns
+        jumbledWords.forEach(wordItem => {
+            wordsColumn.appendChild(createMatchItem(wordItem, 'word'));
+        });
+        
+        jumbledTranslations.forEach(transItem => {
+            translationsColumn.appendChild(createMatchItem(transItem, 'translation'));
+        });
+        
+        // Hide game result
+        gameResult.classList.remove('show');
+        
+        // Hide feedback
+        gameFeedback.classList.remove('show');
+        gameFeedback.className = '';
+        
+        // Start timer or stopwatch if enabled
+        if (gameSettings.timerDuration > 0) {
+            timeRemaining = gameSettings.timerDuration;
+            updateTimerDisplay();
+            startTimer();
+        } else if (gameSettings.enableStopwatch) {
+            timeRemaining = 0;
+            updateTimerDisplay();
+            startStopwatch();
+        }
+        
+        // Add event listeners to match items
+        addEventListenersToMatchItems();
+    }
+    
     function createMatchItem(itemData, type) {
         const itemDiv = document.createElement('div');
         itemDiv.classList.add('match-item');
         itemDiv.textContent = itemData.text;
         itemDiv.dataset.id = itemData.id;
-        itemDiv.dataset.type = type; // 'word' or 'translation'
+        itemDiv.dataset.type = type;
+        
+        // Add subtle animation
+        itemDiv.style.opacity = '0';
+        itemDiv.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            itemDiv.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            itemDiv.style.opacity = '1';
+            itemDiv.style.transform = 'translateY(0)';
+        }, 50);
+        
         return itemDiv;
     }
-
-    if (wordsColumn && jumbledWords) {
-        jumbledWords.forEach(wordItem => {
-            wordsColumn.appendChild(createMatchItem(wordItem, 'word'));
+    
+    function addEventListenersToMatchItems() {
+        const matchItems = document.querySelectorAll('.match-item');
+        matchItems.forEach(item => {
+            item.addEventListener('click', handleMatchItemClick);
         });
     }
+    
+    function handleMatchItemClick(event) {
+        if (!gameActive) return;
+        
+        const clickedItem = event.currentTarget;
+        const itemType = clickedItem.dataset.type;
+        const itemId = clickedItem.dataset.id;
+        
+        // Если карточка уже связана - разорвать связь
+        if (clickedItem.classList.contains('paired')) {
+            breakConnection(clickedItem);
+            return;
+        }
+        
+        if (itemType === 'word') {
+            // Снять выделение с предыдущей выбранной карточки в этой колонке
+            if (selectedWordItem) {
+                selectedWordItem.classList.remove('selected');
+            }
+            
+            // Выбрать новую карточку
+            clickedItem.classList.add('selected');
+            selectedWordItem = clickedItem;
+            
+            // Если есть выбранный перевод - создать связь
+            if (selectedTranslationItem) {
+                createConnection();
+            }
+        } else if (itemType === 'translation') {
+            // Снять выделение с предыдущей выбранной карточки в этой колонке
+            if (selectedTranslationItem) {
+                selectedTranslationItem.classList.remove('selected');
+            }
+            
+            // Выбрать новую карточку
+            clickedItem.classList.add('selected');
+            selectedTranslationItem = clickedItem;
+            
+            // Если есть выбранное слово - создать связь
+            if (selectedWordItem) {
+                createConnection();
+            }
+        }
+    }
+    
+    function createConnection() {
+        // Проверка, что обе карточки выбраны
+        if (!selectedWordItem || !selectedTranslationItem) return;
+        
+        // Получить координаты карточек
+        const wordRect = selectedWordItem.getBoundingClientRect();
+        const transRect = selectedTranslationItem.getBoundingClientRect();
+        const gameAreaRect = matchArea.getBoundingClientRect();
+        
+        // Рассчитать позиции относительно игровой области
+        const wordX = wordRect.left + wordRect.width - gameAreaRect.left;
+        const wordY = wordRect.top + wordRect.height / 2 - gameAreaRect.top;
+        const transX = transRect.left - gameAreaRect.left;
+        const transY = transRect.top + transRect.height / 2 - gameAreaRect.top;
+        
+        // Создать кривую Безье для более красивого соединения
+        const path = document.createElementNS(svgNS, 'path');
+        const midX = (wordX + transX) / 2;
+        
+        // Формирование пути кривой Безье
+        const pathData = `M ${wordX} ${wordY} C ${midX} ${wordY}, ${midX} ${transY}, ${transX} ${transY}`;
+        path.setAttribute('d', pathData);
+        path.classList.add('connection-curve');
+        
+        // Проверить, правильно ли сопоставлены карточки
+        const wordId = selectedWordItem.dataset.id;
+        const translationId = selectedTranslationItem.dataset.id;
+        const isCorrect = wordId === translationId;
+        
+        attemptCount++;
+        
+        // Добавить класс в зависимости от правильности
+        if (isCorrect) {
+            path.classList.add('correct');
+            correctPairs++;
+        } else {
+            path.classList.add('incorrect');
+        }
+        
+        // Добавить путь в SVG
+        connectionsSvg.appendChild(path);
+        
+        // Сохранить информацию о связи
+        connections.push({
+            element: path,
+            wordItem: selectedWordItem,
+            translationItem: selectedTranslationItem,
+            isCorrect: isCorrect
+        });
+        
+        // Пометить карточки как связанные
+        selectedWordItem.classList.add('paired');
+        selectedTranslationItem.classList.add('paired');
+        
+        // Добавить класс правильности/неправильности
+        if (isCorrect) {
+            selectedWordItem.classList.add('correct-paired');
+            selectedTranslationItem.classList.add('correct-paired');
+        } else {
+            selectedWordItem.classList.add('incorrect-paired');
+            selectedTranslationItem.classList.add('incorrect-paired');
+        }
+        
+        // Сбросить выбор
+        selectedWordItem.classList.remove('selected');
+        selectedTranslationItem.classList.remove('selected');
+        selectedWordItem = null;
+        selectedTranslationItem = null;
+        
+        // Обновить счет
+        currentScore++;
+        scoreDisplay.textContent = currentScore;
+        
+        // Проверить завершение игры
+        if (currentScore === totalPairs) {
+            endGame(true);
+        }
+    }
+    
+    function breakConnection(card) {
+        // Найти связь, содержащую эту карточку
+        const connectionIndex = connections.findIndex(conn => 
+            conn.wordItem === card || conn.translationItem === card
+        );
+        
+        if (connectionIndex === -1) return;
+        
+        const connection = connections[connectionIndex];
+        
+        // Удалить визуальную связь
+        connection.element.remove();
+        
+        // Удалить классы связанности и стилей
+        connection.wordItem.classList.remove('paired', 'correct-paired', 'incorrect-paired');
+        connection.translationItem.classList.remove('paired', 'correct-paired', 'incorrect-paired');
+        
+        // Если связь была правильной, уменьшить счет правильных пар
+        if (connection.isCorrect) {
+            correctPairs--;
+        }
+        
+        // Уменьшить общий счет
+        currentScore--;
+        scoreDisplay.textContent = currentScore;
+        
+        // Удалить связь из массива
+        connections.splice(connectionIndex, 1);
+        
+        // Показать обратную связь
+        showFeedback('Связь разорвана', 'info');
+    }
+    
+    function clearAllConnections() {
+        // Удалить все пути из SVG (кроме градиентов)
+        const paths = connectionsSvg.querySelectorAll('path');
+        paths.forEach(path => path.remove());
+        
+        // Очистить массив связей
+        connections = [];
+    }
+    
 
-    if (translationsColumn && jumbledTranslations) {
-        jumbledTranslations.forEach(transItem => {
-            translationsColumn.appendChild(createMatchItem(transItem, 'translation'));
+    
+    function showFeedback(message, type) {
+        gameFeedback.textContent = message;
+        gameFeedback.className = 'feedback-' + type;
+        gameFeedback.classList.add('show');
+        
+        // Hide after delay
+        setTimeout(() => {
+            gameFeedback.classList.remove('show');
+        }, 2500);
+    }
+    
+    function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        
+        timerInterval = setInterval(() => {
+            timeRemaining--;
+            updateTimerDisplay();
+            
+            if (timeRemaining <= 0) {
+                clearInterval(timerInterval);
+                endGame(false);
+            }
+        }, 1000);
+    }
+    
+    function startStopwatch() {
+        if (timerInterval) clearInterval(timerInterval);
+        
+        timerInterval = setInterval(() => {
+            timeRemaining++;
+            updateTimerDisplay();
+        }, 1000);
+    }
+    
+    function updateTimerDisplay() {
+        if (!timerDisplay) return;
+        
+        if (gameSettings.enableStopwatch) {
+            // Секундомер - показываем время в формате MM:SS
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            timerDisplay.className = ''; // Убираем цветовые классы для секундомера
+        } else {
+            // Таймер - показываем оставшееся время
+            timerDisplay.textContent = timeRemaining + 'с';
+            
+            // Update timer color based on time remaining
+            timerDisplay.className = '';
+            if (timeRemaining <= 10) {
+                timerDisplay.classList.add('danger');
+            } else if (timeRemaining <= 30) {
+                timerDisplay.classList.add('warning');
+            }
+        }
+    }
+    
+    function revealResults() {
+        if (gameCompleted) return;
+        
+        // Связи уже помечены как правильные/неправильные при создании
+        // Просто показываем обратную связь
+        showFeedback(`Правильных пар: ${correctPairs} из ${currentScore}`, 'info');
+        
+        gameCompleted = true;
+    }
+    
+    function endGame(completed) {
+        gameActive = false;
+        gameEndTime = Date.now();
+        
+        if (timerInterval) {
+            clearInterval(timerInterval);
+        }
+        
+        // Reveal correct and incorrect pairs
+        revealResults();
+        
+        // Calculate stats
+        const gameTimeSeconds = Math.floor((gameEndTime - gameStartTime) / 1000);
+        const accuracyPercentage = attemptCount > 0 ? Math.round((correctPairs / attemptCount) * 100) : 0;
+        
+        // Update result display
+        finalScore.textContent = correctPairs;
+        finalAccuracy.textContent = accuracyPercentage + '%';
+        
+        // Display time based on mode
+        if (finalTime) {
+            if (gameSettings.enableStopwatch) {
+                // Для секундомера показываем время в формате MM:SS
+                const minutes = Math.floor(gameTimeSeconds / 60);
+                const seconds = gameTimeSeconds % 60;
+                finalTime.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            } else {
+                // Для таймера показываем время в секундах
+                finalTime.textContent = gameTimeSeconds + 'с';
+            }
+        }
+        
+        // Show result with animation
+        gameResult.classList.add('show');
+        
+        // Show appropriate feedback
+        if (completed) {
+            showFeedback('Игра завершена! Проверьте свои результаты.', 'info');
+            if (correctPairs === totalPairs) {
+                createConfetti(150); // Celebration confetti for perfect score
+            }
+        } else {
+            showFeedback('Время истекло! Игра завершена.', 'info');
+        }
+    }
+    
+    function createConfetti(count) {
+        const colors = ['#f94144', '#f3722c', '#f8961e', '#f9c74f', '#90be6d', '#43aa8b', '#577590', '#4361ee', '#3a0ca3', '#7209b7', '#b5179e'];
+        
+        for (let i = 0; i < count; i++) {
+            const confetti = document.createElement('div');
+            confetti.classList.add('confetti');
+            confetti.style.left = Math.random() * 100 + 'vw';
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.width = Math.random() * 12 + 8 + 'px';
+            confetti.style.height = Math.random() * 12 + 8 + 'px';
+            confetti.style.setProperty('--random-x', Math.random());
+            confetti.style.setProperty('--random-rot', Math.random());
+            confetti.style.animationDuration = Math.random() * 3 + 2 + 's';
+            document.body.appendChild(confetti);
+            
+            // Remove confetti after animation
+            setTimeout(() => {
+                confetti.remove();
+            }, 5000);
+        }
+    }
+    
+    // Event Listeners
+    checkAnswersBtn.addEventListener('click', () => {
+        // Check answers and reveal results
+        if (currentScore > 0 && !gameCompleted) {
+            revealResults();
+            showFeedback(`Правильных пар: ${correctPairs} из ${currentScore}`, 'info');
+        } else {
+            showFeedback('Сначала сопоставьте слова с их переводами!', 'info');
+        }
+    });
+    
+    resetGameBtn.addEventListener('click', () => {
+        initializeGame();
+    });
+    
+    playAgainBtn.addEventListener('click', () => {
+        initializeGame();
+    });
+    
+    // Кнопка "Назад к настройкам" с сохранением текущих параметров
+    const backToSettingsBtn = document.getElementById('backToSettingsBtn');
+    if (backToSettingsBtn) {
+        backToSettingsBtn.addEventListener('click', () => {
+            // Создаем URL с текущими параметрами для возврата к настройкам
+            const currentUrl = new URL(window.location);
+            const params = new URLSearchParams();
+            
+            // Сохраняем текущие параметры игры
+            params.append('cards', '{{ num_pairs }}');
+            {% if timer_duration > 0 %}
+            params.append('timer', '{{ timer_duration }}');
+            {% elif enable_stopwatch %}
+            params.append('stopwatch', 'true');
+            {% endif %}
+            
+            // Переходим к странице выбора с сохраненными параметрами
+            window.location.href = '{{ url_for("word_match_select_module") }}?' + params.toString();
         });
     }
-    // Further JS logic for selection, pairing, checking will go into static/js/game_word_match.js
-    console.log("Original Pairs:", originalWordsData);
 });
 </script>
 {% endblock %}

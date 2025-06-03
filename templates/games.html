@@ -198,22 +198,22 @@
             <div class="game-card">
                 <h3>Флэш-карточки</h3>
                 <p>Практикуйте слова с помощью интерактивных флэш-карточек.</p>
-                <a href="{{ "/flashcards_select_module" }}" class="btn btn-primary">Начать</a>
+                <a href="{{ url_for('flashcards_select_module') }}" class="btn btn-primary">Начать</a>
             </div>
             <div class="game-card">
                 <h3>Сопоставление Слов</h3>
                 <p>Соедините слова с их правильными переводами.</p>
-                <a href="{{ "/word_match_select_module" }}" class="btn btn-primary">Играть</a>
+                <a href="{{ url_for('word_match_select_module') }}" class="btn btn-primary">Играть</a>
             </div>
             <div class="game-card">
                 <h3>Собери Предложение</h3>
                 <p>Расставьте слова в правильном порядке, чтобы получилось предложение.</p>
-                <a href="{{ "/sentence_scramble_select_module" }}" class="btn btn-primary">Играть</a>
+                <a href="{{ url_for('sentence_scramble_select_module') }}" class="btn btn-primary">Играть</a>
             </div>
             <div class="game-card">
-                <h3>Другая игра (Скоро)</h3>
-                <p>В разработке находятся и другие увлекательные игры.</p>
-                <!-- <a href="#" class="btn btn-primary disabled">Начать</a> -->
+                <h3>Виселица</h3>
+                <p>Угадайте английское слово по буквам, пока не повесили человечка!</p>
+                <a href="{{ url_for('hangman_select_module') }}" class="btn btn-primary">Играть</a>
             </div>
         </div>
     </div>

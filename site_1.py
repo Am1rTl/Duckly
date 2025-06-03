@@ -1086,6 +1086,35 @@ def get_modules_for_unit():
     
     return jsonify([module[0] for module in modules])
 
+@app.route('/get_word_count')
+def get_word_count():
+    class_name = request.args.get('class_name')
+    unit_name = request.args.get('unit_name')
+    module_name = request.args.get('module_name')
+    units = request.args.getlist('units')
+    modules = request.args.getlist('modules')
+    
+    if not class_name:
+        return jsonify({'count': 0})
+    
+    query = Word.query.filter_by(classs=class_name)
+    
+    if units:
+        # Multiple units
+        query = query.filter(Word.unit.in_(units))
+    elif unit_name:
+        query = query.filter_by(unit=unit_name)
+        
+        if modules:
+            # Multiple modules within a unit
+            query = query.filter(Word.module.in_(modules))
+        elif module_name:
+            # Specific module
+            query = query.filter_by(module=module_name)
+    
+    count = query.count()
+    return jsonify({'count': count})
+
 @app.route("/get_modules_for_sentence_game")
 def get_modules_for_sentence_game():
     class_name = request.args.get('class_name')
@@ -2445,19 +2474,65 @@ def flashcards_select_module():
     # Fetch all unique classes for the first dropdown
     classes = db.session.query(Word.classs).distinct().order_by(Word.classs).all()
     classes = [c[0] for c in classes if c[0]] # Ensure not None or empty
-    return render_template('game_flashcards_select.html', classes=classes)
+    return render_template('game_flashcards_select_improved.html', classes=classes)
 
 @app.route('/games/flashcards/<class_name>/<unit_name>/<module_name>')
-def flashcards_game(class_name, unit_name, module_name):
+@app.route('/games/flashcards/<class_name>/<unit_name>')
+@app.route('/games/flashcards/<class_name>')
+def flashcards_game(class_name, unit_name=None, module_name=None):
     if 'user_id' not in session:
         flash("Пожалуйста, войдите в систему для доступа к флэш-карточкам.", "warning")
-        return redirect(url_for('auth.login')) # Corrected url_for
+        return redirect(url_for('auth.login'))
 
     user_id = session['user_id']
-    words_in_module = Word.query.filter_by(classs=class_name, unit=unit_name, module=module_name).all()
+    
+    # Получаем параметры игры из URL
+    mode = request.args.get('mode', 'specific')
+    cards_count = int(request.args.get('cards', 0))  # 0 означает все карточки
+    selected_modules = request.args.get('modules', '').split(',') if request.args.get('modules') else []
+    selected_units = request.args.get('units', '').split(',') if request.args.get('units') else []
+    
+    # Определяем какие слова загружать в зависимости от режима
+    words_in_module = []
+    
+    if mode == 'specific' and unit_name and module_name:
+        # Конкретный модуль
+        words_in_module = Word.query.filter_by(classs=class_name, unit=unit_name, module=module_name).all()
+        display_info = f"Класс: {class_name}, Юнит: {unit_name}, Модуль: {module_name}"
+    elif mode == 'unit' and unit_name:
+        # Весь юнит
+        words_in_module = Word.query.filter_by(classs=class_name, unit=unit_name).all()
+        display_info = f"Класс: {class_name}, Юнит: {unit_name} (все модули)"
+    elif mode == 'class':
+        # Весь класс
+        words_in_module = Word.query.filter_by(classs=class_name).all()
+        display_info = f"Класс: {class_name} (все юниты и модули)"
+    elif mode == 'multiple-modules' and unit_name and selected_modules:
+        # Несколько выбранных модулей
+        words_in_module = Word.query.filter(
+            Word.classs == class_name,
+            Word.unit == unit_name,
+            Word.module.in_(selected_modules)
+        ).all()
+        display_info = f"Класс: {class_name}, Юнит: {unit_name}, Модули: {', '.join(selected_modules)}"
+    elif mode == 'multiple-units' and selected_units:
+        # Несколько выбранных юнитов
+        words_in_module = Word.query.filter(
+            Word.classs == class_name,
+            Word.unit.in_(selected_units)
+        ).all()
+        display_info = f"Класс: {class_name}, Юниты: {', '.join(selected_units)}"
+    else:
+        # Fallback к конкретному модулю
+        if unit_name and module_name:
+            words_in_module = Word.query.filter_by(classs=class_name, unit=unit_name, module=module_name).all()
+            display_info = f"Класс: {class_name}, Юнит: {unit_name}, Модуль: {module_name}"
+        else:
+            flash("Неверные параметры игры.", "warning")
+            return redirect(url_for('flashcards_select_module'))
 
     if not words_in_module:
-        flash(f"Для модуля '{module_name}' (юнит '{unit_name}', класс '{class_name}') не найдено слов.", "warning")
+        flash(f"Для выбранных параметров не найдено слов.", "warning")
         return redirect(url_for('flashcards_select_module'))
 
     augmented_words_list = []
@@ -2506,15 +2581,22 @@ def flashcards_game(class_name, unit_name, module_name):
     ))
 
 
+    # Ограничиваем количество карточек если указано
+    if cards_count > 0 and len(augmented_words_list) > cards_count:
+        augmented_words_list = augmented_words_list[:cards_count]
+
     if not augmented_words_list: # Should be caught by words_in_module check, but as a safeguard
-        flash(f"Для модуля '{module_name}' (юнит '{unit_name}', класс '{class_name}') не найдено слов.", "warning")
+        flash(f"Для выбранных параметров не найдено слов.", "warning")
         return redirect(url_for('flashcards_select_module'))
 
-    return render_template('flashcards_game.html',
+    return render_template('game_flashcards_improved.html',
                            words=augmented_words_list,
                            class_name=class_name,
-                           unit_name=unit_name,
-                           module_name=module_name)
+                           unit_name=unit_name or "Все юниты",
+                           module_name=module_name or "Все модули",
+                           display_info=display_info,
+                           total_cards=len(augmented_words_list),
+                           game_mode=mode)
 
 # word_match_select_module and word_match_game will be moved to games_bp
 
@@ -2524,31 +2606,79 @@ def word_match_select_module():
         return redirect(url_for('auth.login')) # Corrected url_for
     classes = db.session.query(Word.classs).distinct().order_by(Word.classs).all()
     classes = [c[0] for c in classes if c[0]]
-    return render_template('game_word_match_select.html', classes=classes)
+    return render_template('game_word_match_select_improved.html', classes=classes)
 
 @app.route('/games/word_match/<class_name>/<unit_name>/<module_name>')
-def word_match_game(class_name, unit_name, module_name):
+@app.route('/games/word_match/<class_name>/<unit_name>')
+@app.route('/games/word_match/<class_name>')
+def word_match_game(class_name, unit_name=None, module_name=None):
     if 'user_id' not in session:
         flash("Пожалуйста, войдите в систему.", "warning")
-        return redirect(url_for('auth.login')) # Corrected url_for
+        return redirect(url_for('auth.login'))
 
-    all_words_in_module = Word.query.filter_by(classs=class_name, unit=unit_name, module=module_name).all()
+    # Получаем параметры игры из URL
+    mode = request.args.get('mode', 'specific')
+    cards_count = int(request.args.get('cards', 8))
+    timer_duration = int(request.args.get('timer', 0))
+    enable_stopwatch = request.args.get('stopwatch') == 'true'
+    selected_modules = request.args.get('modules', '').split(',') if request.args.get('modules') else []
+    selected_units = request.args.get('units', '').split(',') if request.args.get('units') else []
 
-    if not all_words_in_module:
-        flash(f"Для модуля '{module_name}' (юнит '{unit_name}', класс '{class_name}') не найдено слов.", "warning")
+    # Определяем какие слова загружать в зависимости от режима
+    all_words = []
+    
+    if mode == 'specific' and unit_name and module_name:
+        # Конкретный модуль
+        all_words = Word.query.filter_by(classs=class_name, unit=unit_name, module=module_name).all()
+        display_info = f"Класс: {class_name}, Юнит: {unit_name}, Модуль: {module_name}"
+    elif mode == 'unit' and unit_name:
+        # Весь юнит
+        all_words = Word.query.filter_by(classs=class_name, unit=unit_name).all()
+        display_info = f"Класс: {class_name}, Юнит: {unit_name} (все модули)"
+    elif mode == 'class':
+        # Весь класс
+        all_words = Word.query.filter_by(classs=class_name).all()
+        display_info = f"Класс: {class_name} (все юниты и модули)"
+    elif mode == 'multiple-modules' and unit_name and selected_modules:
+        # Несколько выбранных модулей
+        all_words = Word.query.filter(
+            Word.classs == class_name,
+            Word.unit == unit_name,
+            Word.module.in_(selected_modules)
+        ).all()
+        display_info = f"Класс: {class_name}, Юнит: {unit_name}, Модули: {', '.join(selected_modules)}"
+    elif mode == 'multiple-units' and selected_units:
+        # Несколько выбранных юнитов
+        all_words = Word.query.filter(
+            Word.classs == class_name,
+            Word.unit.in_(selected_units)
+        ).all()
+        display_info = f"Класс: {class_name}, Юниты: {', '.join(selected_units)}"
+    else:
+        # Fallback к конкретному модулю
+        if unit_name and module_name:
+            all_words = Word.query.filter_by(classs=class_name, unit=unit_name, module=module_name).all()
+            display_info = f"Класс: {class_name}, Юнит: {unit_name}, Модуль: {module_name}"
+        else:
+            flash("Неверные параметры игры.", "warning")
+            return redirect(url_for('word_match_select_module'))
+
+    if not all_words:
+        flash(f"Для выбранных параметров не найдено слов.", "warning")
         return redirect(url_for('word_match_select_module'))
 
-    # Determine number of words for the game, e.g., 8 pairs (16 items)
-    # Ensure we don't try to pick more words than available
-    num_pairs = min(len(all_words_in_module), 8)
+    # Ограничиваем количество карточек доступным количеством слов
+    max_pairs = len(all_words)
+    num_pairs = min(cards_count, max_pairs)
 
-    if num_pairs < 2: # Need at least 2 pairs for a meaningful game
-        flash(f"Недостаточно слов в модуле '{module_name}' для игры (нужно хотя бы 2).", "warning")
+    if num_pairs < 2:
+        flash(f"Недостаточно слов для игры (нужно хотя бы 2, найдено {max_pairs}).", "warning")
         return redirect(url_for('word_match_select_module'))
 
-    selected_word_objects = random.sample(all_words_in_module, num_pairs)
+    # Выбираем случайные слова
+    selected_word_objects = random.sample(all_words, num_pairs)
 
-    original_words_for_js = [] # For checking answers
+    original_words_for_js = []
     jumbled_words_list = []
     jumbled_translations_list = []
 
@@ -2565,8 +2695,13 @@ def word_match_game(class_name, unit_name, module_name):
                            jumbled_words_list=jumbled_words_list,
                            jumbled_translations_list=jumbled_translations_list,
                            class_name=class_name,
-                           unit_name=unit_name,
-                           module_name=module_name)
+                           unit_name=unit_name or "Все юниты",
+                           module_name=module_name or "Все модули",
+                           display_info=display_info,
+                           num_pairs=num_pairs,
+                           timer_duration=timer_duration,
+                           enable_stopwatch=enable_stopwatch,
+                           game_mode=mode)
 
 # sentence_scramble_select_module and sentence_scramble_game will be moved to games_bp
 
@@ -2608,6 +2743,95 @@ def sentence_scramble_game(class_name, unit_name, module_name):
                            class_name=class_name,
                            unit_name=unit_name,
                            module_name=module_name)
+
+# hangman_select_module and hangman_game will be moved to games_bp
+
+@app.route('/games/hangman/select', methods=['GET'])
+def hangman_select_module():
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+    # Fetch all unique classes for the first dropdown
+    classes = db.session.query(Word.classs).distinct().order_by(Word.classs).all()
+    classes = [c[0] for c in classes if c[0]] # Ensure not None or empty
+    return render_template('game_hangman_select_improved.html', classes=classes)
+
+@app.route('/games/hangman/<class_name>/<unit_name>/<module_name>')
+def hangman_game(class_name, unit_name, module_name):
+    if 'user_id' not in session:
+        flash("Пожалуйста, войдите в систему.", "warning")
+        return redirect(url_for('auth.login'))
+
+    # Get game settings from URL parameters
+    num_words = int(request.args.get('words', 10))  # Default 10 words
+    timer_duration = int(request.args.get('timer', 0))  # Default no timer
+    enable_stopwatch = request.args.get('stopwatch', 'false').lower() == 'true'
+    difficulty = request.args.get('difficulty', 'medium')  # easy, medium, hard
+    game_mode = request.args.get('mode', 'specific')  # specific, unit, class, multiple
+
+    # Handle different game modes
+    if game_mode == 'unit':
+        words_query = Word.query.filter_by(classs=class_name, unit=unit_name).all()
+    elif game_mode == 'class':
+        words_query = Word.query.filter_by(classs=class_name).all()
+    elif game_mode == 'multiple':
+        modules = request.args.get('modules', '').split(',')
+        if not modules or modules == ['']:
+            flash("Не выбраны модули для игры.", "warning")
+            return redirect(url_for('hangman_select_module'))
+        words_query = Word.query.filter(
+            Word.classs == class_name,
+            Word.unit == unit_name,
+            Word.module.in_(modules)
+        ).all()
+    else:  # specific module
+        words_query = Word.query.filter_by(classs=class_name, unit=unit_name, module=module_name).all()
+
+    if not words_query:
+        flash(f"Для выбранного модуля не найдено слов.", "warning")
+        return redirect(url_for('hangman_select_module'))
+
+    # Filter words by difficulty if specified
+    if difficulty == 'easy':
+        # Easy: words 3-5 letters
+        words_query = [w for w in words_query if 3 <= len(w.word) <= 5]
+    elif difficulty == 'medium':
+        # Medium: words 4-8 letters
+        words_query = [w for w in words_query if 4 <= len(w.word) <= 8]
+    elif difficulty == 'hard':
+        # Hard: words 6+ letters
+        words_query = [w for w in words_query if len(w.word) >= 6]
+
+    if not words_query:
+        flash(f"Для выбранной сложности не найдено подходящих слов.", "warning")
+        return redirect(url_for('hangman_select_module'))
+
+    # Limit number of words and shuffle
+    if len(words_query) > num_words:
+        words_query = random.sample(words_query, num_words)
+    else:
+        random.shuffle(words_query)
+
+    # Prepare words for the game
+    game_words = []
+    for word_obj in words_query:
+        game_words.append({
+            'id': word_obj.id,
+            'word': word_obj.word.upper(),  # Uppercase for hangman
+            'translation': word_obj.translation,
+            'definition': getattr(word_obj, 'definition', ''),
+            'example': getattr(word_obj, 'example', '')
+        })
+
+    return render_template('game_hangman_improved.html',
+                           words_data=game_words,
+                           class_name=class_name,
+                           unit_name=unit_name,
+                           module_name=module_name,
+                           timer_duration=timer_duration,
+                           enable_stopwatch=enable_stopwatch,
+                           difficulty=difficulty,
+                           game_mode=game_mode,
+                           num_words=len(game_words))
 
 
 @app.route('/test_details_data/<int:test_id>')
