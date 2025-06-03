@@ -432,57 +432,47 @@ document.addEventListener('DOMContentLoaded', function() {
     function endGame() {
         gameActive = false;
         gameEndTime = Date.now();
-        
-        if (timerInterval) {
-            clearInterval(timerInterval);
+        if (timerInterval) clearInterval(timerInterval);
+
+        const durationSeconds = Math.floor((gameEndTime - gameStartTime) / 1000);
+        const accuracy = totalAttempts > 0 ? Math.round((totalCorrectWords / totalAttempts) * 100) : 0;
+
+        if (resultTitle) {
+            if (totalCorrectWords === wordsData.length) {
+                resultTitle.textContent = 'Поздравляем! Все слова угаданы!';
+                createConfetti(100); // Add confetti for a perfect game
+            } else if (totalCorrectWords > 0) {
+                resultTitle.textContent = 'Отличная работа!';
+            } else {
+                resultTitle.textContent = 'Игра окончена. Попробуйте еще раз!';
+            }
         }
         
-        // Calculate stats
-        const gameTimeSeconds = Math.floor((gameEndTime - gameStartTime) / 1000);
-        const accuracyPercentage = totalAttempts > 0 ? Math.round((totalCorrectWords / totalAttempts) * 100) : 0;
-        
-        // Update result display
         if (finalCorrect) finalCorrect.textContent = totalCorrectWords;
-        if (finalAccuracy) finalAccuracy.textContent = accuracyPercentage + '%';
+        if (finalAccuracy) finalAccuracy.textContent = `${accuracy}%`;
         
         if (finalTime) {
-            if (gameSettings.enableStopwatch) {
-                const minutes = Math.floor(gameTimeSeconds / 60);
-                const seconds = gameTimeSeconds % 60;
+            if (gameSettings.timerDuration > 0) {
+                finalTime.textContent = `${gameSettings.timerDuration - timeRemaining} сек`;
+            } else {
+                const minutes = Math.floor(durationSeconds / 60);
+                const seconds = durationSeconds % 60;
                 finalTime.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            } else {
-                finalTime.textContent = gameTimeSeconds + 'с';
             }
         }
-        
-        // Set result title
-        if (resultTitle) {
-            if (accuracyPercentage === 100) {
-                resultTitle.textContent = '🎉 Идеальный результат!';
-                createConfetti(100);
-            } else if (accuracyPercentage >= 80) {
-                resultTitle.textContent = '🌟 Отличная работа!';
-            } else if (accuracyPercentage >= 60) {
-                resultTitle.textContent = '👍 Хорошо!';
-            } else {
-                resultTitle.textContent = '💪 Попробуйте еще раз!';
-            }
+
+        if (gameResult) {
+            gameResult.classList.add('show');
         }
+
+        // Stop any ongoing hanging animations
+        const hangmanBody = document.getElementById('hangman-body');
+        if (hangmanBody) hangmanBody.classList.remove('hanging');
+        const hangmanContainer = document.querySelector('.hangman-container');
+        if (hangmanContainer) hangmanContainer.classList.remove('game-over'); // ensure this class is added for fadeout
         
-        // Show result
-        if (gameResult) gameResult.classList.add('show');
-        
-        // Add event listeners for result buttons
-        if (playAgainBtn) playAgainBtn.addEventListener('click', initializeGame);
-        if (backToMenuBtn) backToMenuBtn.addEventListener('click', () => {
-            window.location.href = backToMenuBtn.dataset.menuUrl || '/'; // Assuming you might add a data-attribute for the URL
-        });
-        // Ensure backToSettingsBtn is handled if it exists from 'ideas' context
-        if (typeof backToSettingsBtn !== 'undefined' && backToSettingsBtn) {
-            backToSettingsBtn.addEventListener('click', () => {
-                 window.location.href = backToSettingsBtn.dataset.settingsUrl || '/'; // Or appropriate settings URL
-            });
-        }
+        // Optionally, add game-over class for fade-out if it's not added elsewhere
+        // if (hangmanContainer) hangmanContainer.classList.add('game-over'); 
     }
     
     function createConfetti(count) {
@@ -552,4 +542,5 @@ document.addEventListener('DOMContentLoaded', function() {
             guessLetter(key);
         }
     });
+});
 });
