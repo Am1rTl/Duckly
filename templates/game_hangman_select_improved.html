@@ -421,6 +421,27 @@
     transform: none;
   }
 
+  .word-count-info {
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 25px 0;
+    text-align: center;
+  }
+
+  .word-count-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #667eea;
+    display: block;
+  }
+
+  .word-count-label {
+    font-size: 1rem;
+    color: #666;
+    margin-top: 8px;
+  }
+
   /* Адаптивность */
   @media (max-width: 768px) {
     .form-container {
@@ -557,6 +578,12 @@
           </div>
         </div>
 
+        <!-- Информация о количестве слов -->
+        <div class="word-count-info" id="wordCountInfo" style="display: none;">
+          <span class="word-count-number" id="totalWordsCount">0</span>
+          <div class="word-count-label">доступных слов для игры</div>
+        </div>
+
         <!-- Настройки игры -->
         <div class="game-settings">
           <div class="section-title">
@@ -663,11 +690,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const timerOptions = document.getElementById('timerOptions');
     const timerOptionBtns = document.querySelectorAll('.timer-option');
     const hangmanForm = document.getElementById('hangmanForm');
+    const wordCountInfo = document.getElementById('wordCountInfo');
+    const totalWordsCount = document.getElementById('totalWordsCount');
     
     let selectedMode = 'specific';
     let selectedDifficulty = 'medium';
     let selectedTimer = 300;
     let availableModules = [];
+    let totalAvailableWords = 0;
 
     // Initialize
     updateModeSelection();
@@ -683,8 +713,46 @@ document.addEventListener('DOMContentLoaded', function() {
             selectedMode = mode;
             updateModeSelection();
             updateFormVisibility();
+            updateWordCount();
         });
     });
+
+    function updateWordCount() {
+        const className = classSelect.value;
+        const unitName = unitSelect.value;
+        const moduleName = moduleSelect.value;
+
+        if (!className) {
+            totalAvailableWords = 0;
+            updateWordCountDisplay();
+            return;
+        }
+
+        switch(selectedMode) {
+            case 'specific':
+                if (unitName && moduleName) {
+                    loadWordCountForModule(className, unitName, moduleName);
+                } else {
+                    totalAvailableWords = 0;
+                    updateWordCountDisplay();
+                }
+                break;
+            case 'unit':
+                if (unitName) {
+                    loadWordCountForUnit(className, unitName);
+                } else {
+                    totalAvailableWords = 0;
+                    updateWordCountDisplay();
+                }
+                break;
+            case 'class':
+                loadWordCountForClass(className);
+                break;
+            case 'multiple':
+                updateWordCountForMultipleModules();
+                break;
+        }
+    }
 
     function updateModeSelection() {
         modeCards.forEach(card => {
@@ -735,6 +803,99 @@ document.addEventListener('DOMContentLoaded', function() {
     wordsCount.addEventListener('input', function() {
         wordsCountValue.textContent = this.value + ' слов';
     });
+
+    function updateWordCountDisplay() {
+        if (totalAvailableWords > 0) {
+            totalWordsCount.textContent = totalAvailableWords;
+            wordCountInfo.style.display = 'block';
+            
+            // Update slider max value to available words count
+            const actualMax = Math.min(totalAvailableWords, 100); // Максимум 100 слов для удобства
+            wordsCount.max = actualMax;
+            document.querySelector('.range-labels span:last-child').textContent = actualMax;
+            
+            // Set default value to reasonable amount or current value if valid
+            const currentValue = parseInt(wordsCount.value);
+            const minValue = Math.min(5, Math.max(1, totalAvailableWords));
+            if (currentValue > actualMax || currentValue < minValue) {
+                const defaultValue = Math.min(Math.max(Math.floor(actualMax / 3), minValue), 15);
+                wordsCount.value = defaultValue;
+                wordsCountValue.textContent = defaultValue + ' слов';
+            }
+            
+            // Update min value
+            wordsCount.min = Math.min(5, Math.max(1, totalAvailableWords));
+            document.querySelector('.range-labels span:first-child').textContent = wordsCount.min;
+        } else {
+            wordCountInfo.style.display = 'none';
+            wordsCount.max = 50;
+            wordsCount.min = 5;
+            document.querySelector('.range-labels span:last-child').textContent = '50';
+            document.querySelector('.range-labels span:first-child').textContent = '5';
+        }
+    }
+
+    function loadWordCountForClass(className) {
+        fetch(`/get_word_count?class_name=${encodeURIComponent(className)}`)
+            .then(response => response.json())
+            .then(data => {
+                totalAvailableWords = data.count;
+                updateWordCountDisplay();
+            })
+            .catch(error => {
+                console.error('Error fetching word count:', error);
+            });
+    }
+
+    function loadWordCountForUnit(className, unitName) {
+        fetch(`/get_word_count?class_name=${encodeURIComponent(className)}&unit_name=${encodeURIComponent(unitName)}`)
+            .then(response => response.json())
+            .then(data => {
+                totalAvailableWords = data.count;
+                updateWordCountDisplay();
+            })
+            .catch(error => {
+                console.error('Error fetching word count:', error);
+            });
+    }
+
+    function loadWordCountForModule(className, unitName, moduleName) {
+        fetch(`/get_word_count?class_name=${encodeURIComponent(className)}&unit_name=${encodeURIComponent(unitName)}&module_name=${encodeURIComponent(moduleName)}`)
+            .then(response => response.json())
+            .then(data => {
+                totalAvailableWords = data.count;
+                updateWordCountDisplay();
+            })
+            .catch(error => {
+                console.error('Error fetching word count:', error);
+            });
+    }
+
+    function updateWordCountForMultipleModules() {
+        const className = classSelect.value;
+        const unitName = unitSelect.value;
+        const selectedModules = Array.from(document.querySelectorAll('#modulesGrid input[type="checkbox"]:checked')).map(cb => cb.value);
+        
+        if (className && unitName && selectedModules.length > 0) {
+            const params = new URLSearchParams();
+            params.append('class_name', className);
+            params.append('unit_name', unitName);
+            selectedModules.forEach(module => params.append('modules', module));
+            
+            fetch(`/get_word_count?${params.toString()}`)
+                .then(response => response.json())
+                .then(data => {
+                    totalAvailableWords = data.count;
+                    updateWordCountDisplay();
+                })
+                .catch(error => {
+                    console.error('Error fetching word count:', error);
+                });
+        } else {
+            totalAvailableWords = 0;
+            updateWordCountDisplay();
+        }
+    }
 
     // Difficulty selection
     difficultyOptions.forEach(option => {
@@ -794,6 +955,8 @@ document.addEventListener('DOMContentLoaded', function() {
         moduleSelect.innerHTML = '<option value="">Сначала выберите юнит...</option>';
         moduleSelect.disabled = true;
         modulesGrid.innerHTML = '';
+        totalAvailableWords = 0;
+        updateWordCountDisplay();
 
         if (className) {
             fetch(`/get_units_for_class?class_name=${encodeURIComponent(className)}`)
@@ -807,6 +970,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     unitSelect.disabled = units.length === 0;
                     if (units.length === 0) {
                         unitSelect.innerHTML = '<option value="">Нет юнитов для этого класса</option>';
+                    }
+                    
+                    // Update word count for class mode
+                    if (selectedMode === 'class') {
+                        loadWordCountForClass(className);
                     }
                 })
                 .catch(error => {
@@ -855,11 +1023,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         checkboxDiv.addEventListener('click', function() {
                             const checkbox = this.querySelector('input[type="checkbox"]');
                             checkbox.checked = !checkbox.checked;
+                            updateWordCountForMultipleModules();
                         });
                     });
                     
                     if (modules.length === 0) {
                         moduleSelect.innerHTML = '<option value="">Нет модулей для этого юнита</option>';
+                    }
+                    
+                    // Update word count for unit mode
+                    if (selectedMode === 'unit') {
+                        loadWordCountForUnit(className, unitName);
                     }
                 })
                 .catch(error => {
@@ -868,6 +1042,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
         } else {
             moduleSelect.innerHTML = '<option value="">Сначала выберите юнит...</option>';
+        }
+    });
+
+    // Module selection
+    moduleSelect.addEventListener('change', function() {
+        const className = classSelect.value;
+        const unitName = unitSelect.value;
+        const moduleName = this.value;
+
+        if (className && unitName && moduleName && selectedMode === 'specific') {
+            loadWordCountForModule(className, unitName, moduleName);
         }
     });
 

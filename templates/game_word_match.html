@@ -166,6 +166,13 @@
         stroke: url(#incorrect-gradient);
         filter: drop-shadow(0 0 8px rgba(249, 65, 68, 0.6));
     }
+
+    .connection-curve.neutral {
+        stroke: #6c757d;
+        stroke-width: 3;
+        stroke-dasharray: 5, 5;
+        filter: drop-shadow(0 0 4px rgba(108, 117, 125, 0.4));
+    }
     
     @keyframes connectionAppear {
         0% {
@@ -311,6 +318,13 @@
 
     .btn-success {
         background: var(--success-gradient);
+    }
+
+    .game-controls .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
     }
 
     .btn-outline-primary {
@@ -493,7 +507,7 @@
 {% block content %}
 <div class="game-match-container">
     <div class="text-start mb-3">
-        <a href="{{ "/games" }}" class="btn btn-primary"><i class="fas fa-arrow-left"></i> Назад</a>
+        <a href="{{ url_for('word_match_select_module') }}" class="btn btn-primary"><i class="fas fa-arrow-left"></i> Назад к выбору</a>
     </div>
     
     <div class="module-info-match">
@@ -547,7 +561,7 @@
     <div id="game-feedback"></div>
 
     <div class="game-controls">
-        <button id="checkAnswersBtn" class="btn btn-primary">Показать результаты</button>
+        <button id="finishGameBtn" class="btn btn-success">Завершить игру</button>
         <button id="resetGameBtn" class="btn btn-warning">Начать заново</button>
     </div>
 

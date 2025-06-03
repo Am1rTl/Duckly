@@ -44,6 +44,30 @@
         flex-direction: column;
     }
 
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        color: white;
+        text-decoration: none;
+    }
+
     .game-header {
         background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(10px);
@@ -598,6 +622,10 @@
 
 {% block content %}
 <div class="hangman-game">
+    <div class="text-start mb-3">
+        <a href="{{ url_for('hangman_select_module') }}" class="btn btn-primary"><i class="fas fa-arrow-left"></i> Назад к выбору</a>
+    </div>
+    
     <div class="game-header">
         <div class="game-info">
             <h1>
@@ -727,7 +755,7 @@
 </div>
 
 <!-- Game Data -->
-<script id="gameWords" type="application/json">
+<script id="hangmanWords" type="application/json">
     {{ words_data | tojson | safe }}
 </script>
 <script id="gameSettings" type="application/json">
@@ -742,400 +770,5 @@
 
 {% block scripts %}
 {{ super() }}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Game Data
-    const wordsData = JSON.parse(document.getElementById('gameWords').textContent);
-    const gameSettings = JSON.parse(document.getElementById('gameSettings').textContent);
-    
-    // DOM Elements
-    const wordDisplay = document.getElementById('word-display');
-    const wordHint = document.getElementById('word-hint');
-    const alphabetGrid = document.getElementById('alphabet-grid');
-    const gameFeedback = document.getElementById('game-feedback');
-    const timerDisplay = document.getElementById('timer-display');
-    const currentWordSpan = document.getElementById('current-word');
-    const correctWordsSpan = document.getElementById('correct-words');
-    const wrongGuessesSpan = document.getElementById('wrong-guesses');
-    const gameResult = document.getElementById('gameResult');
-    
-    // Control buttons
-    const hintBtn = document.getElementById('hintBtn');
-    const skipWordBtn = document.getElementById('skipWordBtn');
-    const resetGameBtn = document.getElementById('resetGameBtn');
-    const playAgainBtn = document.getElementById('playAgainBtn');
-    const backToMenuBtn = document.getElementById('backToMenuBtn');
-    
-    // Hangman parts
-    const hangmanParts = ['head', 'body', 'leftArm', 'rightArm', 'leftLeg', 'rightLeg'];
-    
-    // Game State
-    let currentWordIndex = 0;
-    let currentWord = '';
-    let currentTranslation = '';
-    let guessedLetters = [];
-    let wrongGuesses = 0;
-    let correctWords = 0;
-    let gameActive = true;
-    let hintUsed = false;
-    let timerInterval = null;
-    let timeElapsed = 0;
-    let gameStartTime = Date.now();
-    
-    // Initialize game
-    initializeGame();
-    
-    function initializeGame() {
-        // Reset game state
-        currentWordIndex = 0;
-        correctWords = 0;
-        gameActive = true;
-        gameStartTime = Date.now();
-        
-        // Update UI
-        correctWordsSpan.textContent = '0';
-        
-        // Create alphabet
-        createAlphabet();
-        
-        // Start first word
-        startNewWord();
-        
-        // Start timer if enabled
-        if (gameSettings.timerDuration > 0) {
-            startTimer();
-        } else if (gameSettings.enableStopwatch) {
-            startStopwatch();
-        }
-    }
-    
-    function createAlphabet() {
-        alphabetGrid.innerHTML = '';
-        for (let i = 65; i <= 90; i++) {
-            const letter = String.fromCharCode(i);
-            const btn = document.createElement('button');
-            btn.className = 'letter-btn';
-            btn.innerHTML = `<span>${letter}</span>`;
-            btn.dataset.letter = letter.toLowerCase();
-            btn.addEventListener('click', () => guessLetter(letter.toLowerCase()));
-            alphabetGrid.appendChild(btn);
-        }
-    }
-    
-    function startNewWord() {
-        if (currentWordIndex >= wordsData.length) {
-            endGame();
-            return;
-        }
-        
-        const wordData = wordsData[currentWordIndex];
-        currentWord = wordData.word.toLowerCase();
-        currentTranslation = wordData.translation;
-        guessedLetters = [];
-        wrongGuesses = 0;
-        hintUsed = false;
-        
-        // Update UI
-        currentWordSpan.textContent = currentWordIndex + 1;
-        wrongGuessesSpan.textContent = '0';
-        
-        // Reset hangman
-        hangmanParts.forEach(part => {
-            const element = document.getElementById(part);
-            element.classList.remove('show');
-        });
-        
-        // Reset alphabet
-        document.querySelectorAll('.letter-btn').forEach(btn => {
-            btn.classList.remove('correct', 'incorrect');
-            btn.disabled = false;
-        });
-        
-        // Create word display
-        createWordDisplay();
-        
-        // Hide hint initially
-        wordHint.classList.remove('show');
-        
-        // Hide feedback
-        hideFeedback();
-    }
-    
-    function createWordDisplay() {
-        wordDisplay.innerHTML = '';
-        for (let i = 0; i < currentWord.length; i++) {
-            const letterSlot = document.createElement('div');
-            letterSlot.className = 'letter-slot';
-            letterSlot.dataset.index = i;
-            
-            if (currentWord[i] === ' ') {
-                letterSlot.style.border = 'none';
-                letterSlot.style.background = 'transparent';
-            }
-            
-            wordDisplay.appendChild(letterSlot);
-        }
-    }
-    
-    function guessLetter(letter) {
-        if (!gameActive || guessedLetters.includes(letter)) return;
-        
-        guessedLetters.push(letter);
-        const btn = document.querySelector(`[data-letter="${letter}"]`);
-        
-        if (currentWord.includes(letter)) {
-            // Correct guess
-            btn.classList.add('correct');
-            btn.disabled = true;
-            
-            // Reveal letters
-            for (let i = 0; i < currentWord.length; i++) {
-                if (currentWord[i] === letter) {
-                    const slot = document.querySelector(`[data-index="${i}"]`);
-                    slot.textContent = letter.toUpperCase();
-                    slot.classList.add('filled');
-                }
-            }
-            
-            // Check if word is complete
-            if (isWordComplete()) {
-                setTimeout(() => {
-                    wordCompleted();
-                }, 500);
-            }
-            
-            showFeedback('Правильно!', 'success');
-        } else {
-            // Wrong guess
-            btn.classList.add('incorrect');
-            btn.disabled = true;
-            wrongGuesses++;
-            wrongGuessesSpan.textContent = wrongGuesses;
-            
-            // Show hangman part
-            if (wrongGuesses <= hangmanParts.length) {
-                const part = document.getElementById(hangmanParts[wrongGuesses - 1]);
-                part.classList.add('show');
-            }
-            
-            showFeedback('Неправильно!', 'error');
-            
-            // Check if game over
-            if (wrongGuesses >= gameSettings.maxMistakes) {
-                setTimeout(() => {
-                    wordFailed();
-                }, 500);
-            }
-        }
-    }
-    
-    function isWordComplete() {
-        for (let i = 0; i < currentWord.length; i++) {
-            if (currentWord[i] !== ' ' && !guessedLetters.includes(currentWord[i])) {
-                return false;
-            }
-        }
-        return true;
-    }
-    
-    function wordCompleted() {
-        correctWords++;
-        correctWordsSpan.textContent = correctWords;
-        showFeedback('Слово угадано!', 'success');
-        
-        // Create celebration effect
-        createConfetti(50);
-        
-        setTimeout(() => {
-            nextWord();
-        }, 2000);
-    }
-    
-    function wordFailed() {
-        // Reveal the word
-        for (let i = 0; i < currentWord.length; i++) {
-            if (currentWord[i] !== ' ') {
-                const slot = document.querySelector(`[data-index="${i}"]`);
-                if (!slot.classList.contains('filled')) {
-                    slot.textContent = currentWord[i].toUpperCase();
-                    slot.style.background = 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)';
-                    slot.style.color = 'white';
-                }
-            }
-        }
-        
-        showFeedback(`Слово: ${currentWord.toUpperCase()}`, 'error');
-        
-        setTimeout(() => {
-            nextWord();
-        }, 3000);
-    }
-    
-    function nextWord() {
-        currentWordIndex++;
-        if (currentWordIndex < wordsData.length) {
-            startNewWord();
-        } else {
-            endGame();
-        }
-    }
-    
-    function showHint() {
-        if (hintUsed) return;
-        
-        hintUsed = true;
-        wordHint.textContent = `Перевод: ${currentTranslation}`;
-        wordHint.classList.add('show');
-        hintBtn.disabled = true;
-        hintBtn.style.opacity = '0.5';
-        
-        showFeedback('Подсказка показана!', 'info');
-    }
-    
-    function skipWord() {
-        showFeedback('Слово пропущено', 'info');
-        setTimeout(() => {
-            nextWord();
-        }, 1000);
-    }
-    
-    function startTimer() {
-        let timeRemaining = gameSettings.timerDuration;
-        
-        timerInterval = setInterval(() => {
-            timeRemaining--;
-            updateTimerDisplay(timeRemaining, true);
-            
-            if (timeRemaining <= 0) {
-                clearInterval(timerInterval);
-                endGame();
-            }
-        }, 1000);
-    }
-    
-    function startStopwatch() {
-        timerInterval = setInterval(() => {
-            timeElapsed++;
-            updateTimerDisplay(timeElapsed, false);
-        }, 1000);
-    }
-    
-    function updateTimerDisplay(time, isCountdown) {
-        if (!timerDisplay) return;
-        
-        if (isCountdown) {
-            timerDisplay.textContent = time + 'с';
-            timerDisplay.className = '';
-            
-            if (time <= 10) {
-                timerDisplay.classList.add('danger');
-            } else if (time <= 30) {
-                timerDisplay.classList.add('warning');
-            }
-        } else {
-            const minutes = Math.floor(time / 60);
-            const seconds = time % 60;
-            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        }
-    }
-    
-    function showFeedback(message, type) {
-        gameFeedback.textContent = message;
-        gameFeedback.className = `game-feedback feedback-${type} show`;
-        
-        setTimeout(() => {
-            hideFeedback();
-        }, 2000);
-    }
-    
-    function hideFeedback() {
-        gameFeedback.classList.remove('show');
-    }
-    
-    function endGame() {
-        gameActive = false;
-        if (timerInterval) {
-            clearInterval(timerInterval);
-        }
-        
-        // Calculate stats
-        const gameTime = Math.floor((Date.now() - gameStartTime) / 1000);
-        const accuracy = Math.round((correctWords / wordsData.length) * 100);
-        
-        // Update result display
-        document.getElementById('finalCorrect').textContent = correctWords;
-        document.getElementById('finalAccuracy').textContent = accuracy + '%';
-        
-        const finalTimeEl = document.getElementById('finalTime');
-        if (finalTimeEl) {
-            if (gameSettings.enableStopwatch) {
-                const minutes = Math.floor(gameTime / 60);
-                const seconds = gameTime % 60;
-                finalTimeEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            } else {
-                finalTimeEl.textContent = gameTime + 'с';
-            }
-        }
-        
-        // Show result modal
-        gameResult.style.display = 'flex';
-        setTimeout(() => {
-            gameResult.classList.add('show');
-        }, 100);
-        
-        // Celebration for good performance
-        if (accuracy >= 80) {
-            createConfetti(100);
-        }
-    }
-    
-    function createConfetti(count) {
-        const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd', '#98d8c8'];
-        
-        for (let i = 0; i < count; i++) {
-            const confetti = document.createElement('div');
-            confetti.className = 'confetti';
-            confetti.style.left = Math.random() * 100 + 'vw';
-            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-            confetti.style.animationDuration = Math.random() * 3 + 2 + 's';
-            confetti.style.animationDelay = Math.random() * 2 + 's';
-            document.body.appendChild(confetti);
-            
-            setTimeout(() => {
-                confetti.remove();
-            }, 5000);
-        }
-    }
-    
-    // Event Listeners
-    hintBtn.addEventListener('click', showHint);
-    skipWordBtn.addEventListener('click', skipWord);
-    resetGameBtn.addEventListener('click', () => {
-        if (timerInterval) clearInterval(timerInterval);
-        gameResult.classList.remove('show');
-        gameResult.style.display = 'none';
-        initializeGame();
-    });
-    
-    playAgainBtn.addEventListener('click', () => {
-        gameResult.classList.remove('show');
-        gameResult.style.display = 'none';
-        initializeGame();
-    });
-    
-    backToMenuBtn.addEventListener('click', () => {
-        window.location.href = '/games';
-    });
-    
-    // Keyboard support
-    document.addEventListener('keydown', (e) => {
-        if (!gameActive) return;
-        
-        const key = e.key.toLowerCase();
-        if (key >= 'a' && key <= 'z') {
-            guessLetter(key);
-        }
-    });
-});
-</script>
+<script src="{{ url_for('static', filename='js/game_hangman.js') }}"></script>
 {% endblock %}

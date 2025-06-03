@@ -1066,19 +1066,30 @@ document.addEventListener('DOMContentLoaded', function() {
             totalWordsCount.textContent = totalAvailableWords;
             wordCountInfo.style.display = 'block';
             
-            // Update slider max value
-            cardsCount.max = totalAvailableWords;
-            maxCardsLabel.textContent = totalAvailableWords;
+            // Update slider max value to available words count
+            // Each pair consists of one word and its translation, so max pairs = total words available
+            const actualMax = Math.max(3, Math.min(totalAvailableWords, 50)); // Минимум 3, максимум 50 пар
+            cardsCount.max = actualMax;
+            maxCardsLabel.textContent = actualMax;
             
-            // Adjust current value if it exceeds available words
-            if (parseInt(cardsCount.value) > totalAvailableWords) {
-                cardsCount.value = totalAvailableWords;
-                cardsCountValue.textContent = totalAvailableWords + ' пар';
+            // Set default value to reasonable amount or current value if valid
+            const currentValue = parseInt(cardsCount.value);
+            const minValue = Math.min(3, Math.max(1, totalAvailableWords));
+            if (currentValue > actualMax || currentValue < minValue) {
+                const defaultValue = Math.min(Math.max(Math.floor(actualMax / 2), minValue), 8);
+                cardsCount.value = defaultValue;
+                cardsCountValue.textContent = defaultValue + ' пар';
             }
+            
+            // Update min value
+            cardsCount.min = Math.min(3, Math.max(1, totalAvailableWords));
+            document.querySelector('.range-labels span:first-child').textContent = cardsCount.min;
         } else {
             wordCountInfo.style.display = 'none';
             cardsCount.max = 50;
+            cardsCount.min = 3;
             maxCardsLabel.textContent = '50';
+            document.querySelector('.range-labels span:first-child').textContent = '3';
         }
     }
 

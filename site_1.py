@@ -2618,7 +2618,7 @@ def word_match_game(class_name, unit_name=None, module_name=None):
 
     # Получаем параметры игры из URL
     mode = request.args.get('mode', 'specific')
-    cards_count = int(request.args.get('cards', 8))
+    cards_count = int(request.args.get('cards', 8))  # Количество пар слов
     timer_duration = int(request.args.get('timer', 0))
     enable_stopwatch = request.args.get('stopwatch') == 'true'
     selected_modules = request.args.get('modules', '').split(',') if request.args.get('modules') else []
@@ -2667,7 +2667,7 @@ def word_match_game(class_name, unit_name=None, module_name=None):
         flash(f"Для выбранных параметров не найдено слов.", "warning")
         return redirect(url_for('word_match_select_module'))
 
-    # Ограничиваем количество карточек доступным количеством слов
+    # Ограничиваем количество пар доступным количеством слов
     max_pairs = len(all_words)
     num_pairs = min(cards_count, max_pairs)
 
@@ -2817,7 +2817,7 @@ def hangman_game(class_name, unit_name, module_name):
         game_words.append({
             'id': word_obj.id,
             'word': word_obj.word.upper(),  # Uppercase for hangman
-            'translation': word_obj.translation,
+            'translation': word_obj.perevod,
             'definition': getattr(word_obj, 'definition', ''),
             'example': getattr(word_obj, 'example', '')
         })

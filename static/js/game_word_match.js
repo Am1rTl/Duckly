@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const jumbledWordsEl = document.getElementById('jumbledWords');
     const jumbledTranslationsEl = document.getElementById('jumbledTranslations');
     const gameSettingsEl = document.getElementById('gameSettings');
-    const checkAnswersBtn = document.getElementById('checkAnswersBtn');
+    const finishGameBtn = document.getElementById('finishGameBtn');
     const resetGameBtn = document.getElementById('resetGameBtn');
     const scoreDisplay = document.getElementById('current-score');
     const totalPairsDisplay = document.getElementById('total-pairs');
@@ -104,6 +104,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update UI
         if (scoreDisplay) scoreDisplay.textContent = "0";
         if (totalPairsDisplay) totalPairsDisplay.textContent = totalPairs;
+        
+        // Reset finish button
+        if (finishGameBtn) {
+            finishGameBtn.disabled = false;
+            finishGameBtn.textContent = 'Завершить игру';
+        }
         
         // Clear columns
         wordsColumn.innerHTML = '<h3>Слова</h3>';
@@ -231,13 +237,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         attemptCount++;
         
-        // Add class depending on correctness
-        if (isCorrect) {
-            path.classList.add('correct');
-            correctPairs++;
-        } else {
-            path.classList.add('incorrect');
-        }
+        // Don't show correctness immediately - just mark as neutral
+        path.classList.add('neutral');
         
         // Add path to SVG
         connectionsSvg.appendChild(path);
@@ -250,18 +251,9 @@ document.addEventListener('DOMContentLoaded', function() {
             isCorrect: isCorrect
         });
         
-        // Mark cards as paired
+        // Mark cards as paired (neutral style)
         selectedWordItem.classList.add('paired');
         selectedTranslationItem.classList.add('paired');
-        
-        // Add correctness/incorrectness class
-        if (isCorrect) {
-            selectedWordItem.classList.add('correct-paired');
-            selectedTranslationItem.classList.add('correct-paired');
-        } else {
-            selectedWordItem.classList.add('incorrect-paired');
-            selectedTranslationItem.classList.add('incorrect-paired');
-        }
         
         // Reset selection
         selectedWordItem.classList.remove('selected');
@@ -273,13 +265,22 @@ document.addEventListener('DOMContentLoaded', function() {
         currentScore++;
         if (scoreDisplay) scoreDisplay.textContent = currentScore;
         
-        // Check game completion
+        // Check if all words are paired
         if (currentScore === totalPairs) {
-            endGame(true);
+            // All words are paired - show results and end game
+            setTimeout(() => {
+                revealResults();
+                setTimeout(() => {
+                    endGame(true);
+                }, 2000); // Show results for 2 seconds before showing final modal
+            }, 500); // Small delay to let the last connection animation finish
         }
     }
 
     function breakConnection(card) {
+        // Don't allow breaking connections after game is completed
+        if (gameCompleted) return;
+        
         // Find connection containing this card
         const connectionIndex = connections.findIndex(conn => 
             conn.wordItem === card || conn.translationItem === card
@@ -383,11 +384,36 @@ document.addEventListener('DOMContentLoaded', function() {
     function revealResults() {
         if (gameCompleted) return;
         
-        // Connections are already marked as correct/incorrect when created
-        // Just show feedback
+        correctPairs = 0; // Reset and recalculate
+        
+        // Go through all connections and reveal their correctness
+        connections.forEach(connection => {
+            if (connection.isCorrect) {
+                correctPairs++;
+                // Mark as correct
+                connection.element.classList.remove('neutral');
+                connection.element.classList.add('correct');
+                connection.wordItem.classList.add('correct-paired');
+                connection.translationItem.classList.add('correct-paired');
+            } else {
+                // Mark as incorrect
+                connection.element.classList.remove('neutral');
+                connection.element.classList.add('incorrect');
+                connection.wordItem.classList.add('incorrect-paired');
+                connection.translationItem.classList.add('incorrect-paired');
+            }
+        });
+        
+        // Show feedback
         showFeedback(`Правильных пар: ${correctPairs} из ${currentScore}`, 'info');
         
         gameCompleted = true;
+        
+        // Disable finish button
+        if (finishGameBtn) {
+            finishGameBtn.disabled = true;
+            finishGameBtn.textContent = 'Игра завершена';
+        }
     }
 
     function endGame(completed) {
@@ -398,8 +424,10 @@ document.addEventListener('DOMContentLoaded', function() {
             clearInterval(timerInterval);
         }
         
-        // Reveal correct and incorrect pairs
-        revealResults();
+        // Reveal correct and incorrect pairs if not already revealed
+        if (!gameCompleted) {
+            revealResults();
+        }
         
         // Calculate stats
         const gameTimeSeconds = Math.floor((gameEndTime - gameStartTime) / 1000);
@@ -459,12 +487,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Event Listeners
-    if (checkAnswersBtn) {
-        checkAnswersBtn.addEventListener('click', () => {
-            // Check answers and reveal results
+    if (finishGameBtn) {
+        finishGameBtn.addEventListener('click', () => {
+            // Finish game and reveal results
             if (currentScore > 0 && !gameCompleted) {
                 revealResults();
-                showFeedback(`Правильных пар: ${correctPairs} из ${currentScore}`, 'info');
+                setTimeout(() => {
+                    endGame(true);
+                }, 2000); // Show results for 2 seconds before showing final modal
             } else {
                 showFeedback('Сначала сопоставьте слова с их переводами!', 'info');
             }
@@ -489,7 +519,7 @@ document.addEventListener('DOMContentLoaded', function() {
             initializeGame();
         } else {
             showFeedback("Нет слов для игры в этом модуле.", "error");
-            if (checkAnswersBtn) checkAnswersBtn.disabled = true;
+            if (finishGameBtn) finishGameBtn.disabled = true;
             if (resetGameBtn) resetGameBtn.disabled = true;
         }
     }
