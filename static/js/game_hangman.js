@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const skipWordBtn = document.getElementById('skipWordBtn');
     const resetGameBtn = document.getElementById('resetGameBtn');
     const playAgainBtn = document.getElementById('playAgainBtn');
+    const backToMenuBtn = document.getElementById('backToMenuBtn');
     const backToSettingsBtn = document.getElementById('backToSettingsBtn');
     
     // Hangman parts
@@ -44,6 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let wrongGuesses = 0;
     let totalCorrectWords = 0;
     let totalAttempts = 0;
+    let totalWrongGuesses = 0; // Общий счетчик ошибок за всю игру
     let gameActive = true;
     let hintUsed = false;
     let gameStartTime = Date.now();
@@ -59,6 +61,7 @@ document.addEventListener('DOMContentLoaded', function() {
         currentWordIndex = 0;
         totalCorrectWords = 0;
         totalAttempts = 0;
+        totalWrongGuesses = 0;
         gameActive = true;
         gameStartTime = Date.now();
         gameEndTime = null;
@@ -127,7 +130,11 @@ document.addEventListener('DOMContentLoaded', function() {
         hintUsed = false;
         
         // Reset hangman
-        hangmanParts.forEach(part => part.style.display = 'none');
+        hangmanParts.forEach(part => {
+            if (part) {
+                part.classList.remove('show');
+            }
+        });
         
         // Reset alphabet
         document.querySelectorAll('.letter-btn').forEach(btn => {
@@ -135,11 +142,15 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.disabled = false;
         });
         
+        // Reset hint display
+        wordHint.classList.remove('show');
+        
         // Create word display
         createWordDisplay();
         
         // Show translation as hint
         wordHint.textContent = `Перевод: ${wordData.translation}`;
+        wordHint.classList.add('show');
         
         // Update stats
         updateStats();
@@ -180,12 +191,17 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.classList.add('correct');
             btn.disabled = true;
             
-            // Reveal letters
+            // Reveal letters with animation delay
             const slots = document.querySelectorAll(`[data-letter="${letter}"]`);
-            slots.forEach(slot => {
+            slots.forEach((slot, index) => {
                 if (slot.classList.contains('letter-slot')) {
-                    slot.textContent = letter;
-                    slot.classList.add('revealed');
+                    setTimeout(() => {
+                        slot.textContent = letter;
+                        slot.classList.add('revealed');
+                        
+                        // Add sparkle effect
+                        createSparkle(slot);
+                    }, index * 100); // Delay each letter slightly
                     correctGuesses++;
                 }
             });
@@ -202,10 +218,20 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.classList.add('incorrect');
             btn.disabled = true;
             wrongGuesses++;
+            totalWrongGuesses++; // Увеличиваем общий счетчик ошибок
             
-            // Show hangman part
-            if (wrongGuesses <= hangmanParts.length) {
-                hangmanParts[wrongGuesses - 1].style.display = 'block';
+            // Show hangman part with animation
+            if (wrongGuesses <= hangmanParts.length && hangmanParts[wrongGuesses - 1]) {
+                setTimeout(() => {
+                    hangmanParts[wrongGuesses - 1].classList.add('show');
+                    
+                    // Add shake effect to the whole hangman container
+                    const hangmanContainer = document.querySelector('.hangman-container');
+                    hangmanContainer.style.animation = 'shake 0.5s ease-in-out';
+                    setTimeout(() => {
+                        hangmanContainer.style.animation = '';
+                    }, 500);
+                }, 200);
             }
             
             // Check if game over
@@ -248,9 +274,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function updateStats() {
-        currentWordSpan.textContent = currentWordIndex + 1;
-        correctWordsSpan.textContent = totalCorrectWords;
-        wrongGuessesSpan.textContent = wrongGuesses;
+        if (currentWordSpan) currentWordSpan.textContent = currentWordIndex + 1;
+        if (totalWordsSpan) totalWordsSpan.textContent = wordsData.length;
+        if (correctWordsSpan) correctWordsSpan.textContent = totalCorrectWords;
+        if (wrongGuessesSpan) wrongGuessesSpan.textContent = totalWrongGuesses; // Показываем общий счетчик ошибок
     }
     
     function showHint() {
@@ -272,6 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         wordHint.textContent = hintText;
+        wordHint.classList.add('show');
         showFeedback('Подсказка показана!', 'info');
     }
     
@@ -328,16 +356,28 @@ document.addEventListener('DOMContentLoaded', function() {
             const seconds = timeRemaining % 60;
             timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             timerDisplay.className = 'stat-value';
-        } else {
+            timerDisplay.style.color = 'white';
+            timerDisplay.style.fontSize = '1.5rem';
+            timerDisplay.style.fontWeight = 'bold';
+        } else if (gameSettings.timerDuration > 0) {
             // Timer - show remaining time
             timerDisplay.textContent = timeRemaining + 'с';
             
             // Update timer color based on time remaining
             timerDisplay.className = 'stat-value';
+            timerDisplay.style.fontSize = '1.5rem';
+            timerDisplay.style.fontWeight = 'bold';
+            
             if (timeRemaining <= 10) {
+                timerDisplay.style.color = '#ff4444';
                 timerDisplay.classList.add('danger');
             } else if (timeRemaining <= 30) {
+                timerDisplay.style.color = '#ffaa00';
+                timerDisplay.classList.remove('danger');
                 timerDisplay.classList.add('warning');
+            } else {
+                timerDisplay.style.color = 'white';
+                timerDisplay.classList.remove('danger', 'warning');
             }
         }
     }
@@ -403,11 +443,58 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    function createSparkle(element) {
+        const sparkleCount = 5;
+        const rect = element.getBoundingClientRect();
+        
+        for (let i = 0; i < sparkleCount; i++) {
+            const sparkle = document.createElement('div');
+            sparkle.style.position = 'fixed';
+            sparkle.style.left = (rect.left + rect.width / 2) + 'px';
+            sparkle.style.top = (rect.top + rect.height / 2) + 'px';
+            sparkle.style.width = '4px';
+            sparkle.style.height = '4px';
+            sparkle.style.background = '#FFD700';
+            sparkle.style.borderRadius = '50%';
+            sparkle.style.pointerEvents = 'none';
+            sparkle.style.zIndex = '9999';
+            
+            const angle = (i / sparkleCount) * Math.PI * 2;
+            const distance = 30 + Math.random() * 20;
+            const endX = Math.cos(angle) * distance;
+            const endY = Math.sin(angle) * distance;
+            
+            sparkle.style.animation = `sparkle 0.6s ease-out forwards`;
+            sparkle.style.setProperty('--endX', endX + 'px');
+            sparkle.style.setProperty('--endY', endY + 'px');
+            
+            document.body.appendChild(sparkle);
+            
+            setTimeout(() => {
+                sparkle.remove();
+            }, 600);
+        }
+    }
+    
     // Event Listeners
-    hintBtn.addEventListener('click', showHint);
-    skipWordBtn.addEventListener('click', skipWord);
-    resetGameBtn.addEventListener('click', initializeGame);
-    playAgainBtn.addEventListener('click', initializeGame);
+    if (hintBtn) hintBtn.addEventListener('click', showHint);
+    if (skipWordBtn) skipWordBtn.addEventListener('click', skipWord);
+    if (resetGameBtn) resetGameBtn.addEventListener('click', initializeGame);
+    if (playAgainBtn) playAgainBtn.addEventListener('click', initializeGame);
+    
+    // Back to settings button
+    if (backToSettingsBtn) {
+        backToSettingsBtn.addEventListener('click', () => {
+            window.location.href = '/games/hangman/select';
+        });
+    }
+    
+    // Back to menu button
+    if (backToMenuBtn) {
+        backToMenuBtn.addEventListener('click', () => {
+            window.location.href = '/games/hangman/select';
+        });
+    }
     
     // Keyboard support
     document.addEventListener('keydown', function(event) {
@@ -418,20 +505,4 @@ document.addEventListener('DOMContentLoaded', function() {
             guessLetter(key);
         }
     });
-    
-    // Back to settings button
-    if (backToSettingsBtn) {
-        backToSettingsBtn.addEventListener('click', () => {
-            const params = new URLSearchParams();
-            params.append('words', '{{ num_words }}');
-            params.append('difficulty', '{{ difficulty }}');
-            {% if timer_duration > 0 %}
-            params.append('timer', '{{ timer_duration }}');
-            {% elif enable_stopwatch %}
-            params.append('stopwatch', 'true');
-            {% endif %}
-            
-            window.location.href = '{{ url_for("hangman_select_module") }}?' + params.toString();
-        });
-    }
 });

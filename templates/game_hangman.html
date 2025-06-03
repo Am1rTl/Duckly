@@ -54,12 +54,12 @@
                 <line x1="120" y1="20" x2="120" y2="50" stroke="#8B4513" stroke-width="4"/>
                 
                 <!-- Body parts (initially hidden) -->
-                <circle id="head" cx="120" cy="60" r="10" stroke="#000" stroke-width="2" fill="none" style="display: none"/>
-                <line id="body" x1="120" y1="70" x2="120" y2="150" stroke="#000" stroke-width="2" style="display: none"/>
-                <line id="leftArm" x1="120" y1="100" x2="90" y2="120" stroke="#000" stroke-width="2" style="display: none"/>
-                <line id="rightArm" x1="120" y1="100" x2="150" y2="120" stroke="#000" stroke-width="2" style="display: none"/>
-                <line id="leftLeg" x1="120" y1="150" x2="90" y2="180" stroke="#000" stroke-width="2" style="display: none"/>
-                <line id="rightLeg" x1="120" y1="150" x2="150" y2="180" stroke="#000" stroke-width="2" style="display: none"/>
+                <circle id="head" cx="120" cy="60" r="10" stroke="#000" stroke-width="2" fill="none" class="hangman-part"/>
+                <line id="body" x1="120" y1="70" x2="120" y2="150" stroke="#000" stroke-width="2" class="hangman-part"/>
+                <line id="leftArm" x1="120" y1="100" x2="90" y2="120" stroke="#000" stroke-width="2" class="hangman-part"/>
+                <line id="rightArm" x1="120" y1="100" x2="150" y2="120" stroke="#000" stroke-width="2" class="hangman-part"/>
+                <line id="leftLeg" x1="120" y1="150" x2="90" y2="180" stroke="#000" stroke-width="2" class="hangman-part"/>
+                <line id="rightLeg" x1="120" y1="150" x2="150" y2="180" stroke="#000" stroke-width="2" class="hangman-part"/>
             </svg>
         </div>
 
@@ -134,7 +134,7 @@
     </div>
 
     <div class="mt-4 text-center">
-        <a href="{{ url_for('hangman_select_module') }}" class="btn btn-outline-secondary">
+        <a href="{{ url_for('hangman_select_module') }}" class="btn btn-outline-secondary back-button">
             <i class="fas fa-arrow-left"></i> Выбрать другой модуль
         </a>
     </div>
@@ -265,13 +265,35 @@
 .letter-slot.revealed {
     color: #4CAF50;
     border-color: #4CAF50;
-    animation: letterReveal 0.5s ease;
+    animation: letterReveal 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    background: rgba(76, 175, 80, 0.1);
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
 }
 
 @keyframes letterReveal {
-    0% { transform: scale(0.5); opacity: 0; }
-    50% { transform: scale(1.2); }
-    100% { transform: scale(1); opacity: 1; }
+    0% { 
+        transform: scale(0.3) rotateY(180deg); 
+        opacity: 0;
+        color: transparent;
+    }
+    25% {
+        transform: scale(0.6) rotateY(90deg);
+        opacity: 0.5;
+    }
+    50% { 
+        transform: scale(1.3) rotateY(0deg); 
+        opacity: 0.8;
+        color: #4CAF50;
+    }
+    75% {
+        transform: scale(0.95);
+        opacity: 0.9;
+    }
+    100% { 
+        transform: scale(1); 
+        opacity: 1;
+        color: #4CAF50;
+    }
 }
 
 .word-hint {
@@ -321,12 +343,57 @@
     background: #4CAF50;
     border-color: #4CAF50;
     cursor: not-allowed;
+    animation: correctGuess 0.6s ease;
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
 }
 
 .letter-btn.incorrect {
     background: #f44336;
     border-color: #f44336;
     cursor: not-allowed;
+    animation: incorrectGuess 0.6s ease;
+    box-shadow: 0 0 15px rgba(244, 67, 54, 0.5);
+}
+
+@keyframes correctGuess {
+    0% { 
+        transform: scale(1);
+        background: transparent;
+    }
+    25% {
+        transform: scale(1.2);
+        background: rgba(76, 175, 80, 0.3);
+    }
+    50% {
+        transform: scale(0.9);
+        background: rgba(76, 175, 80, 0.7);
+    }
+    100% { 
+        transform: scale(1);
+        background: #4CAF50;
+    }
+}
+
+@keyframes incorrectGuess {
+    0% { 
+        transform: scale(1) rotate(0deg);
+        background: transparent;
+    }
+    25% {
+        transform: scale(1.1) rotate(-5deg);
+        background: rgba(244, 67, 54, 0.3);
+    }
+    50% {
+        transform: scale(0.95) rotate(5deg);
+        background: rgba(244, 67, 54, 0.7);
+    }
+    75% {
+        transform: scale(1.05) rotate(-2deg);
+    }
+    100% { 
+        transform: scale(1) rotate(0deg);
+        background: #f44336;
+    }
 }
 
 .letter-btn.disabled {
@@ -420,6 +487,100 @@
     background: transparent;
     color: white;
     border: 2px solid white;
+}
+
+.back-button {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    border: 2px solid white !important;
+    padding: 15px 30px !important;
+    font-size: 1.1rem !important;
+    font-weight: bold !important;
+    border-radius: 25px !important;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+}
+
+.back-button:hover {
+    background: rgba(255, 255, 255, 0.3) !important;
+    color: white !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+.stat-value {
+    font-size: 1.5rem !important;
+    font-weight: bold !important;
+    color: white !important;
+}
+
+.stat-value.danger {
+    color: #ff4444 !important;
+}
+
+.stat-value.warning {
+    color: #ffaa00 !important;
+}
+
+/* Hangman parts animation */
+.hangman-part {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.hangman-part.show {
+    opacity: 1;
+    animation: hangmanAppear 0.5s ease;
+}
+
+@keyframes hangmanAppear {
+    0% { 
+        opacity: 0; 
+        transform: scale(0.5);
+    }
+    50% { 
+        transform: scale(1.2);
+    }
+    100% { 
+        opacity: 1; 
+        transform: scale(1);
+    }
+}
+
+/* Sparkle animation */
+@keyframes sparkle {
+    0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(var(--endX), var(--endY)) scale(0);
+        opacity: 0;
+    }
+}
+
+/* Shake animation for hangman */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* Timer pulse animation */
+@keyframes timerPulse {
+    0%, 100% { 
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7);
+    }
+    50% { 
+        transform: scale(1.1);
+        box-shadow: 0 0 0 10px rgba(255, 68, 68, 0);
+    }
+}
+
+.stat-value.danger {
+    animation: timerPulse 1s infinite;
 }
 
 .game-result {
