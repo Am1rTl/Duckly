@@ -195,7 +195,8 @@
     .hangman-part {
         opacity: 0;
         transform: scale(0);
-        transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        transform-origin: 0 0;
+        transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     }
 
     .hangman-part.show {
@@ -642,19 +643,27 @@
 
     .hangman-body.hanging {
         animation: physicsSwing 3s ease-in-out infinite;
-        transform-origin: 120px 50px; /* Absolute SVG coords for rope attachment */
+        transform-origin: 120px 60px; /* Центр головы */
     }
 
     .hangman-body.hanging #leftArm,
     .hangman-body.hanging #rightArm {
         animation: limbTwitch 1.5s ease-in-out infinite;
-        transform-origin: 0 0; /* Limbs are now drawn from their pivot point */
+        transform-origin: 105px 90px; /* Левое плечо */
+    }
+
+    .hangman-body.hanging #rightArm {
+        transform-origin: 135px 90px; /* Правое плечо */
     }
 
     .hangman-body.hanging #leftLeg,
     .hangman-body.hanging #rightLeg {
         animation: limbTwitch 1.8s ease-in-out infinite;
-        transform-origin: 0 0; /* Limbs are now drawn from their pivot point */
+        transform-origin: 112px 145px; /* Левое бедро */
+    }
+
+    .hangman-body.hanging #rightLeg {
+        transform-origin: 128px 145px; /* Правое бедро */
     }
 
     @keyframes sadBrows {
@@ -805,29 +814,39 @@
                     </g>
                     
                     <!-- Left Arm with physics -->
-                    <g id="leftArm" class="hangman-part" transform="translate(105, 90)">
-                        <line x1="0" y1="0" x2="-10" y2="10" stroke="#3498DB" stroke-width="4"/> <!-- Shirt cap -->
-                        <line x1="0" y1="0" x2="-30" y2="45" stroke="#F4D1AE" stroke-width="3" id="leftArmLine"/>
-                        <circle cx="-30" cy="45" r="5" fill="#F4D1AE" stroke="#2C3E50" stroke-width="1.5" id="leftHand"/>
+                    <g id="leftArm" class="hangman-part">
+                        <!-- Shirt cap -->
+                        <line x1="105" y1="90" x2="95" y2="100" stroke="#3498DB" stroke-width="4"/>
+                        <!-- Arm -->
+                        <line x1="105" y1="90" x2="75" y2="135" stroke="#F4D1AE" stroke-width="3" id="leftArmLine"/>
+                        <!-- Hand -->
+                        <circle cx="75" cy="135" r="5" fill="#F4D1AE" stroke="#2C3E50" stroke-width="1.5" id="leftHand"/>
                     </g>
                     
                     <!-- Right Arm with physics -->
-                    <g id="rightArm" class="hangman-part" transform="translate(135, 90)">
-                        <line x1="0" y1="0" x2="10" y2="10" stroke="#3498DB" stroke-width="4"/> <!-- Shirt cap -->
-                        <line x1="0" y1="0" x2="30" y2="45" stroke="#F4D1AE" stroke-width="3" id="rightArmLine"/>
-                        <circle cx="30" cy="45" r="5" fill="#F4D1AE" stroke="#2C3E50" stroke-width="1.5" id="rightHand"/>
+                    <g id="rightArm" class="hangman-part">
+                        <!-- Shirt cap -->
+                        <line x1="135" y1="90" x2="145" y2="100" stroke="#3498DB" stroke-width="4"/>
+                        <!-- Arm -->
+                        <line x1="135" y1="90" x2="165" y2="135" stroke="#F4D1AE" stroke-width="3" id="rightArmLine"/>
+                        <!-- Hand -->
+                        <circle cx="165" cy="135" r="5" fill="#F4D1AE" stroke="#2C3E50" stroke-width="1.5" id="rightHand"/>
                     </g>
                     
                     <!-- Left Leg with physics -->
-                    <g id="leftLeg" class="hangman-part" transform="translate(112, 145)">
-                        <line x1="0" y1="0" x2="-15" y2="60" stroke="#2C3E50" stroke-width="3" id="leftLegLine"/>
-                        <ellipse cx="-15" cy="60" rx="10" ry="5" fill="#34495E" stroke="#2C3E50" stroke-width="1.5" id="leftShoe"/>
+                    <g id="leftLeg" class="hangman-part">
+                        <!-- Leg -->
+                        <line x1="112" y1="145" x2="97" y2="205" stroke="#2C3E50" stroke-width="3" id="leftLegLine"/>
+                        <!-- Shoe -->
+                        <ellipse cx="97" cy="205" rx="10" ry="5" fill="#34495E" stroke="#2C3E50" stroke-width="1.5" id="leftShoe"/>
                     </g>
                     
                     <!-- Right Leg with physics -->
-                    <g id="rightLeg" class="hangman-part" transform="translate(128, 145)">
-                        <line x1="0" y1="0" x2="15" y2="60" stroke="#2C3E50" stroke-width="3" id="rightLegLine"/>
-                        <ellipse cx="15" cy="60" rx="10" ry="5" fill="#34495E" stroke="#2C3E50" stroke-width="1.5" id="rightShoe"/>
+                    <g id="rightLeg" class="hangman-part">
+                        <!-- Leg -->
+                        <line x1="128" y1="145" x2="143" y2="205" stroke="#2C3E50" stroke-width="3" id="rightLegLine"/>
+                        <!-- Shoe -->
+                        <ellipse cx="143" cy="205" rx="10" ry="5" fill="#34495E" stroke="#2C3E50" stroke-width="1.5" id="rightShoe"/>
                     </g>
                 </g>
             </svg>
