@@ -3,6 +3,7 @@ from werkzeug.security import generate_password_hash
 import random
 import time
 import json
+import string
 
 def create_word_with_missing_letters(word):
     """Создает слово с пропущенными буквами для теста 'add_letter'"""
@@ -41,6 +42,14 @@ def create_wrong_translation(correct_translation, all_words):
     if other_translations:
         return random.choice(other_translations)
     return correct_translation
+
+def generate_test_link():
+    """Генерирует уникальную ссылку для теста"""
+    while True:
+        link = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+        # Проверяем, что такая ссылка еще не существует
+        if not Test.query.filter_by(link=link).first():
+            return link
 
 def generate_test_data():
     # Список классов (1-11)
@@ -604,8 +613,7 @@ def generate_test_data():
             for module in modules[unit]:
                 # Создаем тесты разных типов для каждого модуля
                 for test_type_info in test_types:
-                    times = str(time.time()).split(".")
-                    test_link = times[0] + times[1] + str(random.randint(1000, 9999))
+                    test_link = generate_test_link()
                     
                     test = Test(
                         title=f'{test_type_info["title_prefix"]}: {module} ({unit})',
@@ -671,4 +679,5 @@ def generate_test_data():
         print("Test data has been successfully loaded into the database!")
 
 if __name__ == "__main__":
-    generate_test_data()
+    with app.app_context():
+        generate_test_data()

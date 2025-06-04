@@ -37,10 +37,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if(navPanel) navPanel.style.display = 'none';
     }
 
+    console.log("Anti-cheat check status:", window.antiCheatInitialCheckPassed);
+    console.log("Test DB ID:", testDbId);
+    console.log("Storage Key:", storageKey);
+    
     if (window.antiCheatInitialCheckPassed === true) {
+        console.log("Anti-cheat passed, loading words...");
         loadAddLetterWords();
     } else {
         console.warn("Anti-cheat initial check did not pass for add_letter test. Test data will not be loaded.");
+        console.warn("Current anti-cheat status:", window.antiCheatInitialCheckPassed);
         if (loadingMessage) loadingMessage.style.display = 'none';
         const acWarningOverlay = document.querySelector('div[style*="z-index: 2147483647"]');
         if (!acWarningOverlay) {
@@ -340,6 +346,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const initialTimeLimitMinutes = parseFloat(timerDisplay.dataset.timeLimit || '0');
         let serverRemainingSeconds = parseInt(timerDisplay.dataset.remainingTimeSeconds || '-1', 10);
         const isTeacherPreview = form.dataset.isTeacherPreview === 'true';
+        
+        console.log("Timer initialization:");
+        console.log("- Time limit (minutes):", initialTimeLimitMinutes);
+        console.log("- Remaining seconds:", serverRemainingSeconds);
+        console.log("- Is teacher preview:", isTeacherPreview);
 
         if (timerDisplay && !isNaN(initialTimeLimitMinutes) && initialTimeLimitMinutes > 0 && !isTeacherPreview) {
             let timeLeft;

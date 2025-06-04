@@ -188,7 +188,7 @@ h1 {
     {% if test_db_id %} {# Ensure we have test_db_id to construct the form action #}
         {# Try to get test_result.id if test_result is passed and valid #}
         {# {% set storage_key_id = test_result.id if test_result and test_result.id else test_db_id %} #}
-        <form id="addLetterTestForm" action="/submit_test/{{ test_db_id }}" method="POST" data-storage-key="user{{ session['user_id'] }}_test{{ test_db_id }}_attempt{{ test_result.id }}">
+        <form id="addLetterTestForm" action="/submit_test/{{ test_db_id }}" method="POST" data-test-db-id="{{ test_db_id }}" data-storage-key="user{{ session['user_id'] }}_test{{ test_db_id }}_attempt{{ test_result.id }}" data-is-teacher-preview="{{ is_teacher_preview | default(false) | lower }}">
             
             {# Placeholder for Timer #}
             <div id="timer"
