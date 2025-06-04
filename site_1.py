@@ -20,6 +20,32 @@ from models import db, User, Word, Test, TestWord, TestResult, TestAnswer, UserW
 AUTO_CLEAR_RESULTS_ON_NEW_TEST = True  # Включить/выключить автоматическую очистку
 CLEAR_ONLY_ACTIVE_TESTS = True  # Очищать только активные тесты (сохранять архивированные)
 
+def format_time_taken(minutes):
+    """
+    Безопасно форматирует время выполнения теста для отображения.
+    
+    Args:
+        minutes: Время в минутах (может быть None, 0 или отрицательным)
+    
+    Returns:
+        str: Отформатированная строка времени
+    """
+    if minutes is None or minutes < 0:
+        return "0 мин"
+    
+    if minutes == 0:
+        return "<1 мин"
+    
+    hours = minutes // 60
+    remaining_minutes = minutes % 60
+    
+    if hours == 0:
+        return f"{remaining_minutes} мин"
+    elif remaining_minutes == 0:
+        return f"{hours} ч"
+    else:
+        return f"{hours} ч {remaining_minutes} мин"
+
 def auto_clear_previous_test_results(teacher_user, class_number, new_test_id):
     """
     Автоматически очищает результаты предыдущих тестов при создании нового теста.
@@ -860,7 +886,16 @@ def test_id(id):
         # Update test result
         test_result.score = int((score / len(test.test_words)) * 100) if len(test.test_words) > 0 else 0
         test_result.correct_answers = score
-        test_result.completed_at = datetime.utcnow()
+        completion_time = datetime.utcnow()
+        test_result.completed_at = completion_time
+        
+        # Calculate time taken in minutes (safe calculation)
+        if test_result.started_at:
+            time_diff = completion_time - test_result.started_at
+            test_result.time_taken = max(0, int(time_diff.total_seconds() / 60))  # Convert to minutes, ensure non-negative
+        else:
+            test_result.time_taken = 0  # Fallback if started_at is missing
+            
         test_result.answers = json.dumps(answers_dict_for_json) # Keep the JSON dump as it might be used elsewhere or for quick view
         
         # Add TestAnswer instances
@@ -2252,6 +2287,11 @@ def submit_test(test_id):
             
             if not active_test_result.completed_at: # Ensure we only complete it once
                 active_test_result.completed_at = active_test_result.started_at + allowed_duration # Mark completion at the exact intended end time
+                # Calculate time taken for timeout case (should be exactly the time limit)
+                if active_test_result.started_at:
+                    active_test_result.time_taken = test.time_limit  # Time limit in minutes
+                else:
+                    active_test_result.time_taken = 0
                 # Optionally, set score to 0 if no answers are accepted post-deadline
                 # This depends on whether partial/in-time answers were already saved progressively.
                 # For the current setup, it implies answers submitted with this request are too late.
@@ -2393,7 +2433,16 @@ def submit_test(test_id):
     active_test_result.score = int((current_score_count / total_questions) * 100) if total_questions > 0 else 0
     active_test_result.correct_answers = current_score_count
     active_test_result.total_questions = total_questions # Should already be set at start, but good to confirm
-    active_test_result.completed_at = datetime.utcnow()
+    completion_time = datetime.utcnow()
+    active_test_result.completed_at = completion_time
+    
+    # Calculate time taken in minutes (safe calculation)
+    if active_test_result.started_at:
+        time_diff = completion_time - active_test_result.started_at
+        active_test_result.time_taken = max(0, int(time_diff.total_seconds() / 60))  # Convert to minutes, ensure non-negative
+    else:
+        active_test_result.time_taken = 0  # Fallback if started_at is missing
+        
     active_test_result.answers = json.dumps(answers_json_for_db)
     
     # Add TestAnswer instances
@@ -2530,12 +2579,16 @@ def test_results(test_id, result_id):
 
             detailed_answers.append(detailed_answers_item)
 
+    # Format time taken for display
+    time_taken_display = format_time_taken(result.time_taken)
+    
     return render_template('test_results.html',
         test=test,
         score=result.score,
         correct_answers=result.correct_answers,
         total_questions=result.total_questions,
-        time_taken=result.time_taken,
+        time_taken=time_taken_display,
+        time_taken_raw=result.time_taken,  # Raw minutes for any calculations
         incorrect_answers=result.total_questions - result.correct_answers,
         results_summary=detailed_answers, # Changed variable name passed to template
         show_detailed_results=show_detailed_results
@@ -2969,7 +3022,9 @@ def test_details_data(test_id):
                 'completed_at_iso': result.completed_at.isoformat() + "Z" if result.completed_at else None,
                 'score': result.score,
                 'correct_answers': result.correct_answers,
-                'total_questions': result.total_questions
+                'total_questions': result.total_questions,
+                'time_taken_display': format_time_taken(result.time_taken),
+                'time_taken_minutes': result.time_taken
             })
             completed_students_details_json.append(student_data)
         else: # In progress

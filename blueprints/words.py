@@ -50,7 +50,13 @@ def get_modules_for_unit():
 
 @words_bp.route('/words')
 def words():
-    # Consider adding login_required if this page shouldn't be public
+    # Check if user is logged in and get their role
+    is_teacher = False
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+        if user and user.teacher == 'yes':
+            is_teacher = True
+    
     all_words = Word.query.order_by(Word.classs, Word.unit, Word.module, Word.word).all()
     items = {}
 
@@ -63,7 +69,7 @@ def words():
             items[w.classs][w.unit][w.module] = []
         items[w.classs][w.unit][w.module].append({'id': w.id, 'word': w.word, 'perevod': w.perevod}) # Pass id for edit/delete
 
-    return render_template("words.html", items=items)
+    return render_template("words.html", items=items, is_teacher=is_teacher)
 
 @words_bp.route("/add_words", methods=['POST', 'GET'])
 def add_words():
@@ -71,11 +77,11 @@ def add_words():
         flash("Пожалуйста, войдите в систему для добавления слов.", "warning")
         return redirect(url_for('auth.login'))
 
-    # Optional: Add teacher check if only teachers can add words
-    # user = User.query.get(session['user_id'])
-    # if not user or user.teacher != 'yes':
-    #     flash("Только учителя могут добавлять слова.", "warning")
-    #     return redirect(url_for('words.words'))
+    # Teacher check - only teachers can add words
+    user = User.query.get(session['user_id'])
+    if not user or user.teacher != 'yes':
+        flash("Только учителя могут добавлять слова.", "warning")
+        return redirect(url_for('words.words'))
 
 
     if request.method == "POST":
@@ -146,10 +152,16 @@ def add_words():
 
 @words_bp.route('/edit_word/<int:word_id>', methods=['GET', 'POST'])
 def edit_word(word_id):
-    # Add login check, potentially teacher check
+    # Add login check and teacher check
     if 'user_id' not in session:
         flash("Пожалуйста, войдите в систему.", "warning")
         return redirect(url_for('auth.login'))
+    
+    # Teacher check - only teachers can edit words
+    user = User.query.get(session['user_id'])
+    if not user or user.teacher != 'yes':
+        flash("Только учителя могут редактировать слова.", "warning")
+        return redirect(url_for('words.words'))
 
     word_obj = Word.query.get_or_404(word_id)
 
@@ -232,7 +244,11 @@ def edit_word(word_id):
 def delete_word(word_id):
     if 'user_id' not in session:
          return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    # Optional: Add teacher check if only teachers can delete
+    
+    # Teacher check - only teachers can delete words
+    user = User.query.get(session['user_id'])
+    if not user or user.teacher != 'yes':
+        return jsonify({'success': False, 'error': 'Only teachers can delete words'}), 403
 
     word_obj = Word.query.get_or_404(word_id)
 

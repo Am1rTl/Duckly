@@ -405,15 +405,19 @@
     <div id="cardView" class="cards-view">
       </div>
 
+    {% if is_teacher %}
     <div class="add-btn-container">
       <button id="addWordsButton" class="btn btn-primary"><i class="fas fa-plus-circle"></i> Добавить слова</button>
     </div>
+    {% endif %}
   </div>
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js "></script>
   <script>
     // Все слова в виде JSON, передаются из Flask шаблонизатора
     const wordData = {{ items|tojson|safe }};
+    // Информация о роли пользователя
+    const isTeacher = {{ is_teacher|tojson|safe }};
 
     const classSelect = document.getElementById("classFilter");
     const unitSelect = document.getElementById("unitFilter");
@@ -524,6 +528,7 @@
             <div class="translation">${wordObj.perevod}</div>
           </a>
           <div class="card-actions">
+            ${isTeacher ? `
             <a href="${getEditUrl(wordObj.id)}" class="action-btn btn-primary"><i class="fas fa-edit"></i> Изменить</a>
             <button class="action-btn btn-danger"
                     data-word-id="${wordObj.id}"
@@ -534,6 +539,7 @@
                     onclick="handleDeleteWord(this)">
               <i class="fas fa-trash"></i> Удалить
             </button>
+            ` : ''}
           </div>
         `;
         container.appendChild(card);
@@ -556,6 +562,7 @@
           </td>
           <td>${wordObj.perevod}</td>
           <td>
+            ${isTeacher ? `
             <a href="${getEditUrl(wordObj.id)}" class="action-btn btn-primary"><i class="fas fa-edit"></i> Изменить</a>
             <button class="action-btn btn-danger"
                     data-word-id="${wordObj.id}"
@@ -566,6 +573,7 @@
                     onclick="handleDeleteWord(this)">
               <i class="fas fa-trash"></i> Удалить
             </button>
+            ` : ''}
           </td>
         `;
         tableBody.appendChild(row);
@@ -693,7 +701,12 @@
     document.getElementById("wordsTab").onclick = () => location.href = "/words";
     document.getElementById("testsTab").onclick = () => location.href = "/tests";
     document.getElementById("gamesTab").onclick = () => location.href = "/games";
-    document.getElementById("addWordsButton").onclick = () => location.href = "/add_words";
+    
+    // Add words button only exists for teachers
+    const addWordsButton = document.getElementById("addWordsButton");
+    if (addWordsButton) {
+      addWordsButton.onclick = () => location.href = "/add_words";
+    }
   </script>
 </body>
 </html>
