@@ -14,7 +14,7 @@ import os # Added for os.makedirs
 import tempfile # Для временных файлов сессии
 
 # Import models and db
-from models import db, User, Word, Test, TestWord, TestResult, TestAnswer, UserWordReview, Sentence
+from models import db, User, Word, Test, TestWord, TestResult, TestAnswer, TestProgress, UserWordReview, Sentence
 
 # Настройки автоматической очистки результатов
 AUTO_CLEAR_RESULTS_ON_NEW_TEST = True  # Включить/выключить автоматическую очистку
@@ -591,8 +591,15 @@ def api_test_dictation_words(test_db_id):
     test_words_query = TestWord.query.filter_by(test_id=test.id)
 
     if test.word_order == 'random':
+        # Для случайного порядка используем seed на основе user_id и test_id
+        # чтобы порядок был одинаковым для одного пользователя и теста
         test_word_objects = list(test_words_query.all()) # Convert to list to shuffle
+        
+        # Создаем детерминированный seed на основе user_id и test_id
+        seed_value = hash(f"{user.id}_{test.id}") % (2**32)
+        random.seed(seed_value)
         random.shuffle(test_word_objects)
+        random.seed()  # Сбрасываем seed для других операций
     else: # 'sequential' or any other case defaults to ordered
         test_word_objects = test_words_query.order_by(TestWord.word_order).all()
 
@@ -638,8 +645,15 @@ def _get_test_words_api_data(test_db_id, expected_test_type_slug):
     test_words_query = TestWord.query.filter_by(test_id=test.id)
 
     if test.word_order == 'random':
+        # Для случайного порядка используем seed на основе user_id и test_id
+        # чтобы порядок был одинаковым для одного пользователя и теста
         test_word_objects = list(test_words_query.all()) # Convert to list to shuffle
+        
+        # Создаем детерминированный seed на основе user_id и test_id
+        seed_value = hash(f"{user.id}_{test.id}") % (2**32)
+        random.seed(seed_value)
         random.shuffle(test_word_objects)
+        random.seed()  # Сбрасываем seed для других операций
     else: # 'sequential' or any other case defaults to ordered
         test_word_objects = test_words_query.order_by(TestWord.word_order).all()
 
@@ -3163,6 +3177,112 @@ def update_flashcard_review():
         db.session.rollback()
         # Log the error e
         return jsonify({'error': 'Database commit failed', 'details': str(e), 'success': False}), 500
+
+# API для сохранения промежуточных результатов теста
+@app.route('/api/test/<int:test_id>/save_progress', methods=['POST'])
+def save_test_progress(test_id):
+    """Сохраняет промежуточные ответы пользователя во время прохождения теста"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Не авторизован'}), 401
+    
+    user = User.query.get(session['user_id'])
+    if not user:
+        return jsonify({'error': 'Пользователь не найден'}), 401
+    
+    # Получаем активный тест-результат
+    test_result = TestResult.query.filter_by(
+        test_id=test_id,
+        user_id=user.id,
+        completed_at=None
+    ).first()
+    
+    if not test_result:
+        return jsonify({'error': 'Активный тест не найден'}), 404
+    
+    try:
+        data = request.get_json()
+        if not data or 'answers' not in data:
+            return jsonify({'error': 'Неверный формат данных'}), 400
+        
+        # Сохраняем или обновляем прогресс для каждого ответа
+        for answer_data in data['answers']:
+            test_word_id = answer_data.get('test_word_id')
+            user_answer = answer_data.get('user_answer', '')
+            
+            if not test_word_id:
+                continue
+                
+            # Проверяем, что test_word принадлежит этому тесту
+            test_word = TestWord.query.filter_by(id=test_word_id, test_id=test_id).first()
+            if not test_word:
+                continue
+            
+            # Ищем существующую запись прогресса
+            progress = TestProgress.query.filter_by(
+                test_result_id=test_result.id,
+                test_word_id=test_word_id
+            ).first()
+            
+            if progress:
+                # Обновляем существующую запись
+                progress.user_answer = json.dumps(user_answer) if isinstance(user_answer, (dict, list)) else str(user_answer)
+                progress.last_updated = datetime.utcnow()
+            else:
+                # Создаем новую запись
+                progress = TestProgress(
+                    test_result_id=test_result.id,
+                    test_word_id=test_word_id,
+                    user_answer=json.dumps(user_answer) if isinstance(user_answer, (dict, list)) else str(user_answer)
+                )
+                db.session.add(progress)
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Прогресс сохранен'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Ошибка сохранения: {str(e)}'}), 500
+
+@app.route('/api/test/<int:test_id>/load_progress', methods=['GET'])
+def load_test_progress(test_id):
+    """Загружает сохраненные промежуточные ответы пользователя"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Не авторизован'}), 401
+    
+    user = User.query.get(session['user_id'])
+    if not user:
+        return jsonify({'error': 'Пользователь не найден'}), 401
+    
+    # Получаем активный тест-результат
+    test_result = TestResult.query.filter_by(
+        test_id=test_id,
+        user_id=user.id,
+        completed_at=None
+    ).first()
+    
+    if not test_result:
+        return jsonify({'progress': {}})
+    
+    try:
+        # Получаем все сохраненные ответы
+        progress_entries = TestProgress.query.filter_by(
+            test_result_id=test_result.id
+        ).all()
+        
+        progress_data = {}
+        for entry in progress_entries:
+            try:
+                # Пытаемся распарсить JSON, если не получается - используем как строку
+                user_answer = json.loads(entry.user_answer) if entry.user_answer else ''
+            except (json.JSONDecodeError, TypeError):
+                user_answer = entry.user_answer or ''
+            
+            progress_data[str(entry.test_word_id)] = user_answer
+        
+        return jsonify({'progress': progress_data})
+        
+    except Exception as e:
+        return jsonify({'error': f'Ошибка загрузки: {str(e)}'}), 500
 
 # Blueprints are already registered at the top of the file
 # app.register_blueprint(tests_bp, url_prefix='/tests') # Example for future

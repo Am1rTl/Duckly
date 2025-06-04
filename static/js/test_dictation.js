@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function loadDictationWords(test_db_id, wordsContainer, loadingMessage, submitButtonArea, submitButton, backToTestsLink, isTeacherPreview) {
     try {
+        // Загружаем слова теста
         const response = await fetch(`/api/test/${test_db_id}/dictation_words`);
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
@@ -138,6 +139,21 @@ async function loadDictationWords(test_db_id, wordsContainer, loadingMessage, su
             throw new Error(`Ошибка сети: ${response.status} ${response.statusText}. ${errorData.error || ''}`);
         }
         const data = await response.json();
+
+        // Загружаем сохраненный прогресс (только для студентов)
+        let savedProgress = {};
+        if (!isTeacherPreview) {
+            try {
+                const progressResponse = await fetch(`/api/test/${test_db_id}/load_progress`);
+                if (progressResponse.ok) {
+                    const progressData = await progressResponse.json();
+                    savedProgress = progressData.progress || {};
+                    console.log('Загружен сохраненный прогресс:', savedProgress);
+                }
+            } catch (error) {
+                console.warn('Не удалось загрузить сохраненный прогресс:', error);
+            }
+        }
 
         if (loadingMessage) loadingMessage.style.display = 'none';
         wordsContainer.innerHTML = '';
@@ -156,7 +172,12 @@ async function loadDictationWords(test_db_id, wordsContainer, loadingMessage, su
                 const charInputsWrapper = document.createElement('div');
                 charInputsWrapper.className = 'char-inputs-wrapper';
 
-                const numInputs = 3;
+                // Получаем сохраненный ответ для этого слова
+                const savedAnswer = savedProgress[String(wordData.id)] || '';
+                const savedChars = Array.from(savedAnswer);
+                
+                // Создаем минимум 3 поля ввода или столько, сколько было сохранено + 1
+                const numInputs = Math.max(3, savedChars.length + 1);
 
                 for (let i = 0; i < numInputs; i++) {
                     const input = document.createElement('input');
@@ -170,6 +191,11 @@ async function loadDictationWords(test_db_id, wordsContainer, loadingMessage, su
                     input.spellcheck = false;
                     input.setAttribute('aria-label', `Character ${i + 1} for word hint ${wordData.prompt.substring(0,30)}`);
 
+                    // Восстанавливаем сохраненное значение
+                    if (i < savedChars.length) {
+                        input.value = savedChars[i];
+                    }
+
                     input.addEventListener('input', handleDictationInput);
                     input.addEventListener('keydown', handleKeyDown);
                     charInputsWrapper.appendChild(input);
@@ -181,6 +207,11 @@ async function loadDictationWords(test_db_id, wordsContainer, loadingMessage, su
                      checkAndAddNewInput(wordItem, String(wordData.id), charInputsWrapper);
                 }, 50);
             });
+
+            // Настраиваем автосохранение для студентов
+            if (!isTeacherPreview) {
+                setupAutoSave(test_db_id);
+            }
 
             if (submitButton) submitButton.style.display = 'inline-flex';
             if (backToTestsLink) backToTestsLink.style.display = 'none';
@@ -316,4 +347,123 @@ function handleKeyDown(event) {
             }
         }
     }
+}
+
+// Функции для автосохранения прогресса
+let autoSaveTimeout = null;
+let isAutoSaveEnabled = false;
+
+function setupAutoSave(testDbId) {
+    isAutoSaveEnabled = true;
+    console.log('Автосохранение настроено для теста:', testDbId);
+    
+    // Сохраняем при каждом изменении с небольшой задержкой
+    document.addEventListener('input', function(event) {
+        if (event.target.classList.contains('dictation-char-input') && isAutoSaveEnabled) {
+            debouncedAutoSave(testDbId);
+        }
+    });
+    
+    // Сохраняем при потере фокуса
+    document.addEventListener('blur', function(event) {
+        if (event.target.classList.contains('dictation-char-input') && isAutoSaveEnabled) {
+            saveProgress(testDbId);
+        }
+    }, true);
+    
+    // Сохраняем перед закрытием страницы
+    window.addEventListener('beforeunload', function() {
+        if (isAutoSaveEnabled) {
+            saveProgressSync(testDbId);
+        }
+    });
+    
+    // Периодическое сохранение каждые 30 секунд
+    setInterval(() => {
+        if (isAutoSaveEnabled) {
+            saveProgress(testDbId);
+        }
+    }, 30000);
+}
+
+function debouncedAutoSave(testDbId) {
+    if (autoSaveTimeout) {
+        clearTimeout(autoSaveTimeout);
+    }
+    
+    autoSaveTimeout = setTimeout(() => {
+        saveProgress(testDbId);
+    }, 1000); // Сохраняем через 1 секунду после последнего изменения
+}
+
+async function saveProgress(testDbId) {
+    if (!isAutoSaveEnabled) return;
+    
+    try {
+        const answers = collectCurrentAnswers();
+        if (answers.length === 0) return;
+        
+        const response = await fetch(`/api/test/${testDbId}/save_progress`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                answers: answers
+            })
+        });
+        
+        if (response.ok) {
+            console.log('Прогресс сохранен автоматически');
+        } else {
+            console.warn('Не удалось сохранить прогресс:', response.status);
+        }
+    } catch (error) {
+        console.warn('Ошибка автосохранения:', error);
+    }
+}
+
+function saveProgressSync(testDbId) {
+    if (!isAutoSaveEnabled) return;
+    
+    try {
+        const answers = collectCurrentAnswers();
+        if (answers.length === 0) return;
+        
+        // Синхронный запрос для сохранения перед закрытием страницы
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `/api/test/${testDbId}/save_progress`, false);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.send(JSON.stringify({
+            answers: answers
+        }));
+    } catch (error) {
+        console.warn('Ошибка синхронного сохранения:', error);
+    }
+}
+
+function collectCurrentAnswers() {
+    const answers = [];
+    const wordContainers = document.querySelectorAll('.dictation-word-container');
+    
+    wordContainers.forEach(container => {
+        const wordId = container.dataset.wordId;
+        const inputs = container.querySelectorAll('.dictation-char-input');
+        
+        let userAnswer = '';
+        inputs.forEach(input => {
+            if (input.value) {
+                userAnswer += input.value;
+            }
+        });
+        
+        if (wordId) {
+            answers.push({
+                test_word_id: parseInt(wordId),
+                user_answer: userAnswer
+            });
+        }
+    });
+    
+    return answers;
 }

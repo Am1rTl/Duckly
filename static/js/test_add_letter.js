@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     renderNavItem(wordData, index);
                 });
 
-                loadProgressFromLocalStorage();
+                await loadProgressFromServer();
                 showWord(0);
                 testWords.forEach((_, idx) => updateNavCompletedStatus(idx));
 
@@ -303,23 +303,47 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem(storageKey, JSON.stringify(progress));
     }
 
-    function loadProgressFromLocalStorage() {
-        if (!storageKey || !testWords.length) return;
-        const savedProgress = localStorage.getItem(storageKey);
-        if (savedProgress) {
-            try {
-                const progress = JSON.parse(savedProgress);
-                for (const name in progress) {
-                    const inputField = form.querySelector(`.letter-input[name="${name}"]`);
-                    if (inputField) {
-                        inputField.value = progress[name];
+    async function loadProgressFromServer() {
+        if (!testDbId || !testWords.length) return;
+        
+        const isTeacherPreview = form.dataset.isTeacherPreview === 'true';
+        if (isTeacherPreview) return; // Учителя не загружают прогресс
+        
+        try {
+            const response = await fetch(`/api/test/${testDbId}/load_progress`);
+            if (response.ok) {
+                const data = await response.json();
+                const progress = data.progress || {};
+                
+                console.log('Загружен сохраненный прогресс для add_letter:', progress);
+                
+                // Восстанавливаем ответы для каждого слова
+                testWords.forEach(wordData => {
+                    const savedAnswer = progress[String(wordData.id)] || '';
+                    if (savedAnswer) {
+                        // Находим все поля ввода для этого слова
+                        const wordContainer = wordsContainer.querySelector(`.word-container[data-word-id="${wordData.id}"]`);
+                        if (wordContainer) {
+                            const inputs = wordContainer.querySelectorAll('.letter-input');
+                            // Заполняем поля по порядку
+                            for (let i = 0; i < Math.min(savedAnswer.length, inputs.length); i++) {
+                                inputs[i].value = savedAnswer[i];
+                            }
+                        }
                     }
-                }
-            } catch (e) {
-                console.error("Error loading progress from localStorage:", e);
-                localStorage.removeItem(storageKey);
+                });
+                
+                // Настраиваем автосохранение
+                setupAutoSaveForAddLetter();
             }
+        } catch (error) {
+            console.warn('Не удалось загрузить сохраненный прогресс для add_letter:', error);
         }
+    }
+    
+    function loadProgressFromLocalStorage() {
+        // Оставляем для совместимости, но больше не используем
+        console.log('loadProgressFromLocalStorage вызвана, но теперь используется серверное сохранение');
     }
 
     function updateNavCompletedStatus(wordIndex) {
@@ -410,5 +434,121 @@ document.addEventListener('DOMContentLoaded', function() {
             if(nextButton) nextButton.disabled = true;
             if(prevButton) prevButton.disabled = true;
         });
+    }
+
+    // Функции автосохранения для add_letter теста
+    let autoSaveTimeoutAddLetter = null;
+    let isAutoSaveEnabledAddLetter = false;
+
+    function setupAutoSaveForAddLetter() {
+        isAutoSaveEnabledAddLetter = true;
+        console.log('Автосохранение настроено для add_letter теста:', testDbId);
+        
+        // Сохраняем при каждом изменении с небольшой задержкой
+        document.addEventListener('input', function(event) {
+            if (event.target.classList.contains('letter-input') && isAutoSaveEnabledAddLetter) {
+                debouncedAutoSaveAddLetter();
+            }
+        });
+        
+        // Сохраняем при потере фокуса
+        document.addEventListener('blur', function(event) {
+            if (event.target.classList.contains('letter-input') && isAutoSaveEnabledAddLetter) {
+                saveProgressAddLetter();
+            }
+        }, true);
+        
+        // Сохраняем перед закрытием страницы
+        window.addEventListener('beforeunload', function() {
+            if (isAutoSaveEnabledAddLetter) {
+                saveProgressSyncAddLetter();
+            }
+        });
+        
+        // Периодическое сохранение каждые 30 секунд
+        setInterval(() => {
+            if (isAutoSaveEnabledAddLetter) {
+                saveProgressAddLetter();
+            }
+        }, 30000);
+    }
+
+    function debouncedAutoSaveAddLetter() {
+        if (autoSaveTimeoutAddLetter) {
+            clearTimeout(autoSaveTimeoutAddLetter);
+        }
+        
+        autoSaveTimeoutAddLetter = setTimeout(() => {
+            saveProgressAddLetter();
+        }, 1000);
+    }
+
+    async function saveProgressAddLetter() {
+        if (!isAutoSaveEnabledAddLetter || !testDbId) return;
+        
+        try {
+            const answers = collectCurrentAnswersAddLetter();
+            if (answers.length === 0) return;
+            
+            const response = await fetch(`/api/test/${testDbId}/save_progress`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    answers: answers
+                })
+            });
+            
+            if (response.ok) {
+                console.log('Прогресс add_letter сохранен автоматически');
+            } else {
+                console.warn('Не удалось сохранить прогресс add_letter:', response.status);
+            }
+        } catch (error) {
+            console.warn('Ошибка автосохранения add_letter:', error);
+        }
+    }
+
+    function saveProgressSyncAddLetter() {
+        if (!isAutoSaveEnabledAddLetter || !testDbId) return;
+        
+        try {
+            const answers = collectCurrentAnswersAddLetter();
+            if (answers.length === 0) return;
+            
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `/api/test/${testDbId}/save_progress`, false);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify({
+                answers: answers
+            }));
+        } catch (error) {
+            console.warn('Ошибка синхронного сохранения add_letter:', error);
+        }
+    }
+
+    function collectCurrentAnswersAddLetter() {
+        const answers = [];
+        
+        testWords.forEach(wordData => {
+            const wordContainer = wordsContainer.querySelector(`.word-container[data-word-id="${wordData.id}"]`);
+            if (wordContainer) {
+                const inputs = wordContainer.querySelectorAll('.letter-input');
+                let userAnswer = '';
+                inputs.forEach(input => {
+                    if (input.value) {
+                        userAnswer += input.value;
+                    }
+                });
+                
+                answers.push({
+                    test_word_id: wordData.id,
+                    user_answer: userAnswer
+                });
+            }
+        });
+        
+        return answers;
     }
 });

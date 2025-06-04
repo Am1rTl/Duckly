@@ -84,6 +84,20 @@ class TestAnswer(db.Model):
 
     test_word = db.relationship('TestWord', backref=db.backref('answers', lazy=True))
 
+class TestProgress(db.Model):
+    __tablename__ = 'test_progress'
+    id = db.Column(db.Integer, primary_key=True)
+    test_result_id = db.Column(db.Integer, db.ForeignKey('test_results.id'), nullable=False)
+    test_word_id = db.Column(db.Integer, db.ForeignKey('test_words.id'), nullable=False)
+    user_answer = db.Column(db.Text, nullable=True)  # JSON string for complex answers like dictation
+    last_updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    
+    # Unique constraint to ensure one progress record per test_result and test_word
+    __table_args__ = (db.UniqueConstraint('test_result_id', 'test_word_id', name='_test_progress_uc'),)
+    
+    test_result = db.relationship('TestResult', backref=db.backref('progress_entries', lazy=True, cascade='all, delete-orphan'))
+    test_word = db.relationship('TestWord', backref=db.backref('progress_entries', lazy=True))
+
 class UserWordReview(db.Model):
     __tablename__ = 'user_word_reviews'
     id = db.Column(db.Integer, primary_key=True)
