@@ -2,6 +2,45 @@ from site_1 import app, db, Word, User, Test, TestWord
 from werkzeug.security import generate_password_hash
 import random
 import time
+import json
+
+def create_word_with_missing_letters(word):
+    """Создает слово с пропущенными буквами для теста 'add_letter'"""
+    if len(word) <= 2:
+        return word[0] + '_' * (len(word) - 1)
+    
+    # Убираем 1-2 буквы случайным образом
+    word_list = list(word.lower())
+    num_gaps = min(2, max(1, len(word) // 3))
+    
+    # Выбираем случайные позиции для пропусков (не первую и не последнюю)
+    available_positions = list(range(1, len(word) - 1)) if len(word) > 2 else [0]
+    gap_positions = random.sample(available_positions, min(num_gaps, len(available_positions)))
+    
+    for pos in gap_positions:
+        word_list[pos] = '_'
+    
+    return ''.join(word_list)
+
+def create_multiple_choice_options(correct_word, all_words):
+    """Создает варианты ответов для множественного выбора"""
+    # Берем 3 случайных неправильных варианта
+    other_words = [w.word for w in all_words if w.word.lower() != correct_word.lower()]
+    wrong_options = random.sample(other_words, min(3, len(other_words)))
+    
+    # Добавляем правильный ответ
+    all_options = wrong_options + [correct_word]
+    random.shuffle(all_options)
+    
+    return json.dumps(all_options)
+
+def create_wrong_translation(correct_translation, all_words):
+    """Создает неправильный перевод для теста 'true_false'"""
+    # Берем случайный перевод другого слова
+    other_translations = [w.perevod for w in all_words if w.perevod != correct_translation]
+    if other_translations:
+        return random.choice(other_translations)
+    return correct_translation
 
 def generate_test_data():
     # Список классов (1-11)
@@ -512,6 +551,17 @@ def generate_test_data():
             class_number='1'
         )
         db.session.add(student)
+        
+        # Создание пользователя с данными: ник "a", пароль "a", класс "10", ФИО "a a a"
+        hashed_a_password = generate_password_hash('a')
+        user_a = User(
+            fio='a a a',
+            nick='a',
+            password=hashed_a_password,
+            teacher='no',
+            class_number='10'
+        )
+        db.session.add(user_a)
         db.session.commit()
 
         # Добавление слов в базу данных
@@ -537,52 +587,85 @@ def generate_test_data():
                         db.session.add(new_word)
         db.session.commit() # Коммит после добавления всех слов
 
-        # Создание тестового теста
-        # Убедимся, что тест создается для существующих слов
-        # Выберем случайный существующий модуль для теста, чтобы показать разнообразие
-        # или просто создадим для первого класса, как в оригинале.
+        # Создание автоматических тестов для 10 класса
+        test_class = '10'
         
-        # Для примера, создадим тест для 5 класса, Unit 1: Travel, Transportation
-        test_class = '5'
-        test_unit = 'Unit 1: Travel'
-        test_module = 'Transportation'
-
-        times = str(time.time()).split(".")
-        test_link = times[0]+times[1]
+        # Типы тестов для создания
+        test_types = [
+            {'type': 'dictation', 'title_prefix': 'Диктант'},
+            {'type': 'add_letter', 'title_prefix': 'Добавить букву'},
+            {'type': 'true_false', 'title_prefix': 'Правда/Ложь'},
+            {'type': 'multiple_choice_single', 'title_prefix': 'Выбор ответа'},
+            {'type': 'fill_word', 'title_prefix': 'Заполнить слово'}
+        ]
         
-        test = Test(
-            title=f'Тест по {test_module}',
-            classs=test_class,
-            unit=test_unit,
-            module=test_module,
-            type='dictation',
-            link=test_link,
-            created_by=teacher.id,
-            is_active=True,
-            word_order='random'
-        )
-        db.session.add(test)
-        db.session.commit()
+        # Создаем тесты для всех модулей 10 класса
+        for unit in units[test_class]:
+            for module in modules[unit]:
+                # Создаем тесты разных типов для каждого модуля
+                for test_type_info in test_types:
+                    times = str(time.time()).split(".")
+                    test_link = times[0] + times[1] + str(random.randint(1000, 9999))
+                    
+                    test = Test(
+                        title=f'{test_type_info["title_prefix"]}: {module} ({unit})',
+                        classs=test_class,
+                        unit=unit,
+                        module=module,
+                        type=test_type_info['type'],
+                        link=test_link,
+                        created_by=teacher.id,
+                        is_active=True,
+                        word_order='random'
+                    )
+                    db.session.add(test)
+                    db.session.commit()
 
-        # Добавление слов в тест из выбранного модуля
-        words_for_test = Word.query.filter_by(
-            classs=test_class,
-            unit=test_unit,
-            module=test_module
-        ).all()
+                    # Добавление слов в тест из выбранного модуля
+                    words_for_test = Word.query.filter_by(
+                        classs=test_class,
+                        unit=unit,
+                        module=module
+                    ).all()
 
-        if not words_for_test:
-            print(f"Warning: No words found for test module '{test_module}'. Test will be empty.")
+                    if not words_for_test:
+                        print(f"Warning: No words found for test module '{module}'. Test will be empty.")
+                        continue
 
-        for idx, word_obj in enumerate(words_for_test):
-            test_word = TestWord(
-                test_id=test.id,
-                word=word_obj.word,
-                perevod=word_obj.perevod,
-                correct_answer=word_obj.word,
-                word_order=idx
-            )
-            db.session.add(test_word)
+                    for idx, word_obj in enumerate(words_for_test):
+                        # Настройка данных в зависимости от типа теста
+                        test_word_data = {
+                            'test_id': test.id,
+                            'word': word_obj.word,
+                            'perevod': word_obj.perevod,
+                            'correct_answer': word_obj.word,
+                            'word_order': idx
+                        }
+                        
+                        # Специальные настройки для разных типов тестов
+                        if test_type_info['type'] == 'add_letter':
+                            # Для теста "добавить букву" создаем слово с пропущенными буквами
+                            word_with_gaps = create_word_with_missing_letters(word_obj.word)
+                            test_word_data['missing_letters'] = word_with_gaps
+                            test_word_data['word'] = word_with_gaps
+                        elif test_type_info['type'] == 'multiple_choice_single':
+                            # Для множественного выбора создаем варианты ответов
+                            options = create_multiple_choice_options(word_obj.word, words_for_test)
+                            test_word_data['options'] = options
+                        elif test_type_info['type'] == 'true_false':
+                            # Для правда/ложь иногда делаем неправильный перевод
+                            if random.choice([True, False]):
+                                # Создаем неправильный перевод
+                                wrong_translation = create_wrong_translation(word_obj.perevod, words_for_test)
+                                test_word_data['perevod'] = wrong_translation
+                                test_word_data['correct_answer'] = 'False'
+                            else:
+                                test_word_data['correct_answer'] = 'True'
+                        
+                        test_word = TestWord(**test_word_data)
+                        db.session.add(test_word)
+                    
+                    print(f"Created test: {test.title} with {len(words_for_test)} words")
         
         db.session.commit() # Сохранение всех изменений
         print("Test data has been successfully loaded into the database!")

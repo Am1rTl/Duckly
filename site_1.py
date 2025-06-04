@@ -16,6 +16,66 @@ import tempfile # Для временных файлов сессии
 # Import models and db
 from models import db, User, Word, Test, TestWord, TestResult, TestAnswer, UserWordReview, Sentence
 
+# Настройки автоматической очистки результатов
+AUTO_CLEAR_RESULTS_ON_NEW_TEST = True  # Включить/выключить автоматическую очистку
+CLEAR_ONLY_ACTIVE_TESTS = True  # Очищать только активные тесты (сохранять архивированные)
+
+def auto_clear_previous_test_results(teacher_user, class_number, new_test_id):
+    """
+    Автоматически очищает результаты предыдущих тестов при создании нового теста.
+    
+    Args:
+        teacher_user: Объект пользователя-учителя
+        class_number: Номер класса
+        new_test_id: ID нового теста (исключается из очистки)
+    
+    Returns:
+        tuple: (количество_очищенных_результатов, список_затронутых_тестов)
+    """
+    if not AUTO_CLEAR_RESULTS_ON_NEW_TEST:
+        return 0, []
+    
+    try:
+        # Строим запрос для поиска предыдущих тестов
+        query = Test.query.filter(
+            Test.created_by == teacher_user.id,
+            Test.classs == class_number,
+            Test.id != new_test_id
+        )
+        
+        # Если настроено очищать только активные тесты
+        if CLEAR_ONLY_ACTIVE_TESTS:
+            query = query.filter(Test.is_active == True)
+        
+        previous_tests = query.all()
+        
+        results_cleared_count = 0
+        tests_affected = []
+        
+        for prev_test in previous_tests:
+            # Находим все результаты для этого теста
+            results_to_delete = TestResult.query.filter_by(test_id=prev_test.id).all()
+            
+            if results_to_delete:  # Если есть результаты для удаления
+                tests_affected.append(prev_test.title)
+                
+                for result in results_to_delete:
+                    # Удаляем связанные ответы
+                    TestAnswer.query.filter_by(test_result_id=result.id).delete(synchronize_session=False)
+                    # Удаляем результат
+                    db.session.delete(result)
+                    results_cleared_count += 1
+        
+        if results_cleared_count > 0:
+            db.session.commit()
+        
+        return results_cleared_count, tests_affected
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Ошибка при автоматической очистке результатов: {e}")
+        raise e
+
 app = Flask(__name__)
 # Create instance folder if it doesn't exist
 try:
@@ -1434,6 +1494,35 @@ def create_test():
         new_test = Test(**new_test_params)
         db.session.add(new_test)
         db.session.commit() # Commit to get new_test.id so TestWord entries can be linked
+        
+        # АВТОМАТИЧЕСКАЯ ОЧИСТКА РЕЗУЛЬТАТОВ ПРЕДЫДУЩИХ ТЕСТОВ
+        try:
+            results_cleared_count, tests_affected = auto_clear_previous_test_results(
+                teacher_user=user,
+                class_number=class_number,
+                new_test_id=new_test.id
+            )
+            
+            if results_cleared_count > 0:
+                affected_tests_str = ", ".join(tests_affected[:3])  # Показываем первые 3 теста
+                if len(tests_affected) > 3:
+                    affected_tests_str += f" и еще {len(tests_affected) - 3}"
+                
+                test_type_str = "активных тестов" if CLEAR_ONLY_ACTIVE_TESTS else "тестов"
+                flash(f"Автоматически очищено {results_cleared_count} результатов из {test_type_str} для класса {class_number} ({affected_tests_str}).", "info")
+            
+        except Exception as e:
+            # Если произошла ошибка при очистке, не прерываем создание теста
+            # Восстанавливаем состояние для нового теста
+            try:
+                db.session.rollback()
+                db.session.add(new_test)
+                db.session.commit()
+            except:
+                pass  # Если и это не удалось, продолжаем
+            
+            print(f"Ошибка при автоматической очистке результатов: {e}")
+            flash("Тест создан, но не удалось очистить результаты предыдущих тестов.", "warning")
 
         # Final processing of words_data_source based on general word_order and word_count
         # (This was previously somewhat mixed with initial fetching)

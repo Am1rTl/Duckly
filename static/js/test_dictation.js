@@ -156,7 +156,7 @@ async function loadDictationWords(test_db_id, wordsContainer, loadingMessage, su
                 const charInputsWrapper = document.createElement('div');
                 charInputsWrapper.className = 'char-inputs-wrapper';
 
-                const numInputs = wordData.word_placeholder ? wordData.word_placeholder.length : (wordData.correct_answer ? wordData.correct_answer.length : 3);
+                const numInputs = 3;
 
                 for (let i = 0; i < numInputs; i++) {
                     const input = document.createElement('input');
