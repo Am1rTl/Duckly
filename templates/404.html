@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Страница не найдена</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #fff0f5 0%, #ffffff 70%, #ffe4e1 100%); /* Светло-розовый и белый фон */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Arial', sans-serif;
+            color: #555;
+            text-align: center;
+        }
+        #animationCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0; /* Холст под контентом */
+        }
+        .content {
+            position: relative; /* Чтобы был над холстом */
+            z-index: 1;
+            padding: 20px;
+            /* ИЗМЕНЕНИЕ: Убран задний фон и тень */
+            /* background-color: rgba(255, 255, 255, 0.75); */
+            /* box-shadow: 0 0 15px rgba(0,0,0,0.1); */
+            border-radius: 10px; /* Оставим, если пригодится для других элементов в будущем */
+        }
+        h1 {
+            font-size: 3em; /* Увеличил для заметности */
+            color: #ff69b4; /* Розовый акцент */
+            /* ИЗМЕНЕНИЕ: Убран нижний отступ */
+            margin-bottom: 0; 
+        }
+        /* Параграфы были удалены из HTML, так что этот стиль больше не нужен, но оставлю его закомментированным, чтобы показать, что он относился к параграфам */
+        /*
+        p {
+            font-size: 1.2em;
+            line-height: 1.5;
+            margin: 0; 
+            margin-bottom: 0.5em;
+        }
+        p:last-child {
+            margin-bottom: 0;
+        }
+        */
+    </style>
+</head>
+<body>
+    <canvas id="animationCanvas"></canvas>
+    <div class="content">
+        <h1>404</h1>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('animationCanvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            cat.idleWalk.centerX = canvas.width / 2;
+            cat.idleWalk.centerY = canvas.height / 2;
+            cat.idleWalk.radius = Math.min(canvas.width, canvas.height) * 0.3;
+        });
+
+        let mouse = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            moved: false
+        };
+
+        canvas.addEventListener('mousemove', (event) => {
+            mouse.x = event.clientX;
+            mouse.y = event.clientY;
+            if (!mouse.moved) { // Проверяем, было ли это первое движение мыши за некоторое время
+                 if (cat.state === 'idle_walking' || cat.state === 'idle_looking' || cat.state === 'playing_petals') {
+                    cat.state = 'hunting';
+                    cat.expression = 'excited';
+                }
+            }
+            mouse.moved = true; // Флаг, что мышь двигалась в этом цикле
+            cat.idleTimer = 0; // Сбрасываем таймер бездействия при любой активности мыши
+        });
+        canvas.addEventListener('mouseleave', () => {
+            // Если мышь покинула холст во время охоты, нюханья или подготовки к прыжку, кот должен вернуться в состояние бездействия
+            if (cat.state === 'hunting' || cat.state === 'sniffing' || cat.state === 'pounce_setup' || cat.state === 'pouncing') {
+                cat.state = 'idle_looking';
+                cat.expression = 'surprised';
+                cat.idleTimer = 0; // Сбросить таймер бездействия, чтобы позволить новое взаимодействие
+            }
+        });
+
+
+        // --- КОТ ---
+        let cat = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            width: 90, // Базовая ширина для пропорций кота
+            height: 70, // Базовая высота
+            angle: 0, // Угол направления
+            speed: 3,
+            currentSpeed: 3,
+            state: 'idle_looking', // Начальное состояние: 'hunting', 'pouncing', 'idle_looking', 'idle_walking', 'playing_petals', 'sniffing', 'pounce_setup'
+            expression: 'calm', // 'calm', 'excited', 'surprised', 'playful', 'curious'
+            idleTimer: 0, // Секунды бездействия
+            lastActivityTime: Date.now(), // Для расчета deltaTime
+
+            targetX: mouse.x, // Цель для охоты (может быть как курсор, так и точка отступления)
+            targetY: mouse.y,
+            pounce: {
+                isPouncing: false,
+                duration: 40, // Увеличена продолжительность для более выраженных фаз
+                currentFrame: 0,
+                pawExtension: 0,
+                pounceSpeedBoost: 2.5, // Увеличен множитель скорости во время прыжка
+                committedTargetX: 0, // X-координата мыши в момент начала прыжка
+                committedTargetY: 0, // Y-координата мыши в момент начала прыжка
+                initialX: 0, // Начальная X-координата кота в момент начала прыжка/отступления
+                initialY: 0, // Начальная Y-координата кота в момент начала прыжка/отступления
+            },
+            sniffingStartTime: 0, // Время начала нюханья
+
+            idleWalk: {
+                centerX: canvas.width / 2,
+                centerY: canvas.height / 2,
+                radius: Math.min(canvas.width, canvas.height) * 0.3,
+                angle: 0, // Текущий угол на круговой траектории
+                baseSpeed: 0.015, // Угловая скорость для ходьбы
+                currentSpeed: 0.015,
+                isRunMode: false, // True, если кот бежит в режиме бездействия
+                stepPhase: 0, // Для цикла анимации лап
+            },
+            // Новые свойства для хвоста
+            tailSegments: [], // Массив {x, y, vx, vy}
+            tailSegmentLength: 10, // Длина каждого сегмента хвоста
+            tailSegmentCount: 8, // Количество сегментов
+            tailSpringStrength: 0.2, // Сила "пружины" между сегментами
+            tailDamping: 0.8, // Демпфирование (сохранение скорости)
+            tailWindMultiplier: 0.08, // Насколько сильно ветер влияет на хвост
+
+            currentPawPrintDelay: 0,
+            pawPrintInterval: 15, // Кадры между отпечатками лап (регулируется скоростью)
+
+            batting: { // Новые свойства для анимации "удара лапой"
+                isBatting: false,
+                duration: 15, // кадры для одного удара
+                currentFrame: 0,
+                pawExtension: 0,
+                targetPetal: null // Лепесток, по которому кот сейчас бьет
+            }
+        };
+
+        // --- Константы для поведения кота ---
+        const SNIFF_DISTANCE = cat.width * 0.25; // Расстояние, на котором кот останавливается, чтобы "понюхать" курсор
+        const POUNCE_RETREAT_MAGNITUDE = cat.width * 0.5; // Насколько далеко кот отступает перед прыжком
+        const SNIFF_DURATION_SECS = 1.0; // Сколько секунд кот "нюхает"
+        const POUNCE_HIT_THRESHOLD = cat.width * 0.5; // Расстояние, при котором считается, что кот "попал" по курсору после прыжка
+
+        // --- СЛЕДЫ ЛАП ---
+        let pawPrints = [];
+        const PAW_PRINT_LIFETIME = 2500; // миллисекунды
+        const PAW_PRINT_SIZE = 8;
+
+        function addPawPrint(x, y, angle) {
+            // Смещение отпечатков лап для имитации левой/правой лапы
+            const pawOffsetY = cat.height * 0.4;
+            const pawDist = cat.width * 0.15;
+
+            // Добавляем пару отпечатков
+            pawPrints.push({
+                x: x + Math.cos(angle) * pawOffsetY - Math.sin(angle) * pawDist,
+                y: y + Math.sin(angle) * pawOffsetY + Math.cos(angle) * pawDist,
+                opacity: 1,
+                createdAt: Date.now(),
+                angle: angle
+            });
+            pawPrints.push({
+                x: x + Math.cos(angle) * pawOffsetY + Math.sin(angle) * pawDist,
+                y: y + Math.sin(angle) * pawOffsetY - Math.cos(angle) * pawDist,
+                opacity: 1,
+                createdAt: Date.now(),
+                angle: angle
+            });
+        }
+
+        function addPawPrintWhileMoving() {
+            // Вызываем только если кот движется достаточно быстро
+            if (cat.currentSpeed > 0.5) { 
+                cat.currentPawPrintDelay++;
+                // Интервал зависит от скорости кота, чтобы отпечатки были равномерными
+                if (cat.currentPawPrintDelay >= cat.pawPrintInterval / (cat.currentSpeed / cat.speed)) { 
+                    addPawPrint(cat.x, cat.y, cat.angle);
+                    cat.currentPawPrintDelay = 0;
+                }
+            } else {
+                cat.currentPawPrintDelay = cat.pawPrintInterval; // Сброс, чтобы не было моментальных отпечатков при старте движения
+            }
+        }
+
+        function drawPawPrints() {
+            pawPrints = pawPrints.filter(p => {
+                const age = Date.now() - p.createdAt;
+                if (age > PAW_PRINT_LIFETIME) return false;
+                p.opacity = 1 - (age / PAW_PRINT_LIFETIME);
+                return true;
+            });
+
+            pawPrints.forEach(p => {
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.angle);
+                ctx.fillStyle = `rgba(100, 100, 100, ${p.opacity * 0.4})`; // Полупрозрачный серый
+
+                // Основная подушечка
+                ctx.beginPath();
+                ctx.ellipse(0, 0, PAW_PRINT_SIZE * 0.5, PAW_PRINT_SIZE * 0.6, 0, 0, Math.PI * 2);
+                ctx.fill();
+                // Подушечки пальцев (3 маленьких по дуге, 1 чуть выше)
+                for (let i = -1; i <= 1; i++) {
+                     ctx.beginPath();
+                     ctx.arc(i * PAW_PRINT_SIZE * 0.35, -PAW_PRINT_SIZE * 0.5, PAW_PRINT_SIZE * 0.2, 0, Math.PI * 2);
+                     ctx.fill();
+                }
+                ctx.beginPath(); // Подушечка "большого пальца"
+                ctx.arc(0, -PAW_PRINT_SIZE * 0.7, PAW_PRINT_SIZE * 0.18, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            });
+        }
+
+        // --- ВЕТЕР ---
+        let wind = {
+            strength: 0, // Текущая сила ветра (от 0 до ~2.5)
+            directionX: -1, // Преимущественно справа налево
+            directionY: 0, // Небольшое вертикальное отклонение
+            targetStrength: 0, // Сила, к которой стремится ветер
+            lastChangeTime: Date.now(),
+            changeInterval: 5000 + Math.random() * 5000 // мс между изменениями ветра
+        };
+
+        function updateWind() {
+            if (Date.now() - wind.lastChangeTime > wind.changeInterval) {
+                wind.targetStrength = Math.random() * 2.5;
+                if (Math.random() < 0.3) wind.targetStrength = 0; // Шанс безветрия
+
+                // Ветер преимущественно справа налево, с небольшим угловым отклонением
+                wind.directionX = -0.7 - Math.random() * 0.6; // Гарантирует, что всегда отрицательный
+                wind.directionY = (Math.random() - 0.5) * 0.6; // от -0.3 до 0.3
+
+                wind.lastChangeTime = Date.now();
+                wind.changeInterval = 4000 + Math.random() * 6000; // Время следующего изменения
+            }
+            // Плавный переход к целевой силе
+            wind.strength += (wind.targetStrength - wind.strength) * 0.03;
+        }
+
+        // --- ЛЕПЕСТКИ САКУРЫ ---
+        let sakuraPetals = [];
+        const NUM_FALLING_PETALS = 25; // Уменьшенное количество лепестков
+        const GROUNDED_PETAL_LIFETIME = 5000; // 5 секунд, после которых наземный лепесток исчезает
+        const GROUNDED_PETAL_FADE_DURATION = 1000; // Последняя 1 секунда для плавного исчезания
+
+        function createPetal() {
+            const opacity = Math.random() * 0.4 + 0.6;
+            return {
+                x: Math.random() * canvas.width,
+                y: Math.random() * -canvas.height, // Начинаем над экраном
+                size: Math.random() * 6 + 4, // от 4px до 10px
+                speedY: Math.random() * 0.8 + 0.3, // Базовая вертикальная скорость
+                speedX: (Math.random() - 0.5) * 0.5, // Базовое горизонтальное мерцание
+                rotation: Math.random() * Math.PI * 2,
+                rotationSpeed: (Math.random() - 0.5) * 0.07,
+                opacity: opacity,
+                initialOpacity: opacity, // Сохраняем начальную прозрачность для корректного затухания
+                type: Math.floor(Math.random() * 3), // 3 различные формы лепестков
+                sway: (Math.random() - 0.5) * 0.05, // Коэффициент горизонтального покачивания
+                swaySpeed: Math.random() * 0.01 + 0.005, // Скорость цикла покачивания
+                grounded: false, // Новое свойство для накапливания
+                groundedTime: 0 // Время, когда лепесток достиг земли
+            };
+        }
+
+        // Инициализируем с меньшим количеством лепестков для "падения"
+        for (let i = 0; i < NUM_FALLING_PETALS; i++) {
+            sakuraPetals.push(createPetal());
+        }
+        // Добавляем немного больше лепестков изначально, чтобы некоторые быстрее достигли земли для визуального эффекта куч
+        for (let i = 0; i < NUM_FALLING_PETALS / 2; i++) {
+            const p = createPetal();
+            p.y = Math.random() * canvas.height; // Могут начать в любом месте экрана
+            sakuraPetals.push(p);
+        }
+
+
+        function drawSakuraPetal(petal) {
+            ctx.save();
+            ctx.translate(petal.x, petal.y);
+            ctx.rotate(petal.rotation);
+            ctx.beginPath();
+            ctx.fillStyle = `rgba(255, 182, 193, ${petal.opacity})`; // Светло-розовый
+
+            if (petal.type === 0) { // Простой эллипс
+                ctx.ellipse(0, 0, petal.size, petal.size / 1.8, 0, 0, Math.PI * 2);
+            }
+            else if (petal.type === 1) { // Классическая форма сердечка
+                ctx.moveTo(0, -petal.size / 2);
+                ctx.bezierCurveTo(petal.size / 1.5, -petal.size / 3, petal.size / 1.5, petal.size / 4, 0, petal.size / 1.8);
+                ctx.bezierCurveTo(-petal.size / 1.5, petal.size / 4, -petal.size / 1.5, -petal.size / 3, 0, -petal.size / 2);
+            }
+            else { // Более вытянутая, заостренная форма
+                ctx.moveTo(0, -petal.size * 0.6);
+                ctx.quadraticCurveTo(petal.size * 0.7, 0, 0, petal.size * 0.6);
+                ctx.quadraticCurveTo(-petal.size * 0.7, 0, 0, -petal.size * 0.6);
+            }
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawSakuraPetals() {
+            // Рисуем лепестки на земле первыми, чтобы они появлялись "под" падающими
+            sakuraPetals.filter(p => p.grounded).forEach(drawSakuraPetal);
+            sakuraPetals.filter(p => !p.grounded).forEach(drawSakuraPetal);
+        }
+
+
+        function updateSakuraPetals() {
+            // Добавляем новые лепестки, если количество слишком мало (для постоянного падения даже при накапливании)
+            if (sakuraPetals.length < NUM_FALLING_PETALS) {
+                sakuraPetals.push(createPetal());
+            }
+
+            sakuraPetals = sakuraPetals.filter(p => {
+                if (p.grounded) {
+                    const age = Date.now() - p.groundedTime;
+                    if (age >= GROUNDED_PETAL_LIFETIME) {
+                        return false; // Удаляем лепеток, если его время жизни истекло
+                    } else if (age > GROUNDED_PETAL_LIFETIME - GROUNDED_PETAL_FADE_DURATION) {
+                        // Плавно уменьшаем прозрачность в последние секунды
+                        p.opacity = p.initialOpacity * ((GROUNDED_PETAL_LIFETIME - age) / GROUNDED_PETAL_FADE_DURATION);
+                    }
+                    // Наземные лепестки все еще могут быть подвержены горизонтальному ветру
+                    let windForceX = wind.strength * wind.directionX * (p.size / 10);
+                    p.x += windForceX * 0.1; // Гораздо медленнее горизонтальный дрейф при нахождении на земле
+                    return true;
+                }
+
+                p.y += p.speedY; // Базовая скорость падения
+
+                // Эффект ветра
+                let windForceX = wind.strength * wind.directionX * (p.size / 5) ; // Большие лепестки сильнее подвержены
+                let windForceY = wind.strength * wind.directionY * (p.size / 10);
+
+                p.x += p.speedX + windForceX; // Горизонтальное движение от базового мерцания и ветра
+                p.y += windForceY; // Ветер также может немного толкать лепестки вверх или вниз
+
+                p.rotation += p.rotationSpeed * (1 + wind.strength * 0.3); // Ветер заставляет их вращаться быстрее
+                p.x += Math.sin(p.y * p.swaySpeed) * p.sway * p.size; // Нежное покачивание из стороны в сторону
+
+                // Взаимодействие с котом (только для не-наземных лепестков)
+                if (cat.state === 'playing_petals' || cat.state === 'hunting' || cat.state === 'pouncing') {
+                    let dxCat = p.x - cat.x;
+                    let dyCat = p.y - cat.y;
+                    let distCat = Math.sqrt(dxCat * dxCat + dyCat * dyCat);
+                    // Больший радиус взаимодействия для игры/прыжков
+                    let interactionRadius = (cat.width / 2 + p.size) * (cat.state === 'pouncing' || cat.batting.isBatting ? 1.5 : 1);
+
+                    if (distCat < interactionRadius) {
+                        let pushFactor = 1.5; // Базовое отталкивание
+                        if (cat.state === 'pouncing') pushFactor = 2.5; // Более сильное отталкивание при прыжке
+                        if (cat.state === 'playing_petals' && cat.batting.isBatting && cat.batting.targetPetal === p) {
+                             pushFactor = 3.0; // Самое сильное отталкивание при активном ударе
+                             p.y -= 5; // Небольшой удар вверх
+                        }
+
+                        // Отталкиваем лепесток от кота
+                        p.speedX += (dxCat / distCat) * pushFactor * (Math.random() * 0.5 + 0.5);
+                        p.speedY += (dyCat / distCat) * pushFactor * (Math.random() * 0.5 + 0.2);
+                        p.rotationSpeed += (Math.random() - 0.5) * 0.15; // Заставляем его кувыркаться
+                        p.opacity = Math.max(0.2, p.opacity - 0.1); // Кратковременно делаем более прозрачным
+                    }
+                }
+
+                // Лепестки достигают земли (накапливание)
+                if (p.y >= canvas.height - p.size * 0.5 && !p.grounded) { // Проверяем !p.grounded, чтобы установить groundedTime только один раз
+                    p.y = canvas.height - p.size * 0.5; // Прижимаем к земле
+                    p.speedY = 0; // Останавливаем вертикальное движение
+                    p.speedX *= 0.1; // Уменьшаем горизонтальное мерцание
+                    p.rotationSpeed = 0; // Останавливаем вращение
+                    p.sway = 0; // Останавливаем покачивание
+                    p.grounded = true; // Отмечаем как "наземный"
+                    p.groundedTime = Date.now(); // Запоминаем время приземления
+                }
+                
+                // Обработка краев экрана (только для не-наземных лепестков)
+                if (p.x < -p.size * 5) { // Сдуло влево
+                     Object.assign(p, createPetal());
+                     p.x = canvas.width + p.size * 2; // Появляется справа
+                     p.y = Math.random() * canvas.height * 0.5; // На случайной высоте справа
+                } else if (p.x > canvas.width + p.size * 5) { // Сдуло вправо
+                     Object.assign(p, createPetal());
+                     p.x = -p.size * 2; // Появляется слева
+                     p.y = Math.random() * canvas.height * 0.5;
+                }
+                return true; // Сохраняем лепеток, если он еще не исчез
+            });
+        }
+
+        // --- НОВАЯ ФУНКЦИЯ ДЛЯ ОБНОВЛЕНИЯ ХВОСТА ---
+        function updateCatTail() {
+            // 1. Вычисляем целевую позицию для основания хвоста (сегмент 0)
+            // Это относительно текущего положения и поворота кота
+            const tailBaseRelX = -cat.width * 0.42; // Относительная X от центра кота
+            const tailBaseRelY = cat.height * 0.1; // Относительная Y от центра кота
+
+            // Конвертируем относительные координаты в мировые
+            const targetBaseWorldX = cat.x + tailBaseRelX * Math.cos(cat.angle) - tailBaseRelY * Math.sin(cat.angle);
+            const targetBaseWorldY = cat.y + tailBaseRelX * Math.sin(cat.angle) + tailBaseRelY * Math.cos(cat.angle);
+
+            // Применяем пружинную силу и демпфирование к первому сегменту (основанию хвоста)
+            let baseSegment = cat.tailSegments[0];
+            baseSegment.vx += (targetBaseWorldX - baseSegment.x) * cat.tailSpringStrength * 2; // Более сильное притяжение для основания
+            baseSegment.vy += (targetBaseWorldY - baseSegment.y) * cat.tailSpringStrength * 2;
+
+            baseSegment.vx *= cat.tailDamping;
+            baseSegment.vy *= cat.tailDamping;
+
+            baseSegment.x += baseSegment.vx;
+            baseSegment.y += baseSegment.vy;
+
+            // 2. Обновляем последующие сегменты, используя физическую модель "цепочки"
+            for (let i = 1; i < cat.tailSegmentCount; i++) {
+                let prevSegment = cat.tailSegments[i-1];
+                let currentSegment = cat.tailSegments[i];
+
+                // Вектор от текущего сегмента к предыдущему
+                let dx = prevSegment.x - currentSegment.x;
+                let dy = prevSegment.y - currentSegment.y;
+                let dist = Math.sqrt(dx * dx + dy * dy);
+
+                // Поддержание длины сегмента (притяжение текущего к предыдущему)
+                if (dist > cat.tailSegmentLength) {
+                    let angle = Math.atan2(dy, dx);
+                    let targetX = prevSegment.x - Math.cos(angle) * cat.tailSegmentLength;
+                    let targetY = prevSegment.y - Math.sin(angle) * cat.tailSegmentLength;
+
+                    currentSegment.vx += (targetX - currentSegment.x) * cat.tailSpringStrength;
+                    currentSegment.vy += (targetY - currentSegment.y) * cat.tailSpringStrength;
+                }
+
+                // Применение силы ветра (усиливается к кончику хвоста)
+                currentSegment.vx += wind.directionX * wind.strength * cat.tailWindMultiplier * (i / cat.tailSegmentCount);
+                currentSegment.vy += wind.directionY * wind.strength * cat.tailWindMultiplier * (i / cat.tailSegmentCount);
+
+                // Применение демпфирования
+                currentSegment.vx *= cat.tailDamping;
+                currentSegment.vy *= cat.tailDamping;
+
+                // Обновление позиции
+                currentSegment.x += currentSegment.vx;
+                currentSegment.y += currentSegment.vy;
+
+                // Опционально: Ограничение, чтобы сегменты не растягивались/сжимались слишком сильно
+                dx = prevSegment.x - currentSegment.x;
+                dy = prevSegment.y - currentSegment.y;
+                dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist > cat.tailSegmentLength * 1.5) { // Предотвратить чрезмерное растяжение
+                    let angle = Math.atan2(dy, dx);
+                    currentSegment.x = prevSegment.x - Math.cos(angle) * cat.tailSegmentLength * 1.5;
+                    currentSegment.y = prevSegment.y - Math.sin(angle) * cat.tailSegmentLength * 1.5;
+                } else if (dist < cat.tailSegmentLength * 0.5 && i > 0) { // Предотвратить чрезмерное сжатие
+                    let angle = Math.atan2(dy, dx);
+                    currentSegment.x = prevSegment.x - Math.cos(angle) * cat.tailSegmentLength * 0.5;
+                    currentSegment.y = prevSegment.y - Math.sin(angle) * cat.tailSegmentLength * 0.5;
+                }
+            }
+        }
+
+
+        function drawCat() {
+            // 1. Рисуем хвост (используя мировые координаты сегментов) - ИСПОЛЬЗУЕМ НОВЫЙ МЕТОД РИСОВАНИЯ СПЛАЙНА
+            if (cat.tailSegments.length > 1) {
+                ctx.beginPath();
+                ctx.moveTo(cat.tailSegments[0].x, cat.tailSegments[0].y); // Начинаем от основания хвоста
+
+                // Рисуем кривые до предпоследнего сегмента
+                for (let i = 1; i < cat.tailSegmentCount - 1; i++) {
+                    let p0 = cat.tailSegments[i]; // Текущий сегмент как контрольная точка
+                    let p1 = cat.tailSegments[i+1]; // Следующий сегмент
+                    // Середина между текущим и следующим сегментом
+                    let midX = (p0.x + p1.x) / 2;
+                    let midY = (p0.y + p1.y) / 2;
+                    
+                    ctx.quadraticCurveTo(p0.x, p0.y, midX, midY); // Кривая от предыдущей точки до середины, через текущий сегмент
+                }
+                
+                // Завершаем последним сегментом (от последней середины до кончика)
+                // Если сегментов достаточно, последняя кривая уже была нарисована до midX/midY
+                // Тогда просто рисуем прямую линию до последней точки
+                // Иначе (если всего 2 сегмента), lastMidX/Y не будут иметь смысла
+                if (cat.tailSegmentCount > 1) { // Проверяем, что есть хотя бы 2 сегмента, чтобы получить "последний"
+                    ctx.lineTo(cat.tailSegments[cat.tailSegmentCount-1].x, cat.tailSegments[cat.tailSegmentCount-1].y);
+                }
+
+
+                ctx.lineWidth = 13;
+                ctx.strokeStyle = '#707070';
+                ctx.lineCap = 'round';
+                ctx.stroke();
+                ctx.lineWidth = 9;
+                ctx.strokeStyle = '#888888';
+                ctx.stroke();
+            }
+
+
+            // 2. Рисуем остальную часть кота (относительно трансформации кота)
+            ctx.save();
+            ctx.translate(cat.x, cat.y);
+            ctx.rotate(cat.angle);
+
+            // Тень
+            ctx.beginPath();
+            ctx.ellipse(0, cat.height * 0.48, cat.width * 0.38, cat.height * 0.12, 0, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(0,0,0,${0.08 + wind.strength * 0.01})`;
+            ctx.fill();
+
+            // Задние лапы
+            let rearPawOffset = 0;
+            if (cat.state === 'idle_walking' || cat.state === 'hunting' || cat.state === 'pounce_setup') {
+                 // Увеличено значение 5 до 10 для более длинных шагов
+                 rearPawOffset = Math.sin(cat.idleWalk.stepPhase + Math.PI/2) * 10 * (cat.idleWalk.isRunMode ? 1.5 : 1);
+            }
+            for (let i = -1; i <= 1; i += 2) {
+                ctx.fillStyle = '#888888';
+                ctx.strokeStyle = '#777777';
+                ctx.lineWidth = 1.5;
+                // Бедро
+                ctx.beginPath();
+                ctx.ellipse(-cat.width * 0.28 * i, cat.height * 0.15, cat.width * 0.15, cat.height * 0.2, 0,0, Math.PI*2);
+                ctx.fill(); ctx.stroke();
+                // Голень
+                ctx.beginPath();
+                ctx.moveTo(-cat.width * 0.25 * i, cat.height * 0.25);
+                ctx.quadraticCurveTo(
+                    -cat.width * 0.2 * i - rearPawOffset * i * 0.3, cat.height * 0.35,
+                    -cat.width * 0.15 * i - rearPawOffset * i, cat.height * 0.42
+                );
+                ctx.lineWidth = 10; ctx.strokeStyle = '#888888'; ctx.lineCap = 'round'; ctx.stroke();
+                // Лапа (добавлено смещение по Y для анимации подъема/опускания)
+                ctx.beginPath();
+                ctx.arc(-cat.width * 0.15 * i - rearPawOffset*i, cat.height * 0.42 - Math.abs(rearPawOffset)*0.05, 5,0,Math.PI*2);
+                ctx.fillStyle = '#777777'; ctx.fill();
+            }
+
+            // Тело
+            ctx.beginPath();
+            ctx.ellipse(0, 0, cat.width * 0.4, cat.height * 0.45, 0, 0, Math.PI * 2);
+            ctx.fillStyle = '#888888';
+            ctx.fill();
+            ctx.strokeStyle = '#777777';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Передние лапы
+            let pawOffsetWalk = 0;
+            if (cat.state === 'idle_walking' || cat.state === 'hunting' || cat.state === 'pounce_setup') {
+                // Увеличено значение 7 до 12 для более длинных шагов
+                pawOffsetWalk = Math.sin(cat.idleWalk.stepPhase) * 12 * (cat.idleWalk.isRunMode ? 1.5 : 1);
+            }
+
+            for (let i = -1; i <= 1; i += 2) {
+                // Плечо
+                ctx.beginPath();
+                ctx.ellipse(cat.width * 0.22 * i, cat.height * 0.05, cat.width * 0.1, cat.height*0.15, 0,0,Math.PI*2);
+                ctx.fillStyle = '#888888'; ctx.fill(); ctx.strokeStyle = '#777777'; ctx.lineWidth = 1.5; ctx.stroke();
+
+                // Нижняя часть лапы/сама лапа
+                ctx.beginPath();
+                ctx.moveTo(cat.width * 0.22 * i, cat.height * 0.1);
+                // Вычисляем положение колена и лапы в зависимости от состояния
+                let currentPawExtension = 0;
+                if (cat.pounce.isPouncing) currentPawExtension = cat.pounce.pawExtension;
+                else if (cat.batting.isBatting) currentPawExtension = cat.batting.pawExtension;
+
+                let kneeX = cat.width * 0.20 * i + (currentPawExtension * i * 0.3) + pawOffsetWalk * i * 0.5;
+                // Увеличено влияние pawOffsetWalk на Y-координату для более выраженного движения
+                let kneeY = cat.height * 0.30 + (currentPawExtension * 0.05) + Math.abs(pawOffsetWalk) * 0.1;
+                let pawX = cat.width * 0.22 * i + (currentPawExtension * i * 0.9) + pawOffsetWalk * i;
+                // Увеличено влияние pawOffsetWalk на Y-координату для более выраженного движения
+                let pawY = cat.height * 0.42 + (currentPawExtension * 0.2) + Math.abs(pawOffsetWalk) * 0.1;
+
+                ctx.quadraticCurveTo(kneeX, kneeY, pawX, pawY);
+                ctx.lineWidth = 11;
+                ctx.strokeStyle = '#888888';
+                ctx.lineCap = 'round';
+                ctx.stroke();
+                // Лапа
+                ctx.beginPath();
+                ctx.arc(pawX, pawY, 6, 0, Math.PI * 2);
+                ctx.fillStyle = '#777777';
+                ctx.fill();
+            }
+
+            // Голова
+            let headX = cat.width * 0.33;
+            let headY = 0;
+            ctx.beginPath();
+            ctx.arc(headX, headY, cat.height * 0.3, 0, Math.PI * 2);
+            ctx.fillStyle = '#888888'; ctx.fill();
+            ctx.strokeStyle = '#777777'; ctx.lineWidth = 1.5; ctx.stroke();
+
+            // Уши
+            for (let i = -1; i <= 1; i += 2) {
+                ctx.beginPath();
+                let earBaseY = -cat.height * 0.28 * i;
+                ctx.moveTo(headX, earBaseY);
+                ctx.lineTo(headX + cat.height * 0.15 * i, earBaseY - cat.height * 0.12 * i);
+                ctx.lineTo(headX + cat.height * 0.05 * i, earBaseY + cat.height * 0.13 * i);
+                ctx.closePath();
+                ctx.fillStyle = '#888888'; ctx.fill();
+                ctx.strokeStyle = '#777777'; ctx.lineWidth = 1.5; ctx.stroke();
+
+                // Внутреннее ухо (розовое)
+                ctx.beginPath();
+                ctx.moveTo(headX + cat.height*0.03*i, earBaseY - cat.height * 0.01 * i);
+                ctx.lineTo(headX + cat.height * 0.1 * i, earBaseY - cat.height * 0.08 * i);
+                ctx.lineTo(headX + cat.height * 0.04 * i, earBaseY + cat.height * 0.08 * i);
+                ctx.closePath();
+                ctx.fillStyle = '#FFB6C1';
+                ctx.fill();
+            }
+
+            // Глаза (темно-зелено-желтые)
+            let eyeRadius = cat.height * 0.055;
+            let eyeYOffset = cat.height * 0.1;
+            let eyeXPos = headX + cat.width * 0.07;
+
+            for (let i = -1; i <= 1; i += 2) {
+                ctx.beginPath();
+                let currentEyeRadius = eyeRadius;
+                // Форма глаза в зависимости от выражения
+                if (cat.expression === 'excited' || cat.expression === 'playful') {
+                     ctx.ellipse(eyeXPos, headY + eyeYOffset * i, currentEyeRadius, currentEyeRadius * 0.65, 0, 0, Math.PI * 2);
+                } else if (cat.expression === 'surprised' || cat.expression === 'curious') { // Добавлено curious
+                    currentEyeRadius *= 1.25;
+                     ctx.arc(eyeXPos, headY + eyeYOffset * i, currentEyeRadius, 0, Math.PI * 2);
+                } else {
+                     ctx.arc(eyeXPos, headY + eyeYOffset * i, currentEyeRadius, 0, Math.PI * 2);
+                }
+
+                // Градиент цвета глаз
+                let grad = ctx.createRadialGradient(
+                    eyeXPos, headY + eyeYOffset * i, currentEyeRadius * 0.1,
+                    eyeXPos, headY + eyeYOffset * i, currentEyeRadius
+                );
+                grad.addColorStop(0, '#AECB5B');
+                grad.addColorStop(1, '#4A5D23');
+                ctx.fillStyle = grad;
+                ctx.fill();
+
+                // Зрачки
+                ctx.beginPath();
+                let pupilWidth = currentEyeRadius * 0.25;
+                let pupilHeight = currentEyeRadius * 0.7;
+                if (cat.expression === 'excited' || cat.expression === 'surprised' || cat.expression === 'playful' || cat.expression === 'curious') { // Добавлено curious
+                    pupilHeight = currentEyeRadius * 0.5;
+                    pupilWidth = pupilHeight;
+                }
+                ctx.ellipse(eyeXPos, headY + eyeYOffset * i, pupilWidth, pupilHeight, 0, 0, Math.PI * 2);
+                ctx.fillStyle = 'black';
+                ctx.fill();
+                // Блик на глазу
+                ctx.beginPath();
+                ctx.arc(eyeXPos + currentEyeRadius * 0.25, headY + eyeYOffset * i - currentEyeRadius * 0.25, currentEyeRadius * 0.2, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                ctx.fill();
+            }
+
+            // Нос
+            let noseX = headX + cat.width * 0.13;
+            let noseY = headY;
+            ctx.beginPath();
+            ctx.moveTo(noseX, noseY - cat.height * 0.025);
+            ctx.lineTo(noseX + cat.width*0.03, noseY);
+            ctx.lineTo(noseX, noseY + cat.height * 0.025);
+            ctx.closePath();
+            ctx.fillStyle = '#FFA07A';
+            ctx.fill();
+
+            // Рот
+            let mouthX = noseX;
+            let mouthY = noseY + cat.height * 0.05;
+            ctx.beginPath();
+            ctx.moveTo(mouthX, mouthY);
+            if (cat.expression === 'surprised' || cat.expression === 'curious') { // Добавлено curious
+                 ctx.arc(mouthX, mouthY + cat.height*0.02, cat.height*0.03, 0.2*Math.PI, 1.8*Math.PI);
+            } else if (cat.expression === 'playful' || cat.expression === 'excited') {
+                ctx.quadraticCurveTo(mouthX, mouthY + cat.height * 0.05, mouthX - cat.width * 0.02, mouthY + cat.height * 0.03);
+                ctx.moveTo(mouthX, mouthY);
+                ctx.quadraticCurveTo(mouthX, mouthY + cat.height * 0.05, mouthX + cat.width * 0.02, mouthY + cat.height * 0.03);
+            } else {
+                ctx.lineTo(mouthX - cat.width * 0.02, mouthY + cat.height * 0.03);
+                ctx.moveTo(mouthX, mouthY);
+                ctx.lineTo(mouthX + cat.width * 0.02, mouthY + cat.height * 0.03);
+            }
+            ctx.strokeStyle = '#444';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function updateCat() {
+            const now = Date.now();
+            const deltaTime = (now - cat.lastActivityTime) / 1000;
+            cat.lastActivityTime = now;
+
+            if(mouse.moved) {
+                cat.idleTimer = 0;
+            } else {
+                cat.idleTimer += deltaTime;
+            }
+            mouse.moved = false;
+
+            // Регулировка скорости в зависимости от состояния
+            cat.currentSpeed = cat.speed;
+            if(cat.state === 'idle_walking' && cat.idleWalk.isRunMode) cat.currentSpeed *= 1.8;
+            if(cat.state === 'pouncing') cat.currentSpeed *= cat.pounce.pounceSpeedBoost;
+
+            // Сброс анимации "удара лапой", если кот не в состоянии 'playing_petals' или не бьет активно
+            if (cat.state !== 'playing_petals' || !cat.batting.isBatting) {
+                cat.batting.pawExtension = 0;
+                cat.batting.currentFrame = 0;
+            }
+            // Сброс анимации "прыжка", если кот не в состоянии 'pouncing', 'sniffing', 'pounce_setup'
+            if (cat.state !== 'pouncing' && cat.state !== 'sniffing' && cat.state !== 'pounce_setup') { 
+                cat.pounce.pawExtension = 0;
+                cat.pounce.currentFrame = 0;
+                cat.pounce.isPouncing = false; // Убедиться, что флаг сброшен
+            }
+
+
+            if (cat.state === 'hunting') {
+                cat.targetX = mouse.x;
+                cat.targetY = mouse.y;
+                cat.expression = 'excited';
+
+                let dx = cat.targetX - cat.x;
+                let dy = cat.targetY - cat.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+
+                let targetAngle = Math.atan2(dy, dx);
+                // Плавно вращаем кота к цели
+                let angleDiff = targetAngle - cat.angle;
+                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                cat.angle += angleDiff * 0.2;
+
+                if (distance > SNIFF_DISTANCE) {
+                    // Фаза приближения к курсору
+                    cat.x += Math.cos(cat.angle) * cat.currentSpeed;
+                    cat.y += Math.sin(cat.angle) * cat.currentSpeed;
+                    cat.idleWalk.stepPhase += 0.3 * (cat.currentSpeed / cat.speed);
+                    addPawPrintWhileMoving();
+                } else {
+                    // Достаточно близко, чтобы "понюхать"
+                    cat.state = 'sniffing';
+                    cat.sniffingStartTime = Date.now();
+                    cat.expression = 'curious';
+                    cat.idleWalk.stepPhase = 0; // Остановить анимацию ходьбы при нюханьи
+                }
+
+                if (cat.idleTimer > 3) {
+                     cat.state = 'idle_looking';
+                     cat.expression = 'surprised';
+                 }
+
+            } else if (cat.state === 'sniffing') {
+                cat.expression = 'curious';
+                cat.currentSpeed = 0; // Кот не движется
+
+                // Плавно поворачиваем кота к курсору
+                let dx = mouse.x - cat.x;
+                let dy = mouse.y - cat.y;
+                let targetAngle = Math.atan2(dy, dx);
+                let angleDiff = targetAngle - cat.angle;
+                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                cat.angle += angleDiff * 0.05; // Медленный поворот головы
+
+                if (Date.now() - cat.sniffingStartTime > SNIFF_DURATION_SECS * 1000) {
+                    // Нюханье закончено, готовимся к прыжку
+                    cat.state = 'pounce_setup';
+                    cat.pounce.initialX = cat.x;
+                    cat.pounce.initialY = cat.y;
+                    
+                    // Вычисляем цель отступления: отходим от текущего курсора на POUNCE_RETREAT_MAGNITUDE
+                    let angleAway = Math.atan2(cat.y - mouse.y, cat.x - mouse.x);
+                    cat.targetX = cat.x + Math.cos(angleAway) * POUNCE_RETREAT_MAGNITUDE;
+                    cat.targetY = cat.y + Math.sin(angleAway) * POUNCE_RETREAT_MAGNITUDE;
+                    cat.expression = 'excited';
+                }
+                // Если мышь резко ушла, отменяем нюханье и снова охотимся
+                if (mouse.moved && Math.sqrt(dx*dx + dy*dy) > cat.width) {
+                    cat.state = 'hunting';
+                    cat.expression = 'excited';
+                    cat.idleTimer = 0;
+                }
+
+            } else if (cat.state === 'pounce_setup') {
+                cat.expression = 'excited';
+                cat.currentSpeed = cat.speed * 0.8; // Медленнее движется для установки
+                cat.idleWalk.stepPhase += 0.2;
+                addPawPrintWhileMoving();
+
+                let dx = cat.targetX - cat.x;
+                let dy = cat.targetY - cat.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+
+                let targetAngle = Math.atan2(dy, dx);
+                let angleDiff = targetAngle - cat.angle;
+                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                cat.angle += angleDiff * 0.2; // Поворот к точке отступления
+
+                if (distance > 5) { // Ещё не достиг точки отступления
+                    cat.x += Math.cos(cat.angle) * cat.currentSpeed;
+                    cat.y += Math.sin(cat.angle) * cat.currentSpeed;
+                } else {
+                    // Достиг точки отступления, теперь прыгаем
+                    cat.state = 'pouncing';
+                    cat.pounce.isPouncing = true;
+                    cat.pounce.currentFrame = 0;
+                    // !!! Важно: Цель прыжка - ТЕКУЩАЯ позиция мыши !!!
+                    cat.pounce.committedTargetX = mouse.x;
+                    cat.pounce.committedTargetY = mouse.y;
+                    cat.pounce.initialX = cat.x; // Начальная позиция для расчета траектории прыжка
+                    cat.pounce.initialY = cat.y;
+                    cat.expression = 'excited';
+                }
+                // Если мышь резко ушла, отменяем подготовку и снова охотимся
+                if (mouse.moved && Math.sqrt(dx*dx + dy*dy) > cat.width * 2) {
+                    cat.state = 'hunting';
+                    cat.expression = 'excited';
+                    cat.idleTimer = 0;
+                }
+
+
+            } else if (cat.state === 'pouncing') {
+                cat.pounce.currentFrame++;
+                const pounceFrame = cat.pounce.currentFrame;
+                const totalDuration = cat.pounce.duration;
+                const windUpDuration = 10;
+                const lungeDuration = 20; // Кадры 11 по 30
+                const recoveryDuration = 10; // Кадры 31 по 40
+
+                // Цель прыжка (зафиксированная позиция мыши)
+                const targetPounceX = cat.pounce.committedTargetX;
+                const targetPounceY = cat.pounce.committedTargetY;
+
+                // Начальная позиция кота для расчета пути
+                const initialX = cat.pounce.initialX;
+                const initialY = cat.pounce.initialY;
+
+                // Угол к зафиксированной цели
+                const angleToCommittedTarget = Math.atan2(targetPounceY - cat.y, targetPounceX - cat.x);
+                let angleDiff = angleToCommittedTarget - cat.angle; // Исправлено имя переменной
+                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                cat.angle += angleDiff * 0.2; // Плавно поворачиваем кота к цели
+
+                if (pounceFrame <= windUpDuration) { // Фаза 1: Пригибание/Подготовка
+                    cat.expression = 'excited';
+                    let crouchProgress = pounceFrame / windUpDuration;
+                    cat.y = initialY + Math.sin(crouchProgress * Math.PI) * 5; // Небольшое приседание
+                    cat.pounce.pawExtension = crouchProgress * 10; // Легкое вытягивание лап
+                    cat.currentSpeed = cat.speed * 0.5; // Замедление перед прыжком
+
+                } else if (pounceFrame <= windUpDuration + lungeDuration) { // Фаза 2: Бросок/Выпад
+                    cat.expression = 'excited';
+                    const lungeProgress = (pounceFrame - windUpDuration) / lungeDuration; // От 0 до 1
+
+                    // Вытягивание лап, достигая максимума в середине броска
+                    // Максимальное вытягивание лап синхронизировано с достижением цели
+                    cat.pounce.pawExtension = 40 + Math.sin(lungeProgress * Math.PI) * 20; 
+
+                    // Линейное движение к зафиксированной цели
+                    cat.x = initialX + (targetPounceX - initialX) * lungeProgress;
+                    cat.y = initialY + (targetPounceY - initialY) * lungeProgress;
+
+                    // Небольшой прыжок вверх во время броска
+                    cat.y -= Math.sin(lungeProgress * Math.PI) * 20; // Увеличена высота прыжка
+                    cat.currentSpeed = cat.speed * cat.pounce.pounceSpeedBoost; // Высокая скорость
+
+                } else { // Фаза 3: Приземление/Восстановление
+                    cat.expression = 'calm';
+                    const recoveryProgress = (pounceFrame - (windUpDuration + lungeDuration)) / recoveryDuration; // От 0 до 1
+
+                    // Втягивание лап
+                    cat.pounce.pawExtension = Math.max(0, 40 * (1 - recoveryProgress)); // От 40 до 0
+
+                    // Возврат к нормальной Y-позиции
+                    cat.y = initialY; // Сброс Y
+
+                    cat.currentSpeed = cat.speed * 0.8; // Замедление
+                }
+
+                if (pounceFrame >= totalDuration) {
+                    cat.pounce.isPouncing = false;
+                    cat.pounce.pawExtension = 0;
+                    addPawPrint(cat.x, cat.y, cat.angle); // Отпечаток лапы в месте приземления
+
+                    // После прыжка определяем следующее состояние в зависимости от активности мыши и расстояния
+                    const distToMouseAfterPounce = Math.sqrt( (mouse.x - cat.x)**2 + (mouse.y - cat.y)**2 );
+
+                    if (distToMouseAfterPounce < POUNCE_HIT_THRESHOLD) { // Мышь все еще близко после прыжка
+                        cat.state = 'idle_looking';
+                        cat.expression = 'calm'; // Выражение удовлетворения
+                    } else if (cat.idleTimer > 1) { // Мышь бездействовала после прыжка
+                        cat.state = 'idle_looking';
+                        cat.expression = 'surprised';
+                    } else { // Мышь отдалилась, но все еще движется
+                        cat.state = 'hunting'; // Продолжаем охоту
+                        cat.expression = 'excited';
+                    }
+                }
+            } else if (cat.state === 'idle_looking') {
+                cat.idleWalk.stepPhase = 0;
+                cat.expression = 'surprised';
+                // Небольшой случайный поворот головы/тела во время осмотра
+                cat.angle += Math.sin(Date.now()*0.001 + cat.x * 0.01) * 0.005;
+
+                if (cat.idleTimer > 5) {
+                    cat.state = 'idle_walking';
+                    cat.expression = 'calm';
+                    // Устанавливаем начальный угол для круговой прогулки на основе текущей позиции относительно центра
+                    cat.idleWalk.angle = Math.atan2(cat.y - cat.idleWalk.centerY, cat.x - cat.idleWalk.centerX);
+                }
+                 if (cat.idleTimer < 0.1 && mouse.moved) {
+                    cat.state = 'hunting'; cat.expression = 'excited';
+                }
+                 // Попытка начать игру, если рядом есть лепестки и кот бездействует
+                const nearbyPetals = sakuraPetals.filter(p => !p.grounded && Math.sqrt( (p.x - cat.x)**2 + (p.y - cat.y)**2 ) < cat.width * 2);
+                if (nearbyPetals.length > 0 && Math.random() < 0.02 && cat.idleTimer > 2) {
+                    cat.state = 'playing_petals';
+                    cat.expression = 'playful';
+                    cat.idleTimer = 0;
+                }
+
+            } else if (cat.state === 'idle_walking') {
+                cat.expression = cat.idleWalk.isRunMode ? 'excited' : 'calm';
+                cat.idleWalk.currentSpeed = cat.idleWalk.baseSpeed * (cat.idleWalk.isRunMode ? 2.5 : 1);
+                cat.idleWalk.angle += cat.idleWalk.currentSpeed;
+
+                // Целевая позиция на круге
+                let targetWalkX = cat.idleWalk.centerX + Math.cos(cat.idleWalk.angle) * cat.idleWalk.radius;
+                let targetWalkY = cat.idleWalk.centerY + Math.sin(cat.idleWalk.angle) * cat.idleWalk.radius;
+
+                // Ориентируем кота по его пути на круге
+                let dx = targetWalkX - cat.x;
+                let dy = targetWalkY - cat.y;
+                let desiredAngle = Math.atan2(dy, dx);
+
+                let angleDiff = desiredAngle - cat.angle;
+                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                cat.angle += angleDiff * 0.1;
+
+                // Перемещаем кота к цели на круге
+                let moveSpeed = cat.currentSpeed * (cat.idleWalk.isRunMode ? 0.8 : 0.5);
+                cat.x += Math.cos(cat.angle) * moveSpeed;
+                cat.y += Math.sin(cat.angle) * moveSpeed;
+
+                cat.idleWalk.stepPhase += 0.15 * (cat.idleWalk.isRunMode ? 2 : 1);
+
+                // Случайное переключение между ходьбой и бегом
+                if (Math.random() < 0.003) {
+                    cat.idleWalk.isRunMode = !cat.idleWalk.isRunMode;
+                }
+
+                // Добавляем отпечатки лап
+                addPawPrintWhileMoving();
+
+                 if (cat.idleTimer < 0.1 && mouse.moved) {
+                    cat.state = 'hunting'; cat.expression = 'excited';
+                }
+                // Попытка начать игру, если рядом есть лепестки и кот бездействует
+                const nearbyPetals = sakuraPetals.filter(p => !p.grounded && Math.sqrt( (p.x - cat.x)**2 + (p.y - cat.y)**2 ) < cat.width * 2);
+                if (nearbyPetals.length > 0 && Math.random() < 0.01) {
+                    cat.state = 'playing_petals';
+                    cat.expression = 'playful';
+                    cat.idleTimer = 0;
+                }
+
+            } else if (cat.state === 'playing_petals') {
+                cat.expression = 'playful';
+                cat.idleWalk.stepPhase += 0.05;
+                // Убран случайный поворот, чтобы сделать движение плавнее
+                // cat.angle += (Math.random() - 0.5) * 0.02; 
+
+                // Находим ближайший не-наземный лепесток
+                let closestPetal = null;
+                let minDistance = Infinity;
+                sakuraPetals.forEach(p => {
+                    if (!p.grounded) {
+                        let dx = p.x - cat.x;
+                        let dy = p.y - cat.y;
+                        let dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < minDistance) {
+                            minDistance = dist;
+                            closestPetal = p;
+                        }
+                    }
+                });
+
+                if (closestPetal && minDistance < cat.width * 1.5) { // Если лепесток рядом
+                    cat.targetX = closestPetal.x;
+                    cat.targetY = closestPetal.y;
+
+                    let dx = cat.targetX - cat.x;
+                    let dy = cat.targetY - cat.y;
+                    let targetAngle = Math.atan2(dy, dx);
+                    let angleDiff = targetAngle - cat.angle;
+                    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                    while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                    cat.angle += angleDiff * 0.05; // Сделан плавнее поворот
+
+                    if (minDistance < cat.width * 0.6 && !cat.batting.isBatting) {
+                        cat.batting.isBatting = true;
+                        cat.batting.currentFrame = 0;
+                        cat.batting.targetPetal = closestPetal;
+                    }
+
+                    if (cat.batting.isBatting && cat.batting.targetPetal === closestPetal) {
+                        // Анимация удара лапой
+                        cat.batting.currentFrame++;
+                        if (cat.batting.currentFrame < cat.batting.duration / 2) {
+                            cat.batting.pawExtension += 8;
+                        } else {
+                            cat.batting.pawExtension -= 8;
+                        }
+                        cat.batting.pawExtension = Math.max(0, Math.min(cat.batting.pawExtension, 40)); // Ограничиваем вытягивание
+
+                        if (cat.batting.currentFrame >= cat.batting.duration) {
+                            cat.batting.isBatting = false;
+                            cat.batting.pawExtension = 0;
+                            cat.batting.targetPetal = null;
+                            cat.idleTimer = 0;
+                        }
+                    } else if (minDistance > cat.width * 0.7) {
+                        cat.x += Math.cos(cat.angle) * cat.speed * 0.5;
+                        cat.y += Math.sin(cat.angle) * cat.speed * 0.5;
+                    }
+
+                } else { // Нет лепестков поблизости или слишком далеко для игры
+                    cat.batting.isBatting = false;
+                    cat.batting.pawExtension = 0;
+                    cat.batting.targetPetal = null;
+                    if (cat.idleTimer > 2) {
+                        cat.state = 'idle_walking';
+                        cat.expression = 'calm';
+                    }
+                }
+
+                if (cat.idleTimer < 0.1 && mouse.moved && cat.idleTimer > 0) {
+                    cat.state = 'hunting'; cat.expression = 'excited';
+                    cat.batting.isBatting = false;
+                    cat.batting.pawExtension = 0;
+                    cat.batting.targetPetal = null;
+                }
+            }
+            // Держим кота в пределах холста
+            cat.x = Math.max(cat.width / 1.5, Math.min(cat.x, canvas.width - cat.width / 1.5));
+            cat.y = Math.max(cat.height / 1.5, Math.min(cat.y, canvas.height - cat.height / 1.5));
+        }
+
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            updateWind();
+            updateSakuraPetals();
+            drawSakuraPetals();
+
+            updateCatTail(); // Обновляем физику хвоста
+            updateCat();
+            drawPawPrints();
+            drawCat(); // Рисуем хвост теперь внутри drawCat
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- ИНИЦИАЛИЗАЦИЯ ---
+        cat.targetX = cat.x;
+        cat.targetY = cat.y;
+        // Случайное начальное положение для кота для разнообразия при загрузке страницы
+        if (Math.random() < 0.5) {
+             cat.x = canvas.width * (0.2 + Math.random() * 0.2);
+        } else {
+             cat.x = canvas.width * (0.6 + Math.random() * 0.2);
+        }
+        cat.y = canvas.height * (0.3 + Math.random() * 0.4);
+
+        // Инициализируем сегменты хвоста в текущей позиции кота
+        for (let i = 0; i < cat.tailSegmentCount; i++) {
+            cat.tailSegments.push({ x: cat.x, y: cat.y, vx: 0, vy: 0 });
+        }
+
+        // Запускаем кота в состоянии 'idle_looking', с продвинутым idleTimer для быстрого перехода при отсутствии движения мыши
+        cat.state = 'idle_looking';
+        cat.expression = 'surprised';
+        cat.idleTimer = 3.1; // Перейдет в idle_walking, если нет ввода мыши еще ~2 секу
+
+
+        gameLoop(); // Запускаем анимацию
+    </script>
+</body>
+</html>

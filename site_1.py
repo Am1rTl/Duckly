@@ -1,5 +1,5 @@
 from markupsafe import escape
-from flask import Flask, jsonify, request, render_template, redirect, url_for, flash, make_response, session
+from flask import Flask, jsonify, request, render_template, redirect, url_for, flash, make_response, session, abort
 from werkzeug.security import generate_password_hash, check_password_hash # Added for password hashing
 from flask_session import Session  # Добавляем поддержку сессий на основе файловой системы
 import time
@@ -575,7 +575,7 @@ def api_test_dictation_words(test_db_id):
 
     test = Test.query.get(test_db_id)
     if not test:
-        return jsonify({'error': 'Test not found'}), 404
+        abort(404)
 
     if test.type != 'dictation':
         return jsonify({'error': 'Invalid test type for this endpoint'}), 400
@@ -778,7 +778,7 @@ def test_id(id):
 
     test = Test.query.filter_by(link=id).first()
     if not test:
-        return "Test not found", 404
+        abort(404)
 
     # Проверяем, является ли это режимом предпросмотра для учителя
     is_teacher_preview_mode = False
@@ -3288,6 +3288,9 @@ def load_test_progress(test_id):
 # app.register_blueprint(tests_bp, url_prefix='/tests') # Example for future
 # app.register_blueprint(games_bp, url_prefix='/games') # Example for future
 
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
 
 if __name__ == "__main__":
     with app.app_context():
