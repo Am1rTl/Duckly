@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Настройка вопросов для текстового теста</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6c63ff;
+            --primary-light: #a5a1ff;
+            --primary-dark: #5a52e0;
+            --secondary: #4a4a98;
+            --background: #f8f9fe;
+            --card-bg: #ffffff;
+            --text: #333333;
+            --border: #ddd;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --input-focus-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
+            --danger: #dc3545;
+            --success: #28a745;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        body { background-color: var(--background); color: var(--text); padding: 20px; line-height: 1.6; }
+
+        .container { max-width: 1000px; margin: 20px auto; }
+        .top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .btn-back { background-color: transparent; color: var(--primary); border: 2px solid var(--primary); padding: 10px 20px; font-size: 0.9rem; font-weight: 500; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease; }
+        .btn-back:hover { background-color: var(--primary); color: white; }
+
+        .card { background-color: var(--card-bg); padding: 30px; border-radius: 15px; box-shadow: var(--shadow); margin-bottom: 25px; }
+        .card-header h1, .card-header h2 { color: var(--secondary); font-weight: 600; margin-bottom: 15px; }
+        .text-content-display { background-color: #f9f9f9; border: 1px solid var(--border); padding: 20px; border-radius: 8px; margin-bottom: 25px; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { font-weight: 500; margin-bottom: 8px; display: block; font-size: 0.95rem; }
+        .form-group input[type="text"], .form-group textarea, .form-group select {
+            width: 100%; padding: 12px 15px; font-size: 1rem; border: 1px solid var(--border);
+            border-radius: 8px; background-color: #fff; transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .form-group textarea { min-height: 80px; }
+        .form-group input[type="text"]:focus, .form-group textarea:focus, .form-group select:focus {
+            outline: none; border-color: var(--primary); box-shadow: var(--input-focus-shadow);
+        }
+        .btn-submit { background-color: var(--primary); color: white; padding: 12px 25px; font-size: 1rem; font-weight: 500; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s ease; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-submit:hover { background-color: var(--primary-dark); }
+        .btn-add-option { background-color: var(--success); color: white; padding: 8px 15px; font-size: 0.9rem; border: none; border-radius: 6px; cursor: pointer; margin-top: 10px; }
+
+        .options-container .option-item { display: flex; align-items: center; margin-bottom: 10px; gap:10px; }
+        .options-container .option-item input[type="text"] { flex-grow: 1; }
+        .options-container .option-item input[type="checkbox"], .options-container .option-item input[type="radio"] { margin-right: 5px; width: auto; }
+        .btn-remove-option { background-color: var(--danger); color: white; border: none; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.8rem; }
+
+        .existing-questions-list { list-style-type: none; padding: 0; }
+        .existing-questions-list li { background-color: #f9f9f9; border: 1px solid var(--border); padding: 15px; border-radius: 8px; margin-bottom: 10px; }
+        .existing-questions-list li strong { display: block; margin-bottom: 5px; }
+        .existing-questions-list li .options { margin-left: 20px; font-size: 0.9em; }
+        .existing-questions-list li .correct { color: var(--success); font-weight: bold; }
+        .alert { padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: .25rem; }
+        .alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+        .alert-error { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-nav">
+            <a href="{{ url_for('words.words') }}" class="btn-back"> <!-- Adjust if you have a better "back to tests list" URL -->
+                <i class="fas fa-arrow-left"></i> Назад
+            </a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'message' else 'info' }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="card">
+            <div class="card-header">
+                <h1>Настройка вопросов для теста: {{ test.title }}</h1>
+            </div>
+            <h2>Содержимое текста:</h2>
+            <div class="text-content-display">
+                {{ test.text_content if test.text_content else "Для этого теста не было предоставлено текстового содержимого." }}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2>Добавить новый вопрос</h2>
+            </div>
+            <form method="POST" action="{{ url_for('words.configure_text_questions', test_id=test.id) }}">
+                <div class="form-group">
+                    <label for="question_text">Текст вопроса</label>
+                    <textarea id="question_text" name="question_text" rows="3" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Варианты ответов и правильный(е) ответ(ы)</label>
+                    <div id="options-container">
+                        <!-- Options will be added here by JavaScript -->
+                    </div>
+                    <button type="button" id="add-option-btn" class="btn-add-option"><i class="fas fa-plus"></i> Добавить вариант</button>
+                </div>
+
+                <div class="form-group">
+                    <label for="question_type">Тип вопроса (сколько правильных ответов)</label>
+                    <select id="question_type" name="question_type" required>
+                        <option value="single">Один правильный ответ</option>
+                        <option value="multiple">Несколько правильных ответов</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-submit"><i class="fas fa-save"></i> Сохранить вопрос</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2>Существующие вопросы ({{ questions|length }})</h2>
+            </div>
+            {% if questions %}
+                <ul class="existing-questions-list">
+                    {% for q in questions %}
+                        <li>
+                            <strong>Вопрос {{ loop.index }} (ID: {{q.id}}):</strong> {{ q.word }} (Тип: {{q.question_type}})
+                            <div class="options">
+                                {% set opts = q.options|tojson|safe %} <!-- Assuming q.options is JSON string -->
+                                {% set correct_ans = q.correct_answer|tojson|safe %}
+                                <!-- This part needs robust JSON parsing in JS to display properly, or adjust how options are stored/retrieved -->
+                                <p>Варианты: {{ q.options }}</p>
+                                <p class="correct">Правильные: {{ q.correct_answer }}</p>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>Для этого теста пока нет добавленных вопросов.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const optionsContainer = document.getElementById('options-container');
+            const addOptionButton = document.getElementById('add-option-btn');
+            const questionTypeSelect = document.getElementById('question_type');
+            let optionCounter = 0;
+
+            function createOptionInput(index) {
+                const optionItem = document.createElement('div');
+                optionItem.classList.add('option-item');
+
+                const inputType = questionTypeSelect.value === 'single' ? 'radio' : 'checkbox';
+
+                const correctMarker = document.createElement('input');
+                correctMarker.type = inputType;
+                correctMarker.name = questionTypeSelect.value === 'single' ? 'correct_options[]' : `correct_options_cb_${index}`;
+                // For radio, value should be the index. For checkbox, we'll handle it slightly differently or also use index.
+                correctMarker.value = index.toString();
+                // If it's a checkbox for multiple correct answers, the name should be consistent for the group e.g. correct_options[]
+                // If it's radio, name should be same for all radio in a group, and value is what's submitted.
+                // Let's stick to submitting the index of the option.
+                if (inputType === 'checkbox') {
+                    correctMarker.name = 'correct_options[]'; // All checkboxes share this name
+                }
+
+
+                const textInput = document.createElement('input');
+                textInput.type = 'text';
+                textInput.name = 'options[]';
+                textInput.placeholder = `Вариант ${index + 1}`;
+                textInput.required = true;
+
+                const removeButton = document.createElement('button');
+                removeButton.type = 'button';
+                removeButton.classList.add('btn-remove-option');
+                removeButton.innerHTML = '<i class="fas fa-times"></i>';
+                removeButton.addEventListener('click', function() {
+                    optionItem.remove();
+                    // Re-evaluate if minimum options are met (optional, server-side handles it)
+                });
+
+                optionItem.appendChild(correctMarker);
+                optionItem.appendChild(textInput);
+                optionItem.appendChild(removeButton);
+                optionsContainer.appendChild(optionItem);
+                optionCounter++;
+            }
+
+            addOptionButton.addEventListener('click', function() {
+                createOptionInput(optionsContainer.children.length);
+            });
+
+            questionTypeSelect.addEventListener('change', function() {
+                // Change existing radio/checkboxes if type changes
+                const currentOptionItems = optionsContainer.querySelectorAll('.option-item');
+                currentOptionItems.forEach((item, index) => {
+                    const oldMarker = item.querySelector('input[type="radio"], input[type="checkbox"]');
+                    const newMarkerType = this.value === 'single' ? 'radio' : 'checkbox';
+
+                    if (oldMarker.type !== newMarkerType) {
+                        const newMarker = document.createElement('input');
+                        newMarker.type = newMarkerType;
+                        newMarker.name = newMarkerType === 'single' ? 'correct_options[]' : 'correct_options[]'; // Name for group
+                        newMarker.value = oldMarker.value; // Keep the index value
+                        newMarker.checked = false; // Reset checked state
+                        item.replaceChild(newMarker, oldMarker);
+                    }
+                });
+            });
+
+            // Add initial 2 options
+            createOptionInput(0);
+            createOptionInput(1);
+        });
+
+        // Helper to parse JSON in template (if needed, but backend sends it parsed)
+        // For displaying existing questions, if options/correct_answer are JSON strings:
+        // Consider doing this server-side by parsing JSON before passing to template,
+        // or using a JS framework that handles this more gracefully.
+        // Example of how you might parse and display in JS (more complex than needed if server pre-formats)
+        /*
+        document.querySelectorAll('.existing-questions-list .options').forEach(optDiv => {
+            try {
+                const optionsData = JSON.parse(optDiv.dataset.optionsJson); // Assuming data-options-json attribute
+                const correctData = JSON.parse(optDiv.dataset.correctJson); // Assuming data-correct-json
+
+                let html = '<ul>';
+                optionsData.forEach(opt => {
+                    let isCorrect = correctData.includes(opt);
+                    html += `<li>${opt} ${isCorrect ? '<span class="correct">(Верно)</span>' : ''}</li>`;
+                });
+                html += '</ul>';
+                optDiv.innerHTML = html;
+            } catch (e) {
+                console.error("Error parsing question options JSON:", e);
+                // Keep raw display if error
+            }
+        });
+        */
+    </script>
+</body>
+</html>

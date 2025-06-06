@@ -1,7 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 
+import uuid # For generating unique test links
+from datetime import datetime # For created_at if not using db.func
 # Import models from models.py
-from models import db, Word, User
+from models import db, Word, User, Test, TestWord # Added TestWord model
 
 words_bp = Blueprint('words', __name__,
                      template_folder='../templates',
@@ -285,3 +287,155 @@ def quizlet_cards(class_name, unit_name, module_name):
                          class_name=class_name,
                          unit_name=unit_name,
                          module_name=module_name)
+
+
+@words_bp.route('/create_test', methods=['GET', 'POST'])
+def create_test():
+    if 'user_id' not in session:
+        flash("Пожалуйста, войдите в систему, чтобы создавать тесты.", "warning")
+        return redirect(url_for('auth.login'))
+
+    user = User.query.get(session['user_id'])
+    if not user or user.teacher != 'yes':
+        flash("Только учителя могут создавать тесты.", "error")
+        return redirect(url_for('words.words')) # Or a more appropriate page
+
+    if request.method == 'POST':
+        title = request.form.get('title')
+        class_number = request.form.get('class_number') # Form uses class_number
+        test_type = request.form.get('test_type') # Form uses test_type
+        time_limit_str = request.form.get('time_limit', '0')
+        word_order = request.form.get('word_order')
+        word_count_str = request.form.get('word_count')
+
+        # Fields specific to certain test types
+        test_mode = request.form.get('test_mode') # For add_letter
+        dictation_word_source = request.form.get('dictation_word_source') # For dictation
+        # dictation_random_word_count = request.form.get('dictation_random_word_count') # Not directly on Test model
+
+        text_content = None
+        if test_type == 'text_based':
+            text_content = request.form.get('text_content')
+
+        if not title or not class_number or not test_type or not word_order:
+            flash("Необходимо заполнить все обязательные поля: Название, Класс, Тип теста, Порядок слов.", "error")
+            return redirect(url_for('words.create_test')) # Redirect back to form
+
+        try:
+            time_limit = int(time_limit_str) if time_limit_str else 0
+            word_count = int(word_count_str) if word_count_str and word_count_str.isdigit() else None
+        except ValueError:
+            flash("Лимит времени и количество слов должны быть числами.", "error")
+            return redirect(url_for('words.create_test'))
+
+        # Generate a unique link for the test
+        unique_link = str(uuid.uuid4())
+
+        new_test = Test(
+            title=title,
+            classs=class_number, # Model uses 'classs'
+            type=test_type,      # Model uses 'type'
+            link=unique_link,
+            created_by=user.id,
+            time_limit=time_limit if time_limit > 0 else None,
+            word_order=word_order,
+            word_count=word_count if word_count and word_count > 0 else None,
+            test_mode=test_mode if test_type == 'add_letter' else None,
+            text_content=text_content if test_type == 'text_based' else None,
+            dictation_word_source=dictation_word_source if test_type == 'dictation' else None,
+            is_active=True # Default to active, can be changed later
+            # unit, module, dictation_selected_words will be set when words are configured
+        )
+
+        try:
+            db.session.add(new_test)
+            db.session.commit()
+            flash(f"Тест '{new_test.title}' успешно создан. Теперь добавьте слова и настройте тест.", "success")
+            # Redirect to a new route for configuring words for this test
+            # For now, redirecting to a placeholder or back to tests list.
+            # This will eventually be something like: url_for('words.configure_test_words', test_id=new_test.id)
+            return redirect(url_for('words.words')) # Placeholder redirect
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Ошибка при создании теста: {str(e)}", "error")
+            return redirect(url_for('words.create_test'))
+
+    # GET request: render the form
+    return render_template('create_test.html')
+
+@words_bp.route('/configure_text_questions/<int:test_id>', methods=['GET', 'POST'])
+def configure_text_questions(test_id):
+    if 'user_id' not in session:
+        flash("Пожалуйста, войдите в систему.", "warning")
+        return redirect(url_for('auth.login'))
+
+    user = User.query.get(session['user_id'])
+    if not user or user.teacher != 'yes':
+        flash("Только учителя могут настраивать вопросы теста.", "error")
+        return redirect(url_for('words.words')) # Or a general access denied page
+
+    test = Test.query.get_or_404(test_id)
+
+    if test.type != 'text_based':
+        flash("Этот тест не является текстовым тестом.", "error")
+        return redirect(url_for('words.words')) # Or redirect to a page showing test details
+
+    if test.created_by != user.id:
+        # Optional: If only the creator can edit. Could also allow other teachers.
+        flash("Вы не являетесь создателем этого теста.", "error")
+        return redirect(url_for('words.words'))
+
+
+    if request.method == 'POST':
+        question_text = request.form.get('question_text','').strip()
+        options_list = request.form.getlist('options[]') # Assuming options are named 'options[]'
+        correct_options_indices = request.form.getlist('correct_options[]') # Indices of correct options
+        question_type = request.form.get('question_type') # 'single' or 'multiple'
+
+        # Basic validation
+        if not question_text:
+            flash("Текст вопроса не может быть пустым.", "error")
+            return redirect(url_for('words.configure_text_questions', test_id=test_id))
+
+        cleaned_options = [opt.strip() for opt in options_list if opt.strip()]
+        if len(cleaned_options) < 2: # Need at least two options
+            flash("Необходимо предоставить как минимум два варианта ответа.", "error")
+            return redirect(url_for('words.configure_text_questions', test_id=test_id))
+
+        if not correct_options_indices:
+            flash("Необходимо отметить хотя бы один правильный ответ.", "error")
+            return redirect(url_for('words.configure_text_questions', test_id=test_id))
+
+        if question_type == 'single' and len(correct_options_indices) > 1:
+            flash("Для вопроса с одним правильным ответом может быть выбран только один вариант.", "error")
+            return redirect(url_for('words.configure_text_questions', test_id=test_id))
+
+        correct_answers_text = [cleaned_options[int(i)] for i in correct_options_indices]
+
+        # Determine word_order for the new question
+        last_test_word = TestWord.query.filter_by(test_id=test.id).order_by(TestWord.word_order.desc()).first()
+        new_word_order = (last_test_word.word_order + 1) if last_test_word else 1
+
+        new_question = TestWord(
+            test_id=test.id,
+            word=question_text, # Using 'word' field for the question itself
+            options=jsonify(cleaned_options).get_data(as_text=True), # Store options as JSON string
+            correct_answer=jsonify(correct_answers_text).get_data(as_text=True), # Store correct answers as JSON array
+            question_type=question_type,
+            perevod="", # Not used for text_based questions, or could be a hint
+            word_order=new_word_order
+        )
+
+        try:
+            db.session.add(new_question)
+            db.session.commit()
+            flash("Вопрос успешно добавлен.", "success")
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Ошибка при добавлении вопроса: {str(e)}", "error")
+
+        return redirect(url_for('words.configure_text_questions', test_id=test_id))
+
+    # GET request
+    existing_questions = TestWord.query.filter_by(test_id=test_id).order_by(TestWord.word_order).all()
+    return render_template('configure_text_questions.html', test=test, questions=existing_questions)

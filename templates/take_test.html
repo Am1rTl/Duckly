@@ -226,9 +226,12 @@
             {% endfor %}
         </div>
 
+        <div id="mainTextContentDisplay" style="white-space: pre-wrap; margin-bottom: 20px; padding: 15px; background-color: #f0f0f0; border-radius: 8px; max-height: 200px; overflow-y: auto; display: none;">
+            <!-- Test.text_content will be displayed here for text_based tests -->
+        </div>
         <div class="question-container">
-            <div class="word-display" id="wordDisplay"></div>
-            <div class="translation" id="translation"></div>
+            <div class="word-display" id="wordDisplay"></div> <!-- This will be TestWord.word (question text) -->
+            <div class="translation" id="translation"></div> <!-- May be unused or hint for some types -->
             <div id="answerContainer"></div>
         </div>
 
@@ -246,12 +249,14 @@
         const testData = {
             id: {{ test.id }},
             type: "{{ test.type }}",
+            text_content: {{ test.text_content|tojson|safe if test.text_content else 'null' }}, // Add text_content
             timeLimit: {{ test.time_limit or 0 }},
-            words: {{ test.test_words|tojson|safe }},
+            words: {{ test.test_words|tojson|safe }}, // Ensure TestWord.options is JSON string for new types
+                                                     // and TestWord.question_type is included
             currentIndex: 0
         };
 
-        let answers = new Array(testData.words.length).fill(null);
+        let answers = new Array(testData.words.length).fill(null).map(() => null); // Initialize properly
         let timer = null;
         let timeLeft = testData.timeLimit * 60;
 
@@ -282,11 +287,21 @@
 
         function createAnswerInput(word) {
             const container = document.getElementById('answerContainer');
-            container.innerHTML = '';
+            container.innerHTML = ''; // Clear previous inputs
+
+            // Display main text content for text_based tests (once)
+            const mainTextContentDiv = document.getElementById('mainTextContentDisplay');
+            if (testData.type === 'text_based' && testData.text_content) {
+                mainTextContentDiv.textContent = testData.text_content;
+                mainTextContentDiv.style.display = 'block';
+            } else {
+                mainTextContentDiv.style.display = 'none';
+            }
+
+            const currentAnswer = answers[testData.currentIndex];
 
             if (testData.type === 'add_letter') {
                 const missingLetters = word.missing_letters || '';
-                const wordWithGaps = word.word;
                 const letterInputs = document.createElement('div');
                 letterInputs.style.textAlign = 'center';
 
@@ -303,33 +318,128 @@
                         }
                     });
                     letterInputs.appendChild(input);
+                 if (currentAnswer && typeof currentAnswer === 'object' && currentAnswer.letters && currentAnswer.letters[i]) {
+                    input.value = currentAnswer.letters[i];
+                }
+                input.addEventListener('input', function() {
+                    let currentLetters = answers[testData.currentIndex]?.letters || new Array(missingLetters.length).fill('');
+                    currentLetters[parseInt(this.dataset.index)] = this.value;
+                    answers[testData.currentIndex] = { letters: currentLetters };
+                });
+                }
+                container.appendChild(letterInputs);
+            } else if (testData.type === 'multiple_choice' || (testData.type === 'text_based' && word.question_type === 'single')) {
+                // Handles old multiple_choice (single answer via buttons) OR text_based single-answer (radio buttons)
+                // For text_based, word.options should be JSON. For old multiple_choice, it's pipe-separated.
+                let optionsArray;
+                try {
+                    optionsArray = JSON.parse(word.options);
+                } catch (e) {
+                    optionsArray = word.options ? word.options.split('|') : [];
                 }
 
-                container.appendChild(letterInputs);
-            } else if (testData.type === 'multiple_choice') {
-                const options = word.options.split('|');
                 const optionsContainer = document.createElement('div');
-                optionsContainer.className = 'options-container';
+                optionsContainer.className = 'options-container vertical-options'; // Added vertical-options for better layout if needed
 
-                options.forEach(option => {
-                    const button = document.createElement('button');
-                    button.className = 'option-btn';
-                    button.textContent = option;
-                    button.addEventListener('click', function() {
-                        document.querySelectorAll('.option-btn').forEach(btn => 
-                            btn.classList.remove('selected'));
-                        this.classList.add('selected');
-                        answers[testData.currentIndex] = option;
-                    });
-                    optionsContainer.appendChild(button);
+                optionsArray.forEach(optionText => {
+                    if (testData.type === 'text_based') { // Radio buttons for text_based single
+                        const label = document.createElement('label');
+                        label.style.display = 'block'; // Make options stack vertically
+                        label.style.padding = '10px';
+                        label.style.border = '1px solid var(--border)';
+                        label.style.borderRadius = '8px';
+                        label.style.marginBottom = '5px';
+
+                        const radio = document.createElement('input');
+                        radio.type = 'radio';
+                        radio.name = `question_${testData.currentIndex}`;
+                        radio.value = optionText;
+                        if (currentAnswer === optionText) {
+                            radio.checked = true;
+                        }
+                        radio.addEventListener('change', function() {
+                            answers[testData.currentIndex] = this.value;
+                        });
+                        label.appendChild(radio);
+                        label.appendChild(document.createTextNode(" " + optionText));
+                        optionsContainer.appendChild(label);
+                    } else { // Original button style for 'multiple_choice'
+                        const button = document.createElement('button');
+                        button.className = 'option-btn';
+                        button.textContent = optionText;
+                        if (currentAnswer === optionText) {
+                            button.classList.add('selected');
+                        }
+                        button.addEventListener('click', function() {
+                            document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
+                            this.classList.add('selected');
+                            answers[testData.currentIndex] = optionText;
+                        });
+                        optionsContainer.appendChild(button);
+                    }
                 });
-
                 container.appendChild(optionsContainer);
-            } else {
+
+            } else if (testData.type === 'multiple_choice_multiple' || (testData.type === 'text_based' && word.question_type === 'multiple')) {
+                // Handles multiple_choice_multiple (checkboxes) OR text_based multiple-answer (checkboxes)
+                // Assumes word.options is a JSON string array
+                let optionsArray;
+                try {
+                    optionsArray = JSON.parse(word.options);
+                } catch (e) {
+                    console.error("Failed to parse options JSON:", word.options, e);
+                    optionsArray = [];
+                }
+
+                const optionsContainer = document.createElement('div');
+                optionsContainer.className = 'options-container vertical-options'; // For better layout
+
+                // Initialize answer array if null
+                if (!Array.isArray(currentAnswer)) {
+                    answers[testData.currentIndex] = [];
+                }
+
+                optionsArray.forEach(optionText => {
+                    const label = document.createElement('label');
+                    label.style.display = 'block';
+                    label.style.padding = '10px';
+                    label.style.border = '1px solid var(--border)';
+                    label.style.borderRadius = '8px';
+                    label.style.marginBottom = '5px';
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.value = optionText;
+                    if (Array.isArray(currentAnswer) && currentAnswer.includes(optionText)) {
+                        checkbox.checked = true;
+                    }
+                    checkbox.addEventListener('change', function() {
+                        let selectedAnswers = answers[testData.currentIndex];
+                        if (!Array.isArray(selectedAnswers)) selectedAnswers = []; // Ensure it's an array
+
+                        if (this.checked) {
+                            if (!selectedAnswers.includes(this.value)) {
+                                selectedAnswers.push(this.value);
+                            }
+                        } else {
+                            selectedAnswers = selectedAnswers.filter(ans => ans !== this.value);
+                        }
+                        answers[testData.currentIndex] = selectedAnswers;
+                    });
+                    label.appendChild(checkbox);
+                    label.appendChild(document.createTextNode(" " + optionText));
+                    optionsContainer.appendChild(label);
+                });
+                container.appendChild(optionsContainer);
+
+            } else { // Default: dictation, fill_word etc.
                 const input = document.createElement('input');
                 input.type = 'text';
                 input.className = 'answer-input';
                 input.placeholder = 'Введите ответ';
+                if (typeof currentAnswer === 'string') {
+                    input.value = currentAnswer;
+                }
                 input.addEventListener('input', function() {
                     answers[testData.currentIndex] = this.value;
                 });
@@ -338,15 +448,31 @@
         }
 
         function showQuestion() {
-            const word = testData.words[testData.currentIndex];
+            const word = testData.words[testData.currentIndex]; // word is a TestWord object
+
+            // For text_based, word.word is the question. For others, it's the main word.
             document.getElementById('wordDisplay').textContent = word.word;
-            document.getElementById('translation').textContent = word.perevod;
-            createAnswerInput(word);
+
+            // Hide or use translation appropriately
+            const translationDiv = document.getElementById('translation');
+            if (testData.type === 'text_based' || testData.type === 'multiple_choice_multiple') {
+                translationDiv.style.display = 'none'; // No direct 'perevod' for these question structures
+            } else {
+                translationDiv.textContent = word.perevod;
+                translationDiv.style.display = 'block';
+            }
+
+            createAnswerInput(word); // word here is a TestWord object
             updateProgressBar();
 
             document.getElementById('prevBtn').disabled = testData.currentIndex === 0;
             document.getElementById('nextBtn').textContent = 
-                testData.currentIndex === testData.words.length - 1 ? 'Завершить' : 'Далее';
+                testData.currentIndex === testData.words.length - 1 ? 'Завершить' : 'Далее <i class="fas fa-arrow-right"></i>';
+            if(testData.currentIndex === testData.words.length - 1) {
+                 document.getElementById('nextBtn').innerHTML = 'Завершить <i class="fas fa-check-circle"></i>';
+            } else {
+                 document.getElementById('nextBtn').innerHTML = 'Далее <i class="fas fa-arrow-right"></i>';
+            }
         }
 
         function submitTest() {
@@ -362,8 +488,16 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    window.location.href = data.redirect;
+                    window.location.href = data.redirect; // Redirect to results page
+                } else {
+                    // Handle error, maybe show a message
+                    console.error("Error submitting test:", data.error);
+                    alert("Произошла ошибка при отправке теста. " + (data.message || ""));
                 }
+            })
+            .catch(error => {
+                console.error("Fetch error:", error);
+                alert("Ошибка сети при отправке теста.");
             });
         }
 
@@ -386,10 +520,12 @@
         document.querySelectorAll('.progress-item').forEach(item => {
             item.addEventListener('click', () => {
                 const index = parseInt(item.dataset.index);
-                if (index <= testData.currentIndex || answers[index] !== null) {
-                    testData.currentIndex = index;
-                    showQuestion();
-                }
+                // Allow navigation to any question that has been visited OR is the next one
+                // This logic might need refinement based on desired navigation freedom
+                // For now, let's allow jumping to any question, but save answer first.
+                // The original logic: if (index <= testData.currentIndex || answers[index] !== null)
+                testData.currentIndex = index;
+                showQuestion();
             });
         });
 

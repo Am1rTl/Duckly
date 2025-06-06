@@ -221,6 +221,7 @@
                         <option value="multiple_choice_single">Выбор ответа (один правильный)</option>
                         <option value="multiple_choice_multiple">Выбор ответа (несколько правильных)</option>
                         <option value="fill_word">Вписать слово (по переводу)</option>
+                        <option value="text_based">Текстовый вопрос</option>
                     </select>
                 </div>
                 
@@ -240,6 +241,11 @@
                 <div class="form-group" id="word_count_group">
                     <label for="word_count">Общее макс. количество слов (0 или пусто - без ограничения)</label>
                     <input type="number" id="word_count" name="word_count" min="0" placeholder="Все выбранные слова">
+                </div>
+
+                <div class="form-group full-width" id="text_content_group" style="display: none;">
+                    <label for="text_content">Содержание текстового вопроса</label>
+                    <textarea id="text_content" name="text_content" rows="5" style="width: 100%; padding: 12px 15px; font-size: 1rem; border: 1px solid var(--border); border-radius: 8px; background-color: #fff; transition: border-color 0.3s ease, box-shadow 0.3s ease;"></textarea>
                 </div>
             </div>
             
@@ -359,6 +365,7 @@
         const customWordsContainer = document.getElementById('customWordsContainer');
         const testTypeSelect = document.getElementById('test_type');
         const addLetterModeContainer = document.getElementById('addLetterModeContainer');
+        const textContentGroup = document.getElementById('text_content_group');
 
         // Function to fetch and display modules
         function loadModules() {
@@ -428,12 +435,22 @@
         // Function to manage visibility of "Add Letter" mode section
         function toggleAddLetterModeSection() {
             addLetterModeContainer.style.display = (testTypeSelect.value === 'add_letter') ? 'block' : 'none';
+            textContentGroup.style.display = (testTypeSelect.value === 'text_based') ? 'block' : 'none';
+
+            // Hide other type-specific sections
+            if (testTypeSelect.value !== 'add_letter') {
+                addLetterModeContainer.style.display = 'none';
+            }
+            if (testTypeSelect.value !== 'text_based') {
+                textContentGroup.style.display = 'none';
+            }
+            // Keep dictation options separate as it's handled by another function
         }
 
         // Event Listeners
         classNumberSelect.addEventListener('change', loadModules);
         wordSourceSelect.addEventListener('change', toggleWordSourceSections);
-        testTypeSelect.addEventListener('change', toggleAddLetterModeSection);
+        testTypeSelect.addEventListener('change', toggleTestTypeSpecificSections); // Changed here
         
         // Function to add new custom word pair
         document.getElementById('addCustomWordPair').addEventListener('click', function() {
@@ -455,7 +472,7 @@
 
         // Initial calls to set correct visibility on page load
         toggleWordSourceSections(); 
-        toggleAddLetterModeSection();
+        toggleTestTypeSpecificSections(); // Changed here
         // loadModules(); // Optionally load modules if a class is pre-selected on page load
 
         document.addEventListener('DOMContentLoaded', function() {

@@ -36,6 +36,7 @@ class Test(db.Model):
     word_order = db.Column(db.String, nullable=False)  # 'random' or 'sequential'
     word_count = db.Column(db.Integer, nullable=True)  # For random order
     test_mode = db.Column(db.String, nullable=True)  # 'random_letters' or 'manual_letters' for add_letter type
+    text_content = db.Column(db.Text, nullable=True)  # For text-based questions
     
     # New fields for dictation test options
     dictation_word_source = db.Column(db.String, nullable=True) # e.g., "all_module", "selected_specific", "random_from_module"
@@ -54,6 +55,7 @@ class TestWord(db.Model):
     options = db.Column(db.String, nullable=True)  # For multiple choice tests (JSON string)
     correct_answer = db.Column(db.String, nullable=False)
     word_order = db.Column(db.Integer, nullable=False)  # To maintain word order in sequential tests
+    question_type = db.Column(db.String, nullable=True) # 'single' or 'multiple' for MCQs
 
 class TestResult(db.Model):
     __tablename__ = 'test_results'
