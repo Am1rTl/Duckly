@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление вопросами - {{ content.title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6c63ff; --primary-light: #a5a1ff; --primary-dark: #5a52e0;
+            --secondary: #4a4a98; --background: #f8f9fe; --card-bg: #ffffff;
+            --text: #333333; --border: #ddd; --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --input-focus-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
+            --success: #28a745; --warning: #ffc107; --danger: #dc3545;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        body { background-color: var(--background); color: var(--text); padding: 20px; line-height: 1.6; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { color: var(--secondary); font-size: 2rem; font-weight: 600; margin-bottom: 10px; }
+        .header p { color: #666; font-size: 1rem; }
+        .top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 15px; }
+        .btn { padding: 10px 20px; font-size: 0.9rem; font-weight: 500; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; border: none; }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: var(--primary-dark); color: white; }
+        .btn-secondary { background-color: transparent; color: var(--primary); border: 2px solid var(--primary); }
+        .btn-secondary:hover { background-color: var(--primary); color: white; }
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-success:hover { background-color: #218838; color: white; }
+        .btn-warning { background-color: var(--warning); color: #212529; }
+        .btn-warning:hover { background-color: #e0a800; color: #212529; }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-danger:hover { background-color: #c82333; color: white; }
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+        .main-content { display: grid; grid-template-columns: 1fr 400px; gap: 30px; }
+        @media (max-width: 1200px) { .main-content { grid-template-columns: 1fr; } }
+        .text-preview { background-color: var(--card-bg); border-radius: 15px; box-shadow: var(--shadow); padding: 20px; margin-bottom: 30px; }
+        .text-preview h3 { color: var(--secondary); margin-bottom: 15px; }
+        .text-content { max-height: 300px; overflow-y: auto; font-size: 0.95rem; line-height: 1.6; padding: 15px; background-color: #f8f9fa; border-radius: 8px; border: 1px solid var(--border); }
+        .questions-section { background-color: var(--card-bg); border-radius: 15px; box-shadow: var(--shadow); padding: 20px; }
+        .questions-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .questions-header h3 { color: var(--secondary); margin: 0; }
+        .question-card { background-color: #f8f9fa; border: 1px solid var(--border); border-radius: 10px; padding: 15px; margin-bottom: 15px; transition: all 0.3s ease; }
+        .question-card:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+        .question-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .question-number { background-color: var(--primary); color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; }
+        .question-type-badge { font-size: 0.75rem; padding: 3px 8px; border-radius: 12px; font-weight: 500; }
+        .type-multiple_choice { background-color: #e3f2fd; color: #1976d2; }
+        .type-multiple_select { background-color: #f3e5f5; color: #6f42c1; }
+        .type-open_answer { background-color: #fff3e0; color: #f57c00; }
+        .type-true_false { background-color: #e8f5e8; color: #388e3c; }
+        .question-text { font-weight: 500; margin-bottom: 10px; }
+        .question-options { font-size: 0.9rem; color: #666; margin-bottom: 10px; }
+        .question-answer { font-size: 0.9rem; }
+        .question-answer strong { color: var(--success); }
+        .question-actions { display: flex; gap: 8px; margin-top: 10px; }
+        .add-question-form { background-color: var(--card-bg); border-radius: 15px; box-shadow: var(--shadow); padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { font-weight: 500; margin-bottom: 8px; font-size: 0.9rem; color: var(--text); display: block; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; font-size: 0.9rem; border: 1px solid var(--border); border-radius: 6px; background-color: #fff; transition: border-color 0.3s ease, box-shadow 0.3s ease; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); box-shadow: var(--input-focus-shadow); }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+        .options-container { display: none; }
+        .options-container.show { display: block; }
+        .option-input { margin-bottom: 8px; }
+        .empty-state { text-align: center; padding: 40px 20px; color: #666; }
+        .empty-state i { font-size: 3rem; margin-bottom: 15px; color: #ccc; }
+        .stats-bar { display: flex; justify-content: space-between; align-items: center; background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .stat-item { text-align: center; }
+        .stat-number { font-size: 1.5rem; font-weight: 600; color: var(--primary); }
+        .stat-label { font-size: 0.8rem; color: #666; }
+        
+        /* Стили для интерфейса выбора правильного ответа */
+        .correct-answer-selector { margin-top: 10px; }
+        .answer-options-preview { display: flex; flex-direction: column; gap: 8px; }
+        .option-preview-btn { 
+            padding: 12px 16px; 
+            border: 2px solid #e9ecef; 
+            background-color: #f8f9fa; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            transition: all 0.3s ease;
+            text-align: left;
+            font-weight: 500;
+        }
+        .option-preview-btn:hover { 
+            border-color: var(--primary); 
+            background-color: #e3f2fd; 
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .option-preview-btn.selected { 
+            border-color: var(--primary); 
+            background-color: var(--primary); 
+            color: white; 
+            font-weight: 600;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        .option-preview-btn.selected::before {
+            content: "✓ ";
+            font-weight: bold;
+        }
+        
+        /* Стили для true/false селектора */
+        .true-false-selector { margin-top: 10px; }
+        .tf-options { display: flex; gap: 10px; flex-wrap: wrap; }
+        .tf-option-btn { 
+            flex: 1; 
+            min-width: 120px; 
+            padding: 12px 16px; 
+            font-weight: 500; 
+            transition: all 0.3s ease; 
+        }
+        .tf-option-btn:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+        }
+        .tf-option-btn.selected { 
+            font-weight: 600; 
+            transform: translateY(-1px); 
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15); 
+        }
+        .tf-option-btn.selected.btn-outline-success { 
+            background-color: #28a745; 
+            color: white; 
+            border-color: #28a745; 
+        }
+        .tf-option-btn.selected.btn-outline-danger { 
+            background-color: #dc3545; 
+            color: white; 
+            border-color: #dc3545; 
+        }
+        .tf-option-btn.selected.btn-outline-warning { 
+            background-color: #ffc107; 
+            color: #212529; 
+            border-color: #ffc107; 
+        }
+        
+        /* Стили для поля открытого ответа */
+        .open-answer-input { margin-top: 10px; }
+        .open-answer-input input { 
+            width: 100%; 
+            padding: 12px 16px; 
+            border: 2px solid #e9ecef; 
+            border-radius: 8px; 
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        .open-answer-input input:focus { 
+            outline: none; 
+            border-color: var(--primary); 
+            box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2); 
+        }
+        
+        /* Стили для множественного выбора правильных ответов */
+        .multiple-correct-answer-selector { margin-top: 10px; }
+        .multiple-answer-options-preview { display: flex; flex-direction: column; gap: 8px; }
+        .multiple-option-btn { 
+            padding: 12px 16px; 
+            border: 2px solid #e9ecef; 
+            background-color: #f8f9fa; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            transition: all 0.3s ease;
+            text-align: left;
+            font-weight: 500;
+            position: relative;
+            padding-right: 40px;
+        }
+        .multiple-option-btn:hover { 
+            border-color: var(--primary); 
+            background-color: #e3f2fd; 
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .multiple-option-btn.selected { 
+            border-color: var(--primary); 
+            background-color: var(--primary); 
+            color: white; 
+            font-weight: 600;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        .multiple-option-btn::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: 12px;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ccc;
+            border-radius: 3px;
+            background-color: white;
+        }
+        .multiple-option-btn.selected::after {
+            background-color: white;
+            border-color: white;
+            background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='%23000' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='m13.854 3.646-7.5 7.5a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6 10.293l7.146-7.147a.5.5 0 0 1 .708.708z'/%3e%3c/svg%3e");
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-question-circle"></i> Управление вопросами</h1>
+            <p>{{ content.title }} - {{ content.classs }} класс</p>
+        </div>
+
+        <div class="top-nav">
+            <div>
+                <a href="{{ url_for('text_contents') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> К списку текстов
+                </a>
+                <a href="{{ url_for('edit_text_content', content_id=content.id) }}" class="btn btn-warning">
+                    <i class="fas fa-edit"></i> Редактировать текст
+                </a>
+            </div>
+            <div>
+                {% if questions|length > 0 %}
+                <a href="{{ url_for('create_test_from_text', content_id=content.id) }}" class="btn btn-success">
+                    <i class="fas fa-plus-circle"></i> Создать тест
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="text-preview">
+            <h3><i class="fas fa-file-text"></i> Текст для чтения</h3>
+            <div class="text-content">{{ content.content }}</div>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-number">{{ questions|length }}</div>
+                <div class="stat-label">Всего вопросов</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{{ questions|selectattr('question_type', 'equalto', 'multiple_choice')|list|length }}</div>
+                <div class="stat-label">Выбор ответа</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{{ questions|selectattr('question_type', 'equalto', 'multiple_select')|list|length }}</div>
+                <div class="stat-label">Множественный</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{{ questions|selectattr('question_type', 'equalto', 'open_answer')|list|length }}</div>
+                <div class="stat-label">Открытые</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{{ questions|selectattr('question_type', 'equalto', 'true_false')|list|length }}</div>
+                <div class="stat-label">Да/Нет</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="questions-section">
+                <div class="questions-header">
+                    <h3><i class="fas fa-list"></i> Список вопросов</h3>
+                </div>
+
+                {% if questions %}
+                    {% for question in questions %}
+                    <div class="question-card">
+                        <div class="question-header">
+                            <div class="question-number">{{ loop.index }}</div>
+                            <div>
+                                <span class="question-type-badge type-{{ question.question_type }}">
+                                    {% if question.question_type == 'multiple_choice' %}
+                                        Выбор ответа
+                                    {% elif question.question_type == 'multiple_select' %}
+                                        Множественный выбор
+                                    {% elif question.question_type == 'open_answer' %}
+                                        Открытый вопрос
+                                    {% elif question.question_type == 'true_false' %}
+                                        Да/Нет
+                                    {% endif %}
+                                </span>
+                                <span style="margin-left: 10px; font-size: 0.8rem; color: #666;">{{ question.points }} балл(ов)</span>
+                            </div>
+                        </div>
+                        
+                        <div class="question-text">{{ question.question }}</div>
+                        
+                        {% if question.question_type in ['multiple_choice', 'multiple_select'] and question.options %}
+                            <div class="question-options">
+                                <strong>Варианты ответов:</strong><br>
+                                {% set options = question.options|from_json %}
+                                {% for option in options %}
+                                    {{ loop.index }}. {{ option }}<br>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="question-answer">
+                            <strong>Правильный ответ:</strong> 
+                            {% if question.question_type == 'multiple_select' %}
+                                {% set correct_answers = question.correct_answer|from_json %}
+                                {{ correct_answers|join(', ') }}
+                            {% else %}
+                                {{ question.correct_answer }}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="question-actions">
+                            <form method="POST" action="{{ url_for('delete_text_question', question_id=question.id) }}" style="display: inline;" onsubmit="return confirm('Вы уверены, что хотите удалить этот вопрос?')">
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    <i class="fas fa-trash"></i> Удалить
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-question-circle"></i>
+                        <h4>Пока нет вопросов</h4>
+                        <p>Добавьте первый вопрос, используя форму справа</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="add-question-form">
+                <h3 style="margin-bottom: 20px; color: var(--secondary);">
+                    <i class="fas fa-plus"></i> Добавить вопрос
+                </h3>
+                
+                <form method="POST" action="{{ url_for('add_text_question', content_id=content.id) }}">
+                    <div class="form-group">
+                        <label for="question_type">
+                            <i class="fas fa-list-ul"></i> Тип вопроса
+                        </label>
+                        <select id="question_type" name="question_type" required onchange="toggleOptions()">
+                            <option value="">Выберите тип</option>
+                            <option value="multiple_choice">Выбор ответа (один)</option>
+                            <option value="multiple_select">Множественный выбор</option>
+                            <option value="open_answer">Открытый вопрос</option>
+                            <option value="true_false">Да/Нет</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="question">
+                            <i class="fas fa-question"></i> Текст вопроса
+                        </label>
+                        <textarea id="question" name="question" required 
+                                  placeholder="Введите текст вопроса"></textarea>
+                    </div>
+
+                    <div class="options-container" id="optionsContainer">
+                        <label><i class="fas fa-list"></i> Варианты ответов</label>
+                        <div class="option-input">
+                            <input type="text" name="option1" placeholder="Вариант 1">
+                        </div>
+                        <div class="option-input">
+                            <input type="text" name="option2" placeholder="Вариант 2">
+                        </div>
+                        <div class="option-input">
+                            <input type="text" name="option3" placeholder="Вариант 3 (необязательно)">
+                        </div>
+                        <div class="option-input">
+                            <input type="text" name="option4" placeholder="Вариант 4 (необязательно)">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="correct_answer">
+                            <i class="fas fa-check"></i> Правильный ответ
+                        </label>
+                        <input type="hidden" id="correct_answer" name="correct_answer" required>
+                        
+                        <!-- Интерфейс для выбора правильного ответа из вариантов (одиночный выбор) -->
+                        <div id="correctAnswerSelector" class="correct-answer-selector">
+                            <div class="answer-options-preview" id="answerOptionsPreview">
+                                <p class="text-muted">Сначала выберите тип вопроса и заполните варианты ответов</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Интерфейс для множественного выбора правильных ответов -->
+                        <div id="multipleCorrectAnswerSelector" class="multiple-correct-answer-selector" style="display: none;">
+                            <div class="help-text mb-2">
+                                <i class="fas fa-info-circle"></i> Выберите все правильные варианты ответов (можно выбрать несколько)
+                            </div>
+                            <div class="multiple-answer-options-preview" id="multipleAnswerOptionsPreview">
+                                <p class="text-muted">Заполните варианты ответов выше, затем выберите правильные варианты</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Интерфейс для true/false вопросов -->
+                        <div id="trueFalseSelector" class="true-false-selector" style="display: none;">
+                            <div class="tf-options">
+                                <button type="button" class="tf-option-btn btn btn-outline-success" data-value="Да">
+                                    <i class="fas fa-check"></i> Да
+                                </button>
+                                <button type="button" class="tf-option-btn btn btn-outline-danger" data-value="Нет">
+                                    <i class="fas fa-times"></i> Нет
+                                </button>
+                                <button type="button" class="tf-option-btn btn btn-outline-warning" data-value="Не указано">
+                                    <i class="fas fa-question"></i> Не указано
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Поле для открытых вопросов -->
+                        <div id="openAnswerInput" class="open-answer-input" style="display: none;">
+                            <input type="text" id="open_answer_text" placeholder="Введите правильный ответ">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="points">
+                            <i class="fas fa-star"></i> Баллы за вопрос
+                        </label>
+                        <input type="number" id="points" name="points" value="1" min="1" max="10" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        <i class="fas fa-plus"></i> Добавить вопрос
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleOptions() {
+            const questionType = document.getElementById('question_type').value;
+            const optionsContainer = document.getElementById('optionsContainer');
+            const correctAnswerSelector = document.getElementById('correctAnswerSelector');
+            const multipleCorrectAnswerSelector = document.getElementById('multipleCorrectAnswerSelector');
+            const trueFalseSelector = document.getElementById('trueFalseSelector');
+            const openAnswerInput = document.getElementById('openAnswerInput');
+            const correctAnswerInput = document.getElementById('correct_answer');
+            
+            // Скрываем все интерфейсы
+            correctAnswerSelector.style.display = 'none';
+            multipleCorrectAnswerSelector.style.display = 'none';
+            trueFalseSelector.style.display = 'none';
+            openAnswerInput.style.display = 'none';
+            
+            // Очищаем значение
+            correctAnswerInput.value = '';
+            
+            if (questionType === 'multiple_choice') {
+                optionsContainer.classList.add('show');
+                correctAnswerSelector.style.display = 'block';
+                updateAnswerOptionsPreview();
+            } else if (questionType === 'multiple_select') {
+                optionsContainer.classList.add('show');
+                multipleCorrectAnswerSelector.style.display = 'block';
+                updateMultipleAnswerOptionsPreview();
+            } else if (questionType === 'true_false') {
+                optionsContainer.classList.remove('show');
+                trueFalseSelector.style.display = 'block';
+            } else if (questionType === 'open_answer') {
+                optionsContainer.classList.remove('show');
+                openAnswerInput.style.display = 'block';
+            } else {
+                optionsContainer.classList.remove('show');
+            }
+        }
+        
+        function updateAnswerOptionsPreview() {
+            const preview = document.getElementById('answerOptionsPreview');
+            const optionInputs = document.querySelectorAll('#optionsContainer input[type="text"]');
+            
+            preview.innerHTML = '';
+            
+            let hasOptions = false;
+            optionInputs.forEach((input, index) => {
+                const value = input.value.trim();
+                if (value) {
+                    hasOptions = true;
+                    const optionBtn = document.createElement('button');
+                    optionBtn.type = 'button';
+                    optionBtn.className = 'option-preview-btn';
+                    optionBtn.textContent = value;
+                    optionBtn.dataset.value = value;
+                    
+                    optionBtn.addEventListener('click', function() {
+                        // Убираем выделение с других кнопок
+                        preview.querySelectorAll('.option-preview-btn').forEach(btn => {
+                            btn.classList.remove('selected');
+                        });
+                        
+                        // Выделяем выбранную кнопку
+                        this.classList.add('selected');
+                        
+                        // Устанавливаем значение в скрытое поле
+                        document.getElementById('correct_answer').value = value;
+                    });
+                    
+                    preview.appendChild(optionBtn);
+                }
+            });
+            
+            if (!hasOptions) {
+                preview.innerHTML = '<p class="text-muted">Заполните варианты ответов выше, затем нажмите на правильный вариант</p>';
+            }
+        }
+        
+        function updateMultipleAnswerOptionsPreview() {
+            const preview = document.getElementById('multipleAnswerOptionsPreview');
+            const optionInputs = document.querySelectorAll('#optionsContainer input[type="text"]');
+            
+            preview.innerHTML = '';
+            
+            let hasOptions = false;
+            optionInputs.forEach((input, index) => {
+                const value = input.value.trim();
+                if (value) {
+                    hasOptions = true;
+                    const optionBtn = document.createElement('button');
+                    optionBtn.type = 'button';
+                    optionBtn.className = 'multiple-option-btn';
+                    optionBtn.textContent = value;
+                    optionBtn.dataset.value = value;
+                    
+                    optionBtn.addEventListener('click', function() {
+                        // Переключаем выделение кнопки
+                        this.classList.toggle('selected');
+                        
+                        // Собираем все выбранные варианты
+                        const selectedOptions = [];
+                        preview.querySelectorAll('.multiple-option-btn.selected').forEach(btn => {
+                            selectedOptions.push(btn.dataset.value);
+                        });
+                        
+                        // Устанавливаем значение в скрытое поле как JSON
+                        document.getElementById('correct_answer').value = JSON.stringify(selectedOptions);
+                    });
+                    
+                    preview.appendChild(optionBtn);
+                }
+            });
+            
+            if (!hasOptions) {
+                preview.innerHTML = '<p class="text-muted">Заполните варианты ответов выше, затем выберите правильные варианты</p>';
+            }
+        }
+        
+        // Обработчики для true/false кнопок
+        document.addEventListener('DOMContentLoaded', function() {
+            const tfButtons = document.querySelectorAll('.tf-option-btn');
+            tfButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Убираем выделение с других кнопок
+                    tfButtons.forEach(btn => btn.classList.remove('selected'));
+                    
+                    // Выделяем выбранную кнопку
+                    this.classList.add('selected');
+                    
+                    // Устанавливаем значение в скрытое поле
+                    document.getElementById('correct_answer').value = this.dataset.value;
+                });
+            });
+            
+            // Обработчик для поля открытого ответа
+            const openAnswerText = document.getElementById('open_answer_text');
+            openAnswerText.addEventListener('input', function() {
+                document.getElementById('correct_answer').value = this.value;
+            });
+            
+            // Обработчики для полей вариантов ответов
+            const optionInputs = document.querySelectorAll('#optionsContainer input[type="text"]');
+            optionInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    const questionType = document.getElementById('question_type').value;
+                    if (questionType === 'multiple_choice') {
+                        updateAnswerOptionsPreview();
+                    } else if (questionType === 'multiple_select') {
+                        updateMultipleAnswerOptionsPreview();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

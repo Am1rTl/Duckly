@@ -10,4 +10,5 @@ docker run -d \
   -v $(pwd)/flask_session:/app/flask_session \
   # IMPORTANT: Change this SECRET_KEY for production environments!
   -e SECRET_KEY='your-development-secret-key-here' \
+  -e FLASK_DEBUG=1 \
   duckly-app

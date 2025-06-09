@@ -384,7 +384,14 @@
   </div>
 
   {% if is_teacher %}
-  <a href="{{ "/add_tests" }}" class="btn btn-primary" id="addTestBtn" style="margin-bottom: 30px;"><i class="fas fa-plus"></i> Добавить тест</a>
+  <div style="margin-bottom: 30px; display: flex; gap: 15px; flex-wrap: wrap;">
+    <a href="{{ "/add_tests" }}" class="btn btn-primary" id="addTestBtn">
+      <i class="fas fa-plus"></i> Добавить тест
+    </a>
+    <a href="{{ url_for('text_contents') }}" class="btn btn-success">
+      <i class="fas fa-file-text"></i> Управление текстами
+    </a>
+  </div>
   {% endif %}
 
   <h1>Scoreboard</h1>

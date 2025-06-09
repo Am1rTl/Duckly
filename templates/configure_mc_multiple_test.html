@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+
+{% block title %}Настройка вопросов для: {{ test.title }}{% endblock %}
+
+{% block styles %}
+<style>
+    body {
+        background-color: #f8f9fe;
+        font-family: 'Poppins', sans-serif;
+    }
+    .container-main {
+        max-width: 1000px;
+        margin: 20px auto;
+        padding: 25px;
+        background-color: #fff;
+        border-radius: 15px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    }
+    .question-builder-area h2 {
+        color: #5a52e0;
+        border-bottom: 2px solid #a5a1ff;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    .question-item {
+        background-color: #fdfdff;
+        border: 1px solid #e8e8f0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .question-item label {
+        font-weight: 500;
+        margin-bottom: 6px;
+        display: block;
+    }
+    .question-item input[type="text"],
+    .question-item textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        margin-bottom: 10px;
+        font-size: 0.95rem;
+    }
+    .question-item textarea {
+        min-height: 80px;
+        resize: vertical;
+    }
+    .options-container .option-entry {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+    .options-container .option-entry input[type="text"] {
+        flex-grow: 1;
+        margin-bottom: 0;
+    }
+    .btn-add-option, .btn-remove-question, .btn-remove-option {
+        font-size: 0.85rem;
+        padding: 6px 10px;
+    }
+    .btn-primary-custom {
+        background-color: #6c63ff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        font-weight: 500;
+    }
+    .btn-primary-custom:hover {
+        background-color: #5a52e0;
+    }
+    .btn-danger-custom {
+        background-color: #dc3545;
+        color: white;
+    }
+    .form-actions {
+        margin-top: 30px;
+        text-align: right;
+    }
+    .correct-answer-label { /* For checkbox */
+        margin-left: 5px;
+        font-size: 0.9em;
+        user-select: none; /* Prevent text selection on click */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-main">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Настройка вопросов: {{ test.title }}</h1>
+        <a href="{{ url_for('test_details', test_id=test.id) }}" class="btn btn-outline-secondary">К деталям теста</a>
+    </div>
+
+    <div class="question-builder-area">
+        <h2>Редактор Вопросов (Выбор нескольких вариантов)</h2>
+        <form method="POST" id="questionsForm">
+            <input type="hidden" name="questions_data" id="questions_data_hidden_input">
+            
+            <div id="questions_container">
+                <!-- Questions will be dynamically added here by JavaScript -->
+            </div>
+
+            <button type="button" id="addQuestionBtn" class="btn btn-success mt-3 mb-3">
+                <i class="fas fa-plus"></i> Добавить вопрос
+            </button>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-primary-custom">
+                    <i class="fas fa-save"></i> Сохранить все вопросы
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const questionsContainer = document.getElementById('questions_container');
+    const addQuestionBtn = document.getElementById('addQuestionBtn');
+    const questionsForm = document.getElementById('questionsForm');
+    const hiddenInput = document.getElementById('questions_data_hidden_input');
+    let questionCounter = 0;
+    let existingQuestionsData = {{ questions_for_js | safe }};
+
+    // Function to add a new option field to a question
+    function addOptionEntry(optionsDiv, questionId, optionText = "", isCorrect = false) {
+        const optionEntryId = `option-${questionId}-${Date.now()}`;
+        const optionEntry = document.createElement('div');
+        optionEntry.className = 'option-entry mb-2';
+        optionEntry.innerHTML = `
+            <input type="text" class="form-control option-text me-2" placeholder="Текст варианта ответа" value="${escapeHTML(optionText)}">
+            <input type="checkbox" id="${optionEntryId}" class="form-check-input correct-option-checkbox" ${isCorrect ? 'checked' : ''}>
+            <label for="${optionEntryId}" class="form-check-label correct-answer-label">Верный</label>
+            <button type="button" class="btn btn-danger btn-sm btn-remove-option ms-2"><i class="fas fa-times"></i></button>
+        `;
+        optionsDiv.appendChild(optionEntry);
+
+        optionEntry.querySelector('.btn-remove-option').addEventListener('click', function() {
+            optionEntry.remove();
+        });
+    }
+    
+    function escapeHTML(str) {
+        if (str === null || str === undefined) return "";
+        return str.toString().replace(/[&<>"']/g, function (match) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[match];
+        });
+    }
+
+    // Function to add/load a question block
+    function loadQuestion(questionData = null) {
+        questionCounter++;
+        const questionId = questionCounter;
+        const questionDiv = document.createElement('div');
+        questionDiv.className = 'question-item';
+        questionDiv.id = `question-${questionId}`;
+        questionDiv.innerHTML = `
+            <h5>Вопрос ${questionId}</h5>
+            <div class="form-group">
+                <label for="question_text_${questionId}">Текст вопроса:</label>
+                <textarea id="question_text_${questionId}" class="form-control question-text-input" rows="2" placeholder="Введите текст вопроса">${questionData ? escapeHTML(questionData.text) : ''}</textarea>
+            </div>
+            <div class="options-section mt-3">
+                <label>Варианты ответа (отметьте правильные):</label>
+                <div class="options-container">
+                    <!-- Option entries will be added here -->
+                </div>
+                <button type="button" class="btn btn-info btn-sm btn-add-option mt-2">
+                    <i class="fas fa-plus-circle"></i> Добавить вариант
+                </button>
+            </div>
+            <hr>
+            <button type="button" class="btn btn-danger-custom btn-sm btn-remove-question float-end">
+                <i class="fas fa-trash"></i> Удалить этот вопрос
+            </button>
+            <div style="clear:both;"></div>
+        `;
+        questionsContainer.appendChild(questionDiv);
+
+        const addOptionButton = questionDiv.querySelector('.btn-add-option');
+        const optionsDiv = questionDiv.querySelector('.options-container');
+
+        if (questionData && questionData.options) {
+            questionData.options.forEach(optText => {
+                const isCorrect = questionData.correct ? questionData.correct.includes(optText) : false;
+                addOptionEntry(optionsDiv, questionId, optText, isCorrect);
+            });
+        } else {
+            // Add 2 initial empty options for a new question
+            addOptionEntry(optionsDiv, questionId);
+            addOptionEntry(optionsDiv, questionId);
+        }
+
+
+        addOptionButton.addEventListener('click', function() {
+            addOptionEntry(optionsDiv, questionId);
+        });
+        
+        questionDiv.querySelector('.btn-remove-question').addEventListener('click', function() {
+            questionDiv.remove();
+            // Consider re-numbering visual display of "Вопрос X" if desired, though backend uses order
+        });
+    }
+
+    // Load existing questions
+    if (existingQuestionsData && existingQuestionsData.length > 0) {
+        existingQuestionsData.forEach(qData => {
+            loadQuestion(qData);
+        });
+    } else {
+         // Add one empty question to start with if no existing questions
+        loadQuestion();
+    }
+
+    addQuestionBtn.addEventListener('click', () => loadQuestion());
+
+    questionsForm.addEventListener('submit', function(event) {
+        const allQuestions = [];
+        const questionItems = questionsContainer.querySelectorAll('.question-item');
+        
+        let formIsValid = true;
+
+        questionItems.forEach(item => {
+            const questionText = item.querySelector('.question-text-input').value.trim();
+            const options = [];
+            const correctAnswers = [];
+            
+            const optionEntries = item.querySelectorAll('.options-container .option-entry');
+            if (!questionText) {
+                alert('Текст вопроса не может быть пустым.');
+                formIsValid = false;
+                return; // from forEach callback
+            }
+
+            let hasAtLeastOneOption = false;
+            optionEntries.forEach(optEntry => {
+                const optionTextInput = optEntry.querySelector('.option-text');
+                const optionText = optionTextInput.value.trim();
+                if (optionText) {
+                    hasAtLeastOneOption = true;
+                    options.push(optionText);
+                    if (optEntry.querySelector('.correct-option-checkbox').checked) {
+                        correctAnswers.push(optionText);
+                    }
+                }
+            });
+
+            if (!hasAtLeastOneOption) {
+                alert('Каждый вопрос должен иметь хотя бы один вариант ответа.');
+                formIsValid = false;
+                return; // from forEach callback
+            }
+            if (correctAnswers.length === 0) {
+                alert('В каждом вопросе должен быть отмечен хотя бы один правильный ответ.');
+                formIsValid = false;
+                return; // from forEach callback
+            }
+
+            allQuestions.push({
+                text: questionText,
+                options: options,
+                correct: correctAnswers
+            });
+        });
+
+        if (!formIsValid) {
+            event.preventDefault(); // Stop form submission
+            return;
+        }
+        
+        if (questionItems.length === 0) {
+             alert('Добавьте хотя бы один вопрос.');
+             event.preventDefault();
+             return;
+        }
+
+        hiddenInput.value = JSON.stringify(allQuestions);
+    });
+});
+</script>
+{% endblock %} 

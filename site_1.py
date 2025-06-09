@@ -1,5 +1,5 @@
 from markupsafe import escape
-from flask import Flask, jsonify, request, render_template, redirect, url_for, flash, make_response, session, abort
+from flask import Flask, jsonify, request, render_template, redirect, url_for, flash, make_response, session, abort, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash # Added for password hashing
 from flask_session import Session  # Добавляем поддержку сессий на основе файловой системы
 import time
@@ -14,11 +14,104 @@ import os # Added for os.makedirs
 import tempfile # Для временных файлов сессии
 
 # Import models and db
-from models import db, User, Word, Test, TestWord, TestResult, TestAnswer, TestProgress, UserWordReview, Sentence
+from models import db, User, Word, Test, TestWord, TestResult, TestAnswer, TestProgress, UserWordReview, Sentence, TextContent, TextQuestion, TextTestAnswer
 
 # Настройки автоматической очистки результатов
 AUTO_CLEAR_RESULTS_ON_NEW_TEST = True  # Включить/выключить автоматическую очистку
 CLEAR_ONLY_ACTIVE_TESTS = True  # Очищать только активные тесты (сохранять архивированные)
+
+def get_current_user():
+    """Безопасное получение текущего пользователя с использованием современного API SQLAlchemy"""
+    if 'user_id' not in session:
+        return None
+    
+    # Использование db.session.get() вместо User.query.get()
+    return db.session.get(User, session['user_id'])
+
+def require_login(f):
+    """Декоратор для проверки авторизации"""
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('auth.login'))
+        return f(*args, **kwargs)
+    decorated_function.__name__ = f.__name__
+    return decorated_function
+
+def require_teacher(f):
+    """Декоратор для проверки прав учителя"""
+    def decorated_function(*args, **kwargs):
+        user = get_current_user()
+        if not user or user.teacher != 'yes':
+            flash('Доступ запрещён. Требуются права учителя.', 'error')
+            return redirect(url_for('hello'))
+        return f(*args, **kwargs)
+    decorated_function.__name__ = f.__name__
+    return decorated_function
+
+
+def generate_options_with_fallback(target_word, selected_modules, class_number, mode='word_to_translation'):
+    """
+    Генерирует 4 варианта ответов с приоритетным выбором из одного модуля
+    """
+    correct_answer = target_word.perevod if mode == 'word_to_translation' else target_word.word
+    
+    # Сначала пытаемся найти варианты из того же модуля
+    same_module_words = Word.query.filter_by(
+        classs=target_word.classs,
+        unit=target_word.unit,
+        module=target_word.module
+    ).filter(Word.id != target_word.id).all()
+    
+    wrong_options = []
+    
+    # Берем варианты из того же модуля
+    if same_module_words:
+        options_from_module = [w.perevod if mode == 'word_to_translation' else w.word 
+                             for w in same_module_words]
+        wrong_options.extend(random.sample(options_from_module, 
+                                         min(3, len(options_from_module))))
+    
+    # Если недостаточно вариантов, добираем из других модулей того же юнита
+    if len(wrong_options) < 3:
+        same_unit_words = Word.query.filter_by(
+            classs=target_word.classs,
+            unit=target_word.unit
+        ).filter(
+            Word.id != target_word.id,
+            Word.module != target_word.module
+        ).all()
+        
+        if same_unit_words:
+            options_from_unit = [w.perevod if mode == 'word_to_translation' else w.word 
+                               for w in same_unit_words]
+            needed = 3 - len(wrong_options)
+            wrong_options.extend(random.sample(options_from_unit, 
+                                             min(needed, len(options_from_unit))))
+    
+    # Если все еще недостаточно, берем из других юнитов того же класса
+    if len(wrong_options) < 3:
+        other_class_words = Word.query.filter_by(classs=target_word.classs).filter(
+            Word.id != target_word.id,
+            Word.unit != target_word.unit
+        ).all()
+        
+        if other_class_words:
+            options_from_class = [w.perevod if mode == 'word_to_translation' else w.word 
+                                for w in other_class_words]
+            needed = 3 - len(wrong_options)
+            wrong_options.extend(random.sample(options_from_class, 
+                                             min(needed, len(options_from_class))))
+    
+    # Заполняем недостающие варианты заглушками
+    while len(wrong_options) < 3:
+        wrong_options.append(f"Вариант {len(wrong_options) + 1}")
+    
+    # Создаем финальный список с правильным ответом
+    all_options = wrong_options[:3] + [correct_answer]
+    random.shuffle(all_options)
+    
+    return all_options
+
 
 def format_time_taken(minutes):
     """
@@ -159,6 +252,15 @@ from blueprints.words import words_bp
 app.register_blueprint(auth_bp)
 app.register_blueprint(words_bp)
 
+# Add custom template filters
+@app.template_filter('from_json')
+def from_json_filter(value):
+    """Convert JSON string to Python object"""
+    try:
+        return json.loads(value) if value else []
+    except (json.JSONDecodeError, TypeError):
+        return []
+
 # Models are now imported from models.py
 
 
@@ -170,13 +272,377 @@ def index():
 def greet(name):
     return f"Hello, {name}!"
 
-# Auth routes are now in blueprints.auth
-# @app.route("/profile") ... (moved)
-# @app.route("/edit_profile") ... (moved)
-# @app.route("/save_profile", methods=["POST"]) ... (moved)
-# @app.route('/login', methods=['POST', 'GET']) ... (moved)
-# @app.route("/logout") ... (moved)
-# @app.route('/registration', methods=['POST', 'GET']) ... (moved)
+@app.route("/create_text_based_test/<int:test_id>", methods=['GET', 'POST'])
+@require_login
+@require_teacher
+def create_text_based_test(test_id):
+    """Создание вопросов для теста на основе текста"""
+    # Использование db.session.get() вместо Test.query.get()
+    test = db.session.get(Test, test_id)
+    if not test:
+        flash('Тест не найден', 'error')
+        return redirect(url_for('tests'))
+    
+    current_user = get_current_user()
+    if test.created_by != current_user.id:
+        flash('У вас нет прав для редактирования этого теста', 'error')
+        return redirect(url_for('tests'))
+    
+    if request.method == 'POST':
+        questions_data = request.form.get('questions_data')
+        if questions_data:
+            try:
+                questions = json.loads(questions_data)
+                # Сохранение вопросов в поле text_based_questions
+                test.text_based_questions = json.dumps(questions, ensure_ascii=False)
+                db.session.commit()
+                flash('Вопросы успешно сохранены!', 'success')
+                return redirect(url_for('test_details', test_id=test.id))
+            except json.JSONDecodeError:
+                flash('Ошибка при сохранении вопросов', 'error')
+        else:
+            # Если нет данных, сохраняем пустой список
+            test.text_based_questions = json.dumps([], ensure_ascii=False)
+            db.session.commit()
+            flash('Вопросы очищены', 'info')
+            return redirect(url_for('test_details', test_id=test.id))
+    
+    # Получение существующих вопросов
+    existing_questions = []
+    if test.text_based_questions:
+        try:
+            existing_questions = json.loads(test.text_based_questions)
+        except json.JSONDecodeError:
+            existing_questions = []
+    
+    # Подготовка данных для JavaScript
+    questions_for_js = json.dumps(existing_questions, ensure_ascii=False)
+    
+    return render_template('configure_text_quiz.html', 
+                         test=test, 
+                         questions_for_js=questions_for_js)
+
+@app.route('/take_text_test/<test_link>')
+@require_login
+def take_text_test(test_link):
+    """Прохождение теста на основе текста"""
+    # Использование современного API SQLAlchemy
+    test = db.session.execute(
+        db.select(Test).where(Test.link == test_link)
+    ).scalar_one_or_none()
+    
+    if not test:
+        flash('Тест не найден', 'error')
+        return redirect(url_for('hello'))
+    
+    if not test.is_active:
+        flash('Тест неактивен', 'error')
+        return redirect(url_for('hello'))
+    
+    # Проверка наличия вопросов - сначала пробуем новую структуру
+    questions = []
+    if test.text_content_id:
+        # Используем новую структуру с TextQuestion
+        text_questions = db.session.execute(
+            db.select(TextQuestion).where(
+                TextQuestion.text_content_id == test.text_content_id
+            ).order_by(TextQuestion.order_number)
+        ).scalars().all()
+        
+        questions = []
+        for tq in text_questions:
+            question_data = {
+                'id': tq.id,
+                'question': tq.question,
+                'type': tq.question_type,
+                'correct_answer': tq.correct_answer,
+                'points': tq.points
+            }
+            if tq.options:
+                try:
+                    question_data['options'] = json.loads(tq.options)
+                except json.JSONDecodeError:
+                    question_data['options'] = []
+            questions.append(question_data)
+    elif test.text_based_questions:
+        # Fallback к старой структуре
+        try:
+            questions = json.loads(test.text_based_questions)
+        except json.JSONDecodeError:
+            questions = []
+    
+    if not questions:
+        flash('В тесте нет вопросов', 'error')
+        return redirect(url_for('hello'))
+    
+    current_user = get_current_user()
+    
+    # Проверка существующего результата с использованием современного API
+    existing_result = db.session.execute(
+        db.select(TestResult).where(
+            TestResult.test_id == test.id,
+            TestResult.user_id == current_user.id,
+            TestResult.completed_at.is_(None)
+        )
+    ).scalar_one_or_none()
+    
+    if existing_result:
+        # Продолжение существующего теста
+        test_result = existing_result
+    else:
+        # Создание нового результата теста
+        test_result = TestResult(
+            test_id=test.id,
+            user_id=current_user.id,
+            total_questions=len(questions),
+            started_at=datetime.utcnow()
+        )
+        db.session.add(test_result)
+        db.session.commit()
+    
+    # Получаем текстовый контент
+    text_content = None
+    if test.text_content_id:
+        text_content = db.session.get(TextContent, test.text_content_id)
+    
+    return render_template('take_text_test.html', 
+                         test=test, 
+                         questions=questions,
+                         test_result=test_result,
+                         text_content=text_content)
+
+@app.route('/submit_text_test/<int:test_result_id>', methods=['POST'])
+@require_login
+def submit_text_test(test_result_id):
+    """Обработка ответов на тест с текстом"""
+    # Использование db.session.get() вместо TestResult.query.get()
+    test_result = db.session.get(TestResult, test_result_id)
+    if not test_result:
+        return jsonify({'error': 'Результат теста не найден'}), 404
+    
+    current_user = get_current_user()
+    if test_result.user_id != current_user.id:
+        return jsonify({'error': 'Доступ запрещён'}), 403
+    
+    if test_result.completed_at:
+        return jsonify({'error': 'Тест уже завершён'}), 400
+    
+    test = db.session.get(Test, test_result.test_id)
+    
+    # Получаем вопросы - сначала пробуем новую структуру
+    questions = []
+    if test.text_content_id:
+        # Используем новую структуру с TextQuestion
+        text_questions = db.session.execute(
+            db.select(TextQuestion).where(
+                TextQuestion.text_content_id == test.text_content_id
+            ).order_by(TextQuestion.order_number)
+        ).scalars().all()
+        
+        questions = text_questions
+    elif test.text_based_questions:
+        # Fallback к старой структуре
+        try:
+            old_questions = json.loads(test.text_based_questions)
+            # Преобразуем в объекты для совместимости
+            questions = []
+            for i, q in enumerate(old_questions):
+                class OldQuestion:
+                    def __init__(self, data, index):
+                        self.id = f"old_{index}"
+                        self.question = data.get('question', '')
+                        self.question_type = data.get('type', 'open_answer')
+                        self.correct_answer = data.get('correct', '')
+                        self.points = 1
+                        self.options = data.get('options', [])
+                questions.append(OldQuestion(q, i))
+        except json.JSONDecodeError:
+            questions = []
+    
+    # Получение ответов из формы и подсчет правильных ответов
+    correct_count = 0
+    total_points = 0
+    earned_points = 0
+    
+    for i, question in enumerate(questions):
+        question_key = f'question_{i}'
+        user_answer = request.form.get(question_key, '').strip()
+        
+        # Проверка правильности ответа
+        is_correct = False
+        points_for_question = getattr(question, 'points', 1)
+        total_points += points_for_question
+        
+        if question.question_type == 'multiple_choice':
+            is_correct = user_answer == question.correct_answer
+        elif question.question_type == 'multiple_select':
+            # Для множественного выбора сравниваем JSON массивы
+            try:
+                user_answers = json.loads(user_answer) if user_answer else []
+                correct_answers = json.loads(question.correct_answer) if question.correct_answer else []
+                # Сравниваем отсортированные списки для корректного сравнения
+                is_correct = sorted(user_answers) == sorted(correct_answers)
+            except json.JSONDecodeError:
+                is_correct = False
+        elif question.question_type == 'true_false':
+            # Поддержка "Да", "Нет", "Не указано"
+            is_correct = user_answer == question.correct_answer
+        elif question.question_type == 'open_answer':
+            # Для открытых вопросов проверяем точное совпадение (можно улучшить)
+            is_correct = user_answer.lower().strip() == question.correct_answer.lower().strip()
+        
+        if is_correct:
+            correct_count += 1
+            earned_points += points_for_question
+        
+        # Сохраняем ответ в новой структуре, если используем TextQuestion
+        if hasattr(question, 'id') and isinstance(question.id, int):
+            text_answer = TextTestAnswer(
+                test_result_id=test_result.id,
+                text_question_id=question.id,
+                user_answer=user_answer,
+                is_correct=is_correct,
+                points_earned=points_for_question if is_correct else 0
+            )
+            db.session.add(text_answer)
+    
+    # Обновление результата теста
+    test_result.correct_answers = correct_count
+    test_result.score = int((earned_points / total_points) * 100) if total_points > 0 else 0
+    test_result.completed_at = datetime.utcnow()
+    
+    # Вычисляем время выполнения
+    if test_result.started_at:
+        time_diff = datetime.utcnow() - test_result.started_at
+        test_result.time_taken = max(0, int(time_diff.total_seconds() / 60))
+    else:
+        test_result.time_taken = 0
+    
+    db.session.commit()
+    
+    return redirect(url_for('view_text_test_result', test_result_id=test_result.id))
+
+@app.route('/view_text_test_result/<int:test_result_id>')
+@require_login
+def view_text_test_result(test_result_id):
+    """Просмотр результатов теста на основе текста"""
+    # Использование db.session.get() вместо TestResult.query.get()
+    test_result = db.session.get(TestResult, test_result_id)
+    if not test_result:
+        flash('Результат теста не найден', 'error')
+        return redirect(url_for('hello'))
+    
+    current_user = get_current_user()
+    
+    # Проверка прав доступа
+    if test_result.user_id != current_user.id and current_user.teacher != 'yes':
+        flash('Доступ запрещён', 'error')
+        return redirect(url_for('hello'))
+    
+    test = db.session.get(Test, test_result.test_id)
+    
+    # Получаем текстовый контент
+    text_content = None
+    if test.text_content_id:
+        text_content = db.session.get(TextContent, test.text_content_id)
+    
+    # Получаем вопросы и ответы - сначала пробуем новую структуру
+    detailed_results = []
+    
+    if test.text_content_id:
+        # Используем новую структуру с TextQuestion и TextTestAnswer
+        text_questions = db.session.execute(
+            db.select(TextQuestion).where(
+                TextQuestion.text_content_id == test.text_content_id
+            ).order_by(TextQuestion.order_number)
+        ).scalars().all()
+        
+        for i, question in enumerate(text_questions):
+            # Получаем ответ пользователя
+            text_answer = db.session.execute(
+                db.select(TextTestAnswer).where(
+                    TextTestAnswer.test_result_id == test_result.id,
+                    TextTestAnswer.text_question_id == question.id
+                )
+            ).scalar_one_or_none()
+            
+            user_answer = text_answer.user_answer if text_answer else ''
+            is_correct = text_answer.is_correct if text_answer else False
+            points_earned = text_answer.points_earned if text_answer else 0
+            
+            # Получаем варианты ответов для multiple_choice
+            options = []
+            if question.options:
+                try:
+                    options = json.loads(question.options)
+                except json.JSONDecodeError:
+                    options = []
+            
+            detailed_results.append({
+                'question': question,
+                'user_answer': user_answer,
+                'is_correct': is_correct,
+                'points_earned': points_earned,
+                'question_number': i + 1,
+                'options': options
+            })
+    
+    elif test.text_based_questions:
+        # Fallback к старой структуре
+        try:
+            questions = json.loads(test.text_based_questions)
+        except json.JSONDecodeError:
+            questions = []
+        
+        # Получение ответов пользователя из старой структуры
+        user_answers = {}
+        if test_result.answers:
+            try:
+                user_answers = json.loads(test_result.answers)
+            except json.JSONDecodeError:
+                user_answers = {}
+        
+        for i, question in enumerate(questions):
+            question_key = f'question_{i}'
+            user_answer = user_answers.get(question_key, '')
+            
+            # Определение правильности ответа (старая логика)
+            is_correct = False
+            if question.get('type') == 'mc_single':
+                is_correct = user_answer in question.get('correct', [])
+            elif question.get('type') == 'mc_multiple':
+                if isinstance(user_answer, list):
+                    correct_answers = set(question.get('correct', []))
+                    user_answers_set = set(user_answer)
+                    is_correct = user_answers_set == correct_answers
+            elif question.get('type') == 'short_answer':
+                correct_answers = question.get('correct', [])
+                is_correct = any(user_answer.lower() == correct.lower() for correct in correct_answers)
+            
+            detailed_results.append({
+                'question': question,
+                'user_answer': user_answer,
+                'is_correct': is_correct,
+                'question_number': i + 1,
+                'points_earned': 1 if is_correct else 0
+            })
+    
+    # Обновление результата теста
+    test_result.correct_answers = correct_count
+    test_result.score = int((earned_points / total_points) * 100) if total_points > 0 else 0
+    test_result.completed_at = datetime.utcnow()
+    
+    # Вычисляем время выполнения
+    if test_result.started_at:
+        time_diff = datetime.utcnow() - test_result.started_at
+        test_result.time_taken = max(0, int(time_diff.total_seconds() / 60))
+    else:
+        test_result.time_taken = 0
+    
+    db.session.commit()
+    
+    return redirect(url_for('view_text_test_result', test_result_id=test_result.id))
+
 
 
 @app.route("/add_tests", methods=['POST', 'GET'])
@@ -185,7 +651,7 @@ def add_tests():
         flash("Доступ запрещен. Пожалуйста, войдите как учитель.", "warning")
         return redirect(url_for('auth.login'))
 
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user or user.teacher != 'yes':
         flash("Доступ запрещен. Только учителя могут добавлять тесты.", "warning")
         if not user:
@@ -194,6 +660,8 @@ def add_tests():
     
     if request.method == "POST":
         test_type = request.form.get('test_type')
+        test_direction = request.form.get('test_direction', 'word_to_translation')
+        text_content = request.form.get('text_content', '')
         class_number = request.form.get('class_number')
         title = request.form.get('title')
         
@@ -209,6 +677,8 @@ def add_tests():
             'title': title,
             'classs': class_number,
             'type': test_type,
+            'test_direction': test_direction,
+            'text_content': text_content,
             'link': generate_test_link(),
             'created_by': user.id,
             'time_limit': time_limit,
@@ -283,28 +753,33 @@ def add_tests():
         elif len(selected_module_identifiers) > 1:
             new_test_params['unit'] = "Multiple"
             new_test_params['module'] = "Multiple"
-        else: # No modules selected or error
-            new_test_params['unit'] = "N/A" # Default if no specific module context
+        else:
+            new_test_params['unit'] = "N/A"
             new_test_params['module'] = "N/A"
+
+        if test_type == 'text_based':
+            if not text_content or len(text_content.strip()) < 50:
+                flash("Для теста по тексту необходимо загрузить текст длиной не менее 50 символов.", "error")
+                classes_get = [str(i) for i in range(1, 12)]
+                return render_template("add_tests.html", classes=classes_get, **request.form)
+            new_test = Test(**new_test_params)
+            db.session.add(new_test)
+            db.session.commit()
+            flash("Тест создан. Теперь добавьте вопросы по загруженному тексту.", "info")
+            return redirect(url_for('create_text_based_test', test_id=new_test.id))
 
         new_test = Test(**new_test_params)
         db.session.add(new_test)
         
         try:
-            db.session.commit() # Commit Test object to get its ID
-
+            db.session.commit()
             if new_test.word_order == 'random':
                 random.shuffle(words_data_source)
-            
             final_word_count_to_use = new_test.word_count
             if final_word_count_to_use is not None and final_word_count_to_use > 0:
                 words_data_source = words_data_source[:final_word_count_to_use]
-            elif final_word_count_to_use == 0: # Explicitly 0 means no words
+            elif final_word_count_to_use == 0:
                 words_data_source = []
-
-            # If no words are sourced, and it's manual_letters, it will show "no words to configure" on the next page.
-            # This might be okay, or you could flash a specific warning here and redirect differently.
-            # For now, allowing it to proceed.
 
             for idx, word_entry in enumerate(words_data_source):
                 original_word_text = word_entry['word']
@@ -315,6 +790,7 @@ def add_tests():
                 missing_letters_positions_db = None
                 correct_answer_for_db = original_word_text
 
+                # --- Генерация вариантов и ответов для разных типов тестов ---
                 if test_type == 'add_letter':
                     prompt_for_test_word_model = original_translation
                     if test_mode == 'random_letters':
@@ -333,51 +809,33 @@ def add_tests():
                         current_word_for_test_word_model = original_word_text
                         correct_answer_for_db = "" 
                         missing_letters_positions_db = None  
-                            
-                elif test_type == 'multiple_choice_single':
-                    current_word_for_test_word_model = original_translation 
-                    prompt_for_test_word_model = "Выберите правильный перевод:" 
-                    correct_answer_for_db = original_word_text
-                    all_other_words = [w.word for w in Word.query.filter(Word.classs == class_number, Word.word != original_word_text).limit(20).all()]
-                    num_wrong_options = 3
-                    wrong_options_list = random.sample(all_other_words, min(num_wrong_options, len(all_other_words)))
-                    current_options_list_for_db = wrong_options_list + [original_word_text]
+                elif test_type == 'multiple_choice':
+                    if test_direction == 'word_to_translation':
+                        current_word_for_test_word_model = original_word_text
+                        prompt_for_test_word_model = "Выберите правильный перевод:"
+                        correct_answer_for_db = original_translation
+                        all_other_translations = [w.perevod for w in Word.query.filter(Word.classs == class_number, Word.perevod != original_translation).limit(20).all()]
+                        num_wrong_options = 3
+                        wrong_options_list = random.sample(all_other_translations, min(num_wrong_options, len(all_other_translations)))
+                        current_options_list_for_db = wrong_options_list + [original_translation]
+                    else:
+                        current_word_for_test_word_model = original_translation
+                        prompt_for_test_word_model = "Выберите правильное слово:"
+                        correct_answer_for_db = original_word_text
+                        all_other_words = [w.word for w in Word.query.filter(Word.classs == class_number, Word.word != original_word_text).limit(20).all()]
+                        num_wrong_options = 3
+                        wrong_options_list = random.sample(all_other_words, min(num_wrong_options, len(all_other_words)))
+                        current_options_list_for_db = wrong_options_list + [original_word_text]
                     random.shuffle(current_options_list_for_db)
                     options_db = '|'.join(current_options_list_for_db)
-
                 elif test_type == 'dictation':
                     current_word_for_test_word_model = ''.join(['_'] * len(original_word_text))
                     prompt_for_test_word_model = original_translation 
                     correct_answer_for_db = original_word_text
-
-                elif test_type == 'true_false':
-                    if word_entry['source'] == 'custom':
-                        current_word_for_test_word_model = original_word_text
-                        correct_answer_for_db = original_translation if original_translation.lower() in ['true', 'false'] else "True"
-                    else:
-                        current_word_for_test_word_model = f"{original_word_text} - {original_translation}"
-                        correct_answer_for_db = "True"
-                    prompt_for_test_word_model = "Верно или неверно?"
-                    options_db = "True|False"
-                    
                 elif test_type == 'fill_word':
                     current_word_for_test_word_model = original_translation
                     prompt_for_test_word_model = "Впишите соответствующее слово (оригинал):"
                     correct_answer_for_db = original_word_text
-
-                elif test_type == 'multiple_choice_multiple':
-                    current_word_for_test_word_model = original_translation
-                    prompt_for_test_word_model = "Выберите все подходящие варианты:"
-                    correct_answer_for_db = original_word_text 
-                    all_other_words = [w.word for w in Word.query.filter(Word.classs == class_number, Word.word != original_word_text).limit(20).all()]
-                    num_options_total = 4
-                    num_wrong_options_needed = num_options_total - 1
-                    wrong_options_list = random.sample(all_other_words, min(num_wrong_options_needed, len(all_other_words)))
-                    current_options_list_for_db = wrong_options_list + [original_word_text]
-                    while len(current_options_list_for_db) < num_options_total:
-                        current_options_list_for_db.append(f"Вариант {len(current_options_list_for_db)+1}")
-                    random.shuffle(current_options_list_for_db)
-                    options_db = '|'.join(current_options_list_for_db[:num_options_total])
 
                 test_word_entry = TestWord(
                     test_id=new_test.id,
@@ -390,34 +848,28 @@ def add_tests():
                 )
                 db.session.add(test_word_entry)
             
-            db.session.commit() # Commit TestWord objects
+            db.session.commit()
 
             if new_test.type == 'add_letter' and new_test.test_mode == 'manual_letters':
                 flash("Тест создан. Теперь укажите, какие буквы пропустить в словах.", "info")
                 return redirect(url_for('configure_test_words', test_id=new_test.id))
             else:
                 flash("Тест успешно создан!", "success")
-                return redirect(url_for('tests')) # Or consider redirecting to test_details
+                return redirect(url_for('tests'))
 
         except Exception as e:
             db.session.rollback()
-            # If new_test.id exists, it means the Test object might have been committed
-            # before the exception during TestWord creation or the second commit.
-            # So, we explicitly delete the Test object to avoid an orphaned Test.
             if new_test.id:
-                test_to_delete = Test.query.get(new_test.id)
+                test_to_delete = db.session.get(Test, new_test.id)
                 if test_to_delete:
                     db.session.delete(test_to_delete)
-                    db.session.commit() # Commit the deletion of the orphaned Test
-            
+                    db.session.commit()
             flash(f"Ошибка при создании теста или его слов: {str(e)}", "error")
             classes_get = [str(i) for i in range(1, 12)]
-            # Pass back form data to repopulate the form
             return render_template("add_tests.html", classes=classes_get, error_message=str(e), **request.form)
 
-    else: # GET request
+    else:
         classes = [str(i) for i in range(1, 12)]
-        # Pass any form data back if it was a failed POST that rendered GET
         form_data = request.form if request.form else {}
         return render_template("add_tests.html", classes=classes, **form_data)
 
@@ -426,7 +878,7 @@ def tests():
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
 
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user:
         session.pop('user_id', None)
         flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
@@ -485,7 +937,7 @@ def api_tests_progress():
     if 'user_id' not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user or user.teacher != 'yes':
         return jsonify({"error": "Forbidden"}), 403
 
@@ -569,11 +1021,11 @@ def api_test_dictation_words(test_db_id):
     if 'user_id' not in session:
         return jsonify({'error': 'Authentication required'}), 401
 
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user:
         return jsonify({'error': 'User not found'}), 403 # Or 401
 
-    test = Test.query.get(test_db_id)
+    test = db.session.get(Test, test_db_id)
     if not test:
         abort(404)
 
@@ -621,7 +1073,7 @@ def _get_test_words_api_data(test_db_id, expected_test_type_slug):
     if 'user_id' not in session:
         return jsonify({'error': 'Authentication required'}), 401
 
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user:
         return jsonify({'error': 'User not found'}), 403
 
@@ -691,8 +1143,8 @@ def api_test_true_false_words(test_db_id):
             'id': tw.id,
             'statement': tw.word, # The statement to be judged
             'prompt': tw.perevod,  # Usually "Верно или неверно?" or a hint
-            'options': tw.options.split('|') if tw.options else ["True", "False"], # Should be ["True", "False"]
-            'correct_answer': tw.correct_answer # "True" or "False"
+            'options': tw.options.split('|') if tw.options else ["True", "False", "Not_Stated"], # Include "Not_Stated" option
+            'correct_answer': tw.correct_answer # "True", "False", or "Not_Stated"
         })
     return jsonify({'words': words_data, 'test_title': test.title, 'test_type': test.type})
 
@@ -757,7 +1209,7 @@ def test_id(id):
         flash("Пожалуйста, войдите в систему, чтобы пройти тест.", "error")
         return redirect(url_for('auth.login'))
 
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user:
         session.pop('user_id', None)
         flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
@@ -792,14 +1244,14 @@ def test_id(id):
     # Сначала пробуем получить из сессии
     if 'active_test_result_id' in session:
         test_result_id = session['active_test_result_id']
-        test_result = TestResult.query.get(test_result_id)
+        test_result = db.session.get(TestResult, test_result_id)
         print(f"DEBUG: Found test_result from session: {test_result}")
     
     # Если не нашли в сессии, пробуем из cookie
     if not test_result and 'active_test_result_id' in request.cookies:
         try:
             test_result_id = int(request.cookies.get('active_test_result_id'))
-            test_result = TestResult.query.get(test_result_id)
+            test_result = db.session.get(TestResult, test_result_id)
             if test_result:
                 # Если нашли в cookie, сохраняем в сессию для будущих запросов
                 session['active_test_result_id'] = test_result_id
@@ -851,7 +1303,104 @@ def test_id(id):
                 flash("Не удалось найти активный сеанс теста. Пожалуйста, начните тест сначала.", "warning")
                 return redirect(url_for('take_test', test_link=test.link)) # Redirect to start
 
-        # Process answers
+        # Process answers based on test type
+        if test.type == 'text_based':
+            # Обработка текстовых тестов
+            # Получаем вопросы - сначала пробуем новую структуру
+            questions = []
+            if test.text_content_id:
+                # Используем новую структуру с TextQuestion
+                text_questions = db.session.execute(
+                    db.select(TextQuestion).where(
+                        TextQuestion.text_content_id == test.text_content_id
+                    ).order_by(TextQuestion.order_number)
+                ).scalars().all()
+                
+                questions = text_questions
+            elif test.text_based_questions:
+                # Fallback к старой структуре
+                try:
+                    old_questions = json.loads(test.text_based_questions)
+                    # Преобразуем в объекты для совместимости
+                    questions = []
+                    for i, q in enumerate(old_questions):
+                        class OldQuestion:
+                            def __init__(self, data, index):
+                                self.id = f"old_{index}"
+                                self.question = data.get('question', '')
+                                self.question_type = data.get('type', 'open_answer')
+                                self.correct_answer = data.get('correct', '')
+                                self.points = 1
+                                self.options = data.get('options', [])
+                        questions.append(OldQuestion(q, i))
+                except json.JSONDecodeError:
+                    questions = []
+            
+            # Получение ответов из формы и подсчет правильных ответов
+            correct_count = 0
+            total_points = 0
+            earned_points = 0
+            
+            for i, question in enumerate(questions):
+                question_key = f'question_{i}'
+                user_answer = request.form.get(question_key, '').strip()
+                
+                # Проверка правильности ответа
+                is_correct = False
+                points_for_question = getattr(question, 'points', 1)
+                total_points += points_for_question
+                
+                if question.question_type == 'multiple_choice':
+                    is_correct = user_answer == question.correct_answer
+                elif question.question_type == 'multiple_select':
+                    # Для множественного выбора сравниваем JSON массивы
+                    try:
+                        user_answers = json.loads(user_answer) if user_answer else []
+                        correct_answers = json.loads(question.correct_answer) if question.correct_answer else []
+                        # Сравниваем отсортированные списки для корректного сравнения
+                        is_correct = sorted(user_answers) == sorted(correct_answers)
+                    except json.JSONDecodeError:
+                        is_correct = False
+                elif question.question_type == 'true_false':
+                    # Поддержка "Да", "Нет", "Не указано"
+                    is_correct = user_answer == question.correct_answer
+                elif question.question_type == 'open_answer':
+                    # Для открытых вопросов проверяем точное совпадение (можно улучшить)
+                    is_correct = user_answer.lower().strip() == question.correct_answer.lower().strip()
+                
+                if is_correct:
+                    correct_count += 1
+                    earned_points += points_for_question
+                
+                # Сохраняем ответ в новой структуре, если используем TextQuestion
+                if hasattr(question, 'id') and isinstance(question.id, int):
+                    text_answer = TextTestAnswer(
+                        test_result_id=test_result.id,
+                        text_question_id=question.id,
+                        user_answer=user_answer,
+                        is_correct=is_correct,
+                        points_earned=points_for_question if is_correct else 0
+                    )
+                    db.session.add(text_answer)
+            
+            # Обновление результата теста
+            test_result.correct_answers = correct_count
+            test_result.score = int((earned_points / total_points) * 100) if total_points > 0 else 0
+            completion_time = datetime.utcnow()
+            test_result.completed_at = completion_time
+            
+            # Вычисляем время выполнения
+            if test_result.started_at:
+                time_diff = completion_time - test_result.started_at
+                test_result.time_taken = max(0, int(time_diff.total_seconds() / 60))
+            else:
+                test_result.time_taken = 0
+            
+            db.session.commit()
+            
+            return redirect(url_for('view_text_test_result', test_result_id=test_result.id))
+        
+        # Process answers for word-based tests
         answers_dict_for_json = {} # To store in TestResult.answers (JSON)
         score = 0
         processed_answers_for_db = [] # To store TestAnswer objects
@@ -878,8 +1427,8 @@ def test_id(id):
                 if user_answer_for_comparison == actual_correct_answer_for_comparison:
                     is_this_answer_correct = True
             elif test.type == 'true_false':
-                # For true_false, correct_answer is 'True' or 'False'
-                if user_input_answer.capitalize() == word.correct_answer: # Comparison is case-insensitive for T/F but store as True/False
+                # For true_false, correct_answer is 'True', 'False', or 'Not_Stated'
+                if user_input_answer == word.correct_answer: # Direct comparison for T/F/NS
                     is_this_answer_correct = True
             elif test.type == 'fill_word':
                 if user_answer_for_comparison == actual_correct_answer_for_comparison:
@@ -1132,6 +1681,60 @@ def test_id(id):
                              test_title=test.title,
                              test_db_id=test.id,
                              is_teacher_preview=is_teacher_preview_mode)
+    elif test.type == 'text_based':
+        # Обработка текстовых тестов
+        # Проверка наличия вопросов - сначала пробуем новую структуру
+        questions = []
+        if test.text_content_id:
+            # Используем новую структуру с TextQuestion
+            text_questions = db.session.execute(
+                db.select(TextQuestion).where(
+                    TextQuestion.text_content_id == test.text_content_id
+                ).order_by(TextQuestion.order_number)
+            ).scalars().all()
+            
+            questions = []
+            for tq in text_questions:
+                question_data = {
+                    'id': tq.id,
+                    'question': tq.question,
+                    'type': tq.question_type,
+                    'correct_answer': tq.correct_answer,
+                    'points': tq.points
+                }
+                if tq.options:
+                    try:
+                        question_data['options'] = json.loads(tq.options)
+                    except json.JSONDecodeError:
+                        question_data['options'] = []
+                questions.append(question_data)
+        elif test.text_based_questions:
+            # Fallback к старой структуре
+            try:
+                questions = json.loads(test.text_based_questions)
+            except json.JSONDecodeError:
+                questions = []
+        
+        if not questions:
+            flash('В тесте нет вопросов', 'error')
+            return redirect(url_for('tests'))
+        
+        # Получаем текстовый контент
+        text_content = None
+        if test.text_content_id:
+            text_content = db.session.get(TextContent, test.text_content_id)
+        
+        return render_template('take_text_test.html', 
+                             test=test, 
+                             questions=questions,
+                             test_result=test_result,
+                             text_content=text_content,
+                             test_id=id, # link
+                             time_limit=test.time_limit,
+                             remaining_time_seconds=remaining_time_seconds,
+                             test_title=test.title,
+                             test_db_id=test.id,
+                             is_teacher_preview=is_teacher_preview_mode)
     else:
         # Fallback for unknown test types
         flash(f"Неизвестный тип теста: {test.type}", "error")
@@ -1142,7 +1745,7 @@ def edit_profile():
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
     
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user:
         session.pop('user_id', None)
         flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
@@ -1166,6 +1769,10 @@ def save_profile():
 # def add_words():
 #     ... (implementation removed) ...
 
+@app.route("/test_dropdowns")
+def test_dropdowns():
+    return send_from_directory('.', 'test_dropdowns.html')
+
 @app.route("/get_units_for_class")
 def get_units_for_class():
     class_name = request.args.get('class_name')
@@ -1174,10 +1781,12 @@ def get_units_for_class():
     
     # Get unique units for the selected class
     units = db.session.query(Word.unit).filter(
-        Word.classs == class_name
+        Word.classs == class_name,
+        Word.unit.isnot(None),
+        Word.unit != ''
     ).distinct().all()
     
-    return jsonify([unit[0] for unit in units])
+    return jsonify([unit[0] for unit in units if unit[0]])
 
 @app.route("/get_modules_for_unit")
 def get_modules_for_unit():
@@ -1190,10 +1799,12 @@ def get_modules_for_unit():
     # Get unique modules for the selected class and unit
     modules = db.session.query(Word.module).filter(
         Word.classs == class_name,
-        Word.unit == unit_name
+        Word.unit == unit_name,
+        Word.module.isnot(None),
+        Word.module != ''
     ).distinct().all()
     
-    return jsonify([module[0] for module in modules])
+    return jsonify([module[0] for module in modules if module[0]])
 
 @app.route('/get_word_count')
 def get_word_count():
@@ -1259,7 +1870,7 @@ def hello():
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
 
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user:
         session.pop('user_id', None) # Clean up invalid session
         flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
@@ -1428,7 +2039,7 @@ def create_test():
         flash("Доступ запрещен. Пожалуйста, войдите как учитель.", "warning")
         return redirect(url_for('auth.login'))
 
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user or user.teacher != 'yes':
         flash("Доступ запрещен. Только учителя могут создавать тесты.", "warning")
         if not user: # If user is None (e.g. ID in session is invalid), pop session and redirect
@@ -1656,22 +2267,22 @@ def create_test():
                     # Removed flash messages regarding missing manual indices here.
                         
             elif test_type == 'multiple_choice_single':
-                current_word_for_test_word_model = original_translation # This is the question: "What is the word for X?"
-                prompt_for_test_word_model = "Выберите правильный перевод:" 
-                correct_answer_for_db = original_word_text
+                test_direction = new_test.test_direction or 'word_to_translation'
                 
-                all_other_words_in_class = [w.word for w in Word.query.filter(Word.classs == class_number, Word.word != original_word_text).all()]
-                num_wrong_options = 3
+                if test_direction == 'word_to_translation':
+                    current_word_for_test_word_model = original_word_text
+                    prompt_for_test_word_model = "Выберите правильный перевод:"
+                    correct_answer_for_db = original_translation
+                else:  # translation_to_word
+                    current_word_for_test_word_model = original_translation
+                    prompt_for_test_word_model = "Выберите правильное слово:"
+                    correct_answer_for_db = original_word_text
                 
-                wrong_options_list = []
-                if len(all_other_words_in_class) >= num_wrong_options:
-                    wrong_options_list = random.sample(all_other_words_in_class, num_wrong_options)
-                else: 
-                    wrong_options_list = all_other_words_in_class
-                
-                current_options_list_for_db = wrong_options_list + [original_word_text]
-                random.shuffle(current_options_list_for_db)
-                options_db = '|'.join(current_options_list_for_db)
+                # Используем новую функцию для генерации вариантов
+                options_list = generate_options_with_fallback(
+                    word_entry, selected_modules, class_number, test_direction
+                )
+                options_db = '|'.join(options_list)
 
             elif test_type == 'dictation':
                 # Student hears/sees translation (prompt) and types the word (correct_answer).
@@ -1791,7 +2402,7 @@ def create_test():
             return redirect(url_for('test_details', test_id=new_test.id))
 
     # GET request:
-    user = User.query.get(session['user_id']) # Ensure user is fetched for GET request as well
+    user = db.session.get(User, session['user_id']) # Ensure user is fetched for GET request as well
     # Fetch available modules to populate the form (example, adjust as per actual logic)
     available_modules = {} # Replace with actual module fetching logic if needed for the GET request
     classes_get = [str(i) for i in range(1, 12)]
@@ -1805,7 +2416,7 @@ def configure_test_words(test_id):
         flash("Доступ запрещен. Пожалуйста, войдите.", "warning")
         return redirect(url_for('auth.login'))
     
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user or user.teacher != 'yes':
         flash("Доступ запрещен. Только учителя могут настраивать тесты.", "warning")
         return redirect(url_for('tests'))
@@ -1894,12 +2505,58 @@ def configure_test_words(test_id):
     # Pass the (now modified with .display_indices_for_form) test_words_for_config to the template.
     return render_template('configure_test_words.html', test=test, test_words=test_words_for_config, user=user)
 
+@app.route('/configure_true_false_test/<int:test_id>', methods=['GET', 'POST'])
+def configure_true_false_test(test_id):
+    if 'user_id' not in session:
+        flash("Доступ запрещен. Пожалуйста, войдите.", "warning")
+        return redirect(url_for('auth.login'))
+    
+    user = db.session.get(User, session['user_id'])
+    if not user or user.teacher != 'yes':
+        flash("Доступ запрещен. Только учителя могут настраивать тесты.", "warning")
+        return redirect(url_for('tests'))
+
+    test = Test.query.get_or_404(test_id)
+    
+    if test.created_by != user.id:
+        flash("Вы не можете редактировать этот тест, так как не являетесь его создателем.", "danger")
+        return redirect(url_for('tests'))
+
+    if test.type != 'true_false':
+        flash("Этот маршрут предназначен только для тестов типа 'true_false'.", "info")
+        return redirect(url_for('test_details', test_id=test.id))
+
+    test_words = TestWord.query.filter_by(test_id=test.id).order_by(TestWord.word_order).all()
+
+    if request.method == 'POST':
+        try:
+            for word in test_words:
+                # Получаем данные из формы для каждого слова
+                statement = request.form.get(f'statement_{word.id}', '').strip()
+                prompt = request.form.get(f'prompt_{word.id}', '').strip()
+                correct_answer = request.form.get(f'correct_answer_{word.id}', '').strip()
+                
+                if statement and correct_answer:
+                    word.word = statement
+                    word.perevod = prompt if prompt else "Верно или неверно?"
+                    word.correct_answer = correct_answer
+            
+            db.session.commit()
+            flash("Настройки теста true/false успешно сохранены!", "success")
+            return redirect(url_for('test_details', test_id=test.id))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Произошла ошибка при сохранении настроек: {str(e)}", "error")
+    
+    return render_template('configure_true_false_test.html', test=test, test_words=test_words, user=user)
+
 @app.route("/test/<int:test_id>")
 def test_details(test_id):
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
 
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user:
         session.pop('user_id', None)
         flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
@@ -1921,7 +2578,7 @@ def test_details(test_id):
         not_started_student_ids = {s.id for s in students_in_class}
 
         for result in all_results_for_test:
-            student_user = User.query.get(result.user_id)
+            student_user = db.session.get(User, result.user_id)
             if not student_user or student_user.teacher == 'yes': # Skip non-students or if user somehow deleted
                 if student_user and result.user_id in not_started_student_ids:
                     not_started_student_ids.remove(result.user_id)
@@ -1958,7 +2615,7 @@ def test_details(test_id):
                         item_data_for_template['remaining_time_display'] = "Время вышло"
                 in_progress_students_details.append(item_data_for_template)
 
-        not_started_students = [User.query.get(uid) for uid in not_started_student_ids]
+        not_started_students = [db.session.get(User, uid) for uid in not_started_student_ids]
         not_started_students = [s for s in not_started_students if s] 
         
         completed_count = len(completed_students_details)
@@ -2006,7 +2663,7 @@ def archive_test(test_id):
         flash("Доступ запрещен. Пожалуйста, войдите как учитель.", "warning")
         return redirect(url_for('auth.login'))
 
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user or user.teacher != 'yes':
         flash("Только создатель теста может его архивировать.", "warning")
         if not user: session.pop('user_id', None)
@@ -2026,7 +2683,7 @@ def unarchive_test(test_id):
         flash("Доступ запрещен. Пожалуйста, войдите как учитель.", "warning")
         return redirect(url_for('auth.login'))
 
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user or user.teacher != 'yes':
         flash("Только создатель теста может его восстановить из архива.", "warning")
         if not user: session.pop('user_id', None)
@@ -2048,7 +2705,7 @@ def clear_test_results(test_id):
         flash("Доступ запрещен. Пожалуйста, войдите как учитель.", "warning")
         return redirect(url_for('auth.login'))
 
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user or user.teacher != 'yes':
         flash("Только создатель теста может очистить его результаты.", "warning")
         if not user: session.pop('user_id', None)
@@ -2088,7 +2745,7 @@ def delete_test_completely(test_id):
         flash("Доступ запрещен. Пожалуйста, войдите как учитель.", "warning")
         return redirect(url_for('auth.login'))
 
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user or user.teacher != 'yes':
         flash("Только создатель теста может его удалить.", "warning")
         if not user: session.pop('user_id', None)
@@ -2122,7 +2779,7 @@ def take_test(test_link):
         flash("Пожалуйста, войдите в систему, чтобы пройти тест.", "error")
         return redirect(url_for('auth.login'))
 
-    current_user = User.query.get(session['user_id'])
+    current_user = db.session.get(User, session['user_id'])
     if not current_user:
         session.pop('user_id', None)
         flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
@@ -2261,7 +2918,7 @@ def submit_test(test_id):
         flash("Аутентификация не пройдена. Пожалуйста, войдите снова.", "error")
         return redirect(url_for('auth.login'))
 
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user:
         flash("Пользователь не найден. Пожалуйста, войдите снова.", "error")
         return redirect(url_for('auth.login'))
@@ -2468,7 +3125,13 @@ def submit_test(test_id):
             is_correct=ans_data['is_correct']
         )
         db.session.add(test_answer_entry)
-
+    
+    # Использование современного API SQLAlchemy
+    test = db.session.get(Test, test_id)
+    if not test:
+        flash('Тест не найден', 'error')
+        return redirect(url_for('tests'))
+    
     try:
         db.session.commit()
         flash("Тест успешно завершен!", "success")
@@ -2484,14 +3147,33 @@ def test_results(test_id, result_id):
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
 
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
+    # Использование современного API SQLAlchemy
+    test = db.session.get(Test, test_id)
+    if not test:
+        flash('Тест не найден', 'error')
+        return redirect(url_for('tests'))
+    
+    result = db.session.get(TestResult, result_id)
+    if not result:
+        flash('Результат теста не найден', 'error')
+        return redirect(url_for('tests'))
+    
     if not user:
         session.pop('user_id', None)
         flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
         return redirect(url_for('auth.login'))
 
-    test = Test.query.get_or_404(test_id)
-    result = TestResult.query.get_or_404(result_id)
+    # Использование современного API SQLAlchemy
+    test = db.session.get(Test, test_id)
+    if not test:
+        flash('Тест не найден', 'error')
+        return redirect(url_for('tests'))
+    
+    result = db.session.get(TestResult, result_id)
+    if not result:
+        flash('Результат теста не найден', 'error')
+        return redirect(url_for('tests'))
 
     # Verify access to results
     can_view_results = False
@@ -2593,6 +3275,49 @@ def test_results(test_id, result_id):
 
             detailed_answers.append(detailed_answers_item)
 
+    # Обработка результатов текстовых тестов
+    text_test_results = []
+    if test.type == 'text_based' and show_detailed_results:
+        questions = []
+        if test.text_based_questions:
+            try:
+                questions = json.loads(test.text_based_questions)
+            except json.JSONDecodeError:
+                questions = []
+        
+        # Получение ответов пользователя
+        user_answers = {}
+        if result.answers:
+            try:
+                user_answers = json.loads(result.answers)
+            except json.JSONDecodeError:
+                user_answers = {}
+        
+        # Подготовка данных для отображения
+        for i, question in enumerate(questions):
+            question_key = f'question_{i}'
+            user_answer = user_answers.get(question_key, '')
+            
+            # Определение правильности ответа
+            is_correct = False
+            if question.get('type') == 'mc_single':
+                is_correct = user_answer in question.get('correct', [])
+            elif question.get('type') == 'mc_multiple':
+                if isinstance(user_answer, list):
+                    correct_answers = set(question.get('correct', []))
+                    user_answers_set = set(user_answer)
+                    is_correct = user_answers_set == correct_answers
+            elif question.get('type') == 'short_answer':
+                correct_answers = question.get('correct', [])
+                is_correct = any(user_answer.lower() == correct.lower() for correct in correct_answers)
+            
+            text_test_results.append({
+                'question': question,
+                'user_answer': user_answer,
+                'is_correct': is_correct,
+                'question_number': i + 1
+            })
+
     # Format time taken for display
     time_taken_display = format_time_taken(result.time_taken)
     
@@ -2605,7 +3330,9 @@ def test_results(test_id, result_id):
         time_taken_raw=result.time_taken,  # Raw minutes for any calculations
         incorrect_answers=result.total_questions - result.correct_answers,
         results_summary=detailed_answers, # Changed variable name passed to template
-        show_detailed_results=show_detailed_results
+        show_detailed_results=show_detailed_results,
+        text_test_results=text_test_results,  # Добавляем результаты текстовых тестов
+        is_teacher=user.teacher == 'yes'  # Добавляем информацию о статусе учителя
     )
 
 @app.route("/games")
@@ -2613,7 +3340,7 @@ def games():
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
     
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user:
         session.pop('user_id', None)
         flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
@@ -2995,7 +3722,7 @@ def test_details_data(test_id):
     if 'user_id' not in session:
         return jsonify({'error': 'Authentication required'}), 401
 
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user or user.teacher != 'yes': # Only teachers should access this live data endpoint
         return jsonify({'error': 'Forbidden for non-teachers'}), 403
 
@@ -3015,7 +3742,7 @@ def test_details_data(test_id):
     not_started_student_ids = {s.id for s in students_in_class}
 
     for result in all_results_for_test:
-        student_user = User.query.get(result.user_id)
+        student_user = db.session.get(User, result.user_id)
         if not student_user or student_user.teacher == 'yes':
             if student_user and result.user_id in not_started_student_ids:
                 not_started_student_ids.remove(result.user_id)
@@ -3069,7 +3796,7 @@ def test_details_data(test_id):
 
     not_started_students_json = []
     for uid in not_started_student_ids:
-        s_user = User.query.get(uid)
+        s_user = db.session.get(User, uid)
         if s_user:
             not_started_students_json.append({'id': s_user.id, 'fio': s_user.fio, 'nick': s_user.nick})
     
@@ -3185,7 +3912,7 @@ def save_test_progress(test_id):
     if 'user_id' not in session:
         return jsonify({'error': 'Не авторизован'}), 401
     
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user:
         return jsonify({'error': 'Пользователь не найден'}), 401
     
@@ -3249,7 +3976,7 @@ def load_test_progress(test_id):
     if 'user_id' not in session:
         return jsonify({'error': 'Не авторизован'}), 401
     
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user:
         return jsonify({'error': 'Пользователь не найден'}), 401
     
@@ -3283,6 +4010,297 @@ def load_test_progress(test_id):
         
     except Exception as e:
         return jsonify({'error': f'Ошибка загрузки: {str(e)}'}), 500
+
+# ==================== УПРАВЛЕНИЕ ТЕКСТОВЫМ КОНТЕНТОМ ====================
+
+@app.route('/text_contents')
+@require_login
+@require_teacher
+def text_contents():
+    """Список всех текстовых контентов"""
+    user = db.session.get(User, session['user_id'])
+    
+    # Получаем все текстовые контенты, созданные текущим пользователем
+    contents = db.session.execute(
+        db.select(TextContent).where(
+            TextContent.created_by == user.id,
+            TextContent.is_active == True
+        ).order_by(TextContent.created_at.desc())
+    ).scalars().all()
+    
+    return render_template('text_contents.html', contents=contents, user=user)
+
+@app.route('/create_text_content', methods=['GET', 'POST'])
+@require_login
+@require_teacher
+def create_text_content():
+    """Создание нового текстового контента"""
+    user = db.session.get(User, session['user_id'])
+    
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        content = request.form.get('content', '').strip()
+        classs = request.form.get('class', '').strip()
+        unit = request.form.get('unit', '').strip()
+        module = request.form.get('module', '').strip()
+        
+        # Валидация
+        if not title:
+            flash('Название текста обязательно', 'error')
+            return render_template('create_text_content.html', user=user)
+        
+        if not content or len(content) < 50:
+            flash('Текст должен содержать не менее 50 символов', 'error')
+            return render_template('create_text_content.html', user=user)
+        
+        if not classs:
+            flash('Класс обязателен', 'error')
+            return render_template('create_text_content.html', user=user)
+        
+        # Создаем новый текстовый контент
+        new_content = TextContent(
+            title=title,
+            content=content,
+            classs=classs,
+            unit=unit if unit else None,
+            module=module if module else None,
+            created_by=user.id
+        )
+        
+        try:
+            db.session.add(new_content)
+            db.session.commit()
+            flash('Текстовый контент успешно создан!', 'success')
+            return redirect(url_for('edit_text_questions', content_id=new_content.id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Ошибка при создании текстового контента: {str(e)}', 'error')
+    
+    return render_template('create_text_content.html', user=user)
+
+@app.route('/edit_text_content/<int:content_id>', methods=['GET', 'POST'])
+@require_login
+@require_teacher
+def edit_text_content(content_id):
+    """Редактирование текстового контента"""
+    user = db.session.get(User, session['user_id'])
+    content = db.session.get(TextContent, content_id)
+    
+    if not content or content.created_by != user.id:
+        flash('Текстовый контент не найден', 'error')
+        return redirect(url_for('text_contents'))
+    
+    if request.method == 'POST':
+        content.title = request.form.get('title', '').strip()
+        content.content = request.form.get('content', '').strip()
+        content.classs = request.form.get('class', '').strip()
+        content.unit = request.form.get('unit', '').strip()
+        content.module = request.form.get('module', '').strip()
+        
+        # Валидация
+        if not content.title:
+            flash('Название текста обязательно', 'error')
+            return render_template('edit_text_content.html', content=content, user=user)
+        
+        if not content.content or len(content.content) < 50:
+            flash('Текст должен содержать не менее 50 символов', 'error')
+            return render_template('edit_text_content.html', content=content, user=user)
+        
+        if not content.classs:
+            flash('Класс обязателен', 'error')
+            return render_template('edit_text_content.html', content=content, user=user)
+        
+        try:
+            db.session.commit()
+            flash('Текстовый контент успешно обновлен!', 'success')
+            return redirect(url_for('text_contents'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Ошибка при обновлении текстового контента: {str(e)}', 'error')
+    
+    return render_template('edit_text_content.html', content=content, user=user)
+
+@app.route('/edit_text_questions/<int:content_id>')
+@require_login
+@require_teacher
+def edit_text_questions(content_id):
+    """Редактирование вопросов к тексту"""
+    user = db.session.get(User, session['user_id'])
+    content = db.session.get(TextContent, content_id)
+    
+    if not content or content.created_by != user.id:
+        flash('Текстовый контент не найден', 'error')
+        return redirect(url_for('text_contents'))
+    
+    # Получаем все вопросы для данного текста
+    questions = db.session.execute(
+        db.select(TextQuestion).where(
+            TextQuestion.text_content_id == content_id
+        ).order_by(TextQuestion.order_number)
+    ).scalars().all()
+    
+    return render_template('edit_text_questions.html', content=content, questions=questions, user=user)
+
+@app.route('/add_text_question/<int:content_id>', methods=['POST'])
+@require_login
+@require_teacher
+def add_text_question(content_id):
+    """Добавление вопроса к тексту"""
+    user = db.session.get(User, session['user_id'])
+    content = db.session.get(TextContent, content_id)
+    
+    if not content or content.created_by != user.id:
+        flash('Текстовый контент не найден', 'error')
+        return redirect(url_for('text_contents'))
+    
+    question_text = request.form.get('question', '').strip()
+    question_type = request.form.get('question_type', '').strip()
+    correct_answer = request.form.get('correct_answer', '').strip()
+    points = int(request.form.get('points', 1))
+    
+    # Валидация
+    if not question_text:
+        flash('Текст вопроса обязателен', 'error')
+        return redirect(url_for('edit_text_questions', content_id=content_id))
+    
+    if not question_type:
+        flash('Тип вопроса обязателен', 'error')
+        return redirect(url_for('edit_text_questions', content_id=content_id))
+    
+    if not correct_answer:
+        flash('Правильный ответ обязателен', 'error')
+        return redirect(url_for('edit_text_questions', content_id=content_id))
+    
+    # Получаем следующий порядковый номер
+    max_order = db.session.execute(
+        db.select(db.func.max(TextQuestion.order_number)).where(
+            TextQuestion.text_content_id == content_id
+        )
+    ).scalar() or 0
+    
+    # Обработка вариантов ответов для multiple_choice и multiple_select
+    options = None
+    
+    if question_type in ['multiple_choice', 'multiple_select']:
+        option1 = request.form.get('option1', '').strip()
+        option2 = request.form.get('option2', '').strip()
+        option3 = request.form.get('option3', '').strip()
+        option4 = request.form.get('option4', '').strip()
+        
+        options_list = [opt for opt in [option1, option2, option3, option4] if opt]
+        if len(options_list) < 2:
+            flash('Для вопроса с выбором ответа нужно минимум 2 варианта', 'error')
+            return redirect(url_for('edit_text_questions', content_id=content_id))
+        
+        options = json.dumps(options_list, ensure_ascii=False)
+        
+        # Для множественного выбора проверяем правильный ответ
+        if question_type == 'multiple_select':
+            # Проверяем, что правильный ответ - это JSON массив
+            try:
+                correct_answers = json.loads(correct_answer)
+                if not isinstance(correct_answers, list) or len(correct_answers) == 0:
+                    flash('Для вопроса с множественным выбором нужно выбрать хотя бы один правильный ответ', 'error')
+                    return redirect(url_for('edit_text_questions', content_id=content_id))
+            except json.JSONDecodeError:
+                flash('Ошибка в формате правильных ответов для множественного выбора', 'error')
+                return redirect(url_for('edit_text_questions', content_id=content_id))
+    
+    # Создаем новый вопрос
+    new_question = TextQuestion(
+        text_content_id=content_id,
+        question=question_text,
+        question_type=question_type,
+        options=options,
+        correct_answer=correct_answer,
+        points=points,
+        order_number=max_order + 1
+    )
+    
+    try:
+        db.session.add(new_question)
+        db.session.commit()
+        flash('Вопрос успешно добавлен!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Ошибка при добавлении вопроса: {str(e)}', 'error')
+    
+    return redirect(url_for('edit_text_questions', content_id=content_id))
+
+@app.route('/delete_text_question/<int:question_id>', methods=['POST'])
+@require_login
+@require_teacher
+def delete_text_question(question_id):
+    """Удаление вопроса"""
+    user = db.session.get(User, session['user_id'])
+    question = db.session.get(TextQuestion, question_id)
+    
+    if not question or question.text_content.created_by != user.id:
+        flash('Вопрос не найден', 'error')
+        return redirect(url_for('text_contents'))
+    
+    content_id = question.text_content_id
+    
+    try:
+        db.session.delete(question)
+        db.session.commit()
+        flash('Вопрос успешно удален!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Ошибка при удалении вопроса: {str(e)}', 'error')
+    
+    return redirect(url_for('edit_text_questions', content_id=content_id))
+
+@app.route('/create_test_from_text/<int:content_id>')
+@require_login
+@require_teacher
+def create_test_from_text(content_id):
+    """Создание теста на основе текстового контента"""
+    user = db.session.get(User, session['user_id'])
+    content = db.session.get(TextContent, content_id)
+    
+    if not content or content.created_by != user.id:
+        flash('Текстовый контент не найден', 'error')
+        return redirect(url_for('text_contents'))
+    
+    # Проверяем, есть ли вопросы
+    questions_count = db.session.execute(
+        db.select(db.func.count(TextQuestion.id)).where(
+            TextQuestion.text_content_id == content_id
+        )
+    ).scalar()
+    
+    if questions_count == 0:
+        flash('Сначала добавьте вопросы к тексту', 'error')
+        return redirect(url_for('edit_text_questions', content_id=content_id))
+    
+    # Генерируем уникальную ссылку для теста
+    test_link = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+    while db.session.execute(db.select(Test).where(Test.link == test_link)).scalar():
+        test_link = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+    
+    # Создаем новый тест
+    new_test = Test(
+        title=f"Тест по тексту: {content.title}",
+        classs=content.classs,
+        unit=content.unit or "N/A",
+        module=content.module or "N/A",
+        type='text_based',
+        link=test_link,
+        created_by=user.id,
+        word_order='sequential',
+        text_content_id=content_id
+    )
+    
+    try:
+        db.session.add(new_test)
+        db.session.commit()
+        flash('Тест успешно создан!', 'success')
+        return redirect(url_for('test_details', test_id=new_test.id))
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Ошибка при создании теста: {str(e)}', 'error')
+        return redirect(url_for('text_contents'))
 
 # Blueprints are already registered at the top of the file
 # app.register_blueprint(tests_bp, url_prefix='/tests') # Example for future

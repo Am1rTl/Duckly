@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Создать текстовый контент</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6c63ff; --primary-light: #a5a1ff; --primary-dark: #5a52e0;
+            --secondary: #4a4a98; --background: #f8f9fe; --card-bg: #ffffff;
+            --text: #333333; --border: #ddd; --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --input-focus-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        body { background-color: var(--background); color: var(--text); padding: 20px; line-height: 1.6; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .top-nav { width: 100%; max-width: 900px; display: flex; justify-content: flex-start; align-items: center; margin-bottom: 25px; }
+        .btn-back { background-color: transparent; color: var(--primary); border: 2px solid var(--primary); padding: 10px 20px; font-size: 0.9rem; font-weight: 500; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-back:hover { background-color: var(--primary); color: white; }
+        .form-container { background-color: var(--card-bg); padding: 30px 40px; border-radius: 15px; box-shadow: var(--shadow); width: 100%; max-width: 900px; }
+        .form-header { text-align: center; margin-bottom: 30px; }
+        .form-header h1 { color: var(--secondary); font-size: 2rem; font-weight: 600; position: relative; display: inline-block; padding-bottom: 10px; }
+        .form-header h1::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 70px; height: 4px; background: var(--primary); border-radius: 2px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { font-weight: 500; margin-bottom: 8px; font-size: 0.95rem; color: var(--text); display: block; }
+        .form-group input[type="text"], .form-group input[type="number"], .form-group select, .form-group textarea { width: 100%; padding: 12px 15px; font-size: 1rem; border: 1px solid var(--border); border-radius: 8px; background-color: #fff; transition: border-color 0.3s ease, box-shadow 0.3s ease; }
+        .form-group input[type="text"]:focus, .form-group input[type="number"]:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); box-shadow: var(--input-focus-shadow); }
+        .form-group select:disabled { background-color: #f8f9fa; color: #6c757d; cursor: not-allowed; border-color: #e9ecef; }
+        .form-group textarea { resize: vertical; min-height: 200px; font-family: inherit; }
+        .form-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media (min-width: 768px) { .form-grid { grid-template-columns: 1fr 1fr 1fr; gap: 25px; } }
+        .form-actions { margin-top: 30px; text-align: right; display: flex; gap: 15px; justify-content: flex-end; }
+        .btn { padding: 12px 30px; font-size: 1rem; font-weight: 500; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: var(--primary-dark); color: white; }
+        .btn-secondary { background-color: #6c757d; color: white; }
+        .btn-secondary:hover { background-color: #5a6268; color: white; }
+        .char-counter { font-size: 0.85rem; color: #666; margin-top: 5px; }
+        .char-counter.warning { color: #ffc107; }
+        .char-counter.success { color: #28a745; }
+        .help-text { font-size: 0.85rem; color: #666; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div class="top-nav">
+        <a href="{{ url_for('text_contents') }}" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Назад к списку
+        </a>
+    </div>
+
+    <div class="form-container">
+        <div class="form-header">
+            <h1><i class="fas fa-file-plus"></i> Создать текстовый контент</h1>
+        </div>
+
+        <form method="POST">
+            <div class="form-group">
+                <label for="title">
+                    <i class="fas fa-heading"></i> Название текста *
+                </label>
+                <input type="text" id="title" name="title" required 
+                       placeholder="Введите название текста" 
+                       value="{{ request.form.title if request.form.title }}">
+                <div class="help-text">Краткое описательное название для текста</div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="class">
+                        <i class="fas fa-graduation-cap"></i> Класс *
+                    </label>
+                    <select id="class" name="class" required>
+                        <option value="">Выберите класс</option>
+                        {% for i in range(1, 12) %}
+                        <option value="{{ i }}" {% if request.form.class == i|string %}selected{% endif %}>{{ i }} класс</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="unit">
+                        <i class="fas fa-book"></i> Юнит
+                    </label>
+                    <select id="unit" name="unit">
+                        <option value="">Выберите юнит</option>
+                    </select>
+                    <div class="help-text">Необязательно. Сначала выберите класс</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="module">
+                        <i class="fas fa-bookmark"></i> Модуль
+                    </label>
+                    <select id="module" name="module">
+                        <option value="">Выберите модуль</option>
+                    </select>
+                    <div class="help-text">Необязательно. Сначала выберите юнит</div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="content">
+                    <i class="fas fa-file-text"></i> Текст для чтения *
+                </label>
+                <textarea id="content" name="content" required 
+                          placeholder="Вставьте или введите текст для чтения. Минимум 50 символов.">{{ request.form.content if request.form.content }}</textarea>
+                <div class="char-counter" id="charCounter">0 символов (минимум 50)</div>
+                <div class="help-text">Текст, по которому будут составлены вопросы для теста</div>
+            </div>
+
+            <div class="form-actions">
+                <a href="{{ url_for('text_contents') }}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Отмена
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Создать и добавить вопросы
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Счетчик символов
+        const contentTextarea = document.getElementById('content');
+        const charCounter = document.getElementById('charCounter');
+        
+        function updateCharCounter() {
+            const length = contentTextarea.value.length;
+            charCounter.textContent = `${length} символов`;
+            
+            if (length < 50) {
+                charCounter.textContent += ' (минимум 50)';
+                charCounter.className = 'char-counter warning';
+            } else {
+                charCounter.className = 'char-counter success';
+            }
+        }
+        
+        contentTextarea.addEventListener('input', updateCharCounter);
+        updateCharCounter(); // Инициализация
+        
+        // Обработка выпадающих списков для юнитов и модулей
+        const classSelect = document.getElementById('class');
+        const unitSelect = document.getElementById('unit');
+        const moduleSelect = document.getElementById('module');
+        
+        // Функция для очистки и отключения select
+        function clearAndDisableSelect(selectElement, placeholder) {
+            selectElement.innerHTML = `<option value="">${placeholder}</option>`;
+            selectElement.disabled = true;
+        }
+        
+        // Функция для включения select
+        function enableSelect(selectElement) {
+            selectElement.disabled = false;
+        }
+        
+        // Загрузка юнитов при выборе класса
+        classSelect.addEventListener('change', function() {
+            const selectedClass = this.value;
+            
+            // Очищаем и отключаем зависимые селекты
+            clearAndDisableSelect(unitSelect, 'Выберите юнит');
+            clearAndDisableSelect(moduleSelect, 'Выберите модуль');
+            
+            if (selectedClass) {
+                // Загружаем юниты для выбранного класса
+                fetch(`/get_units_for_class?class_name=${selectedClass}`)
+                    .then(response => response.json())
+                    .then(units => {
+                        unitSelect.innerHTML = '<option value="">Выберите юнит</option>';
+                        
+                        units.forEach(unit => {
+                            const option = document.createElement('option');
+                            option.value = unit;
+                            option.textContent = unit;
+                            unitSelect.appendChild(option);
+                        });
+                        
+                        enableSelect(unitSelect);
+                    })
+                    .catch(error => {
+                        console.error('Ошибка при загрузке юнитов:', error);
+                        clearAndDisableSelect(unitSelect, 'Ошибка загрузки юнитов');
+                    });
+            }
+        });
+        
+        // Загрузка модулей при выборе юнита
+        unitSelect.addEventListener('change', function() {
+            const selectedClass = classSelect.value;
+            const selectedUnit = this.value;
+            
+            // Очищаем модули
+            clearAndDisableSelect(moduleSelect, 'Выберите модуль');
+            
+            if (selectedClass && selectedUnit) {
+                // Загружаем модули для выбранного класса и юнита
+                fetch(`/get_modules_for_unit?class_name=${selectedClass}&unit_name=${selectedUnit}`)
+                    .then(response => response.json())
+                    .then(modules => {
+                        moduleSelect.innerHTML = '<option value="">Выберите модуль</option>';
+                        
+                        modules.forEach(module => {
+                            const option = document.createElement('option');
+                            option.value = module;
+                            option.textContent = module;
+                            moduleSelect.appendChild(option);
+                        });
+                        
+                        enableSelect(moduleSelect);
+                    })
+                    .catch(error => {
+                        console.error('Ошибка при загрузке модулей:', error);
+                        clearAndDisableSelect(moduleSelect, 'Ошибка загрузки модулей');
+                    });
+            }
+        });
+        
+        // Инициализация - отключаем юниты и модули при загрузке страницы
+        clearAndDisableSelect(unitSelect, 'Сначала выберите класс');
+        clearAndDisableSelect(moduleSelect, 'Сначала выберите юнит');
+        
+        // Если есть предварительно выбранные значения (при ошибке валидации), восстанавливаем их
+        document.addEventListener('DOMContentLoaded', function() {
+            const preselectedClass = "{{ request.form.class if request.form.class }}";
+            const preselectedUnit = "{{ request.form.unit if request.form.unit }}";
+            const preselectedModule = "{{ request.form.module if request.form.module }}";
+            
+            if (preselectedClass) {
+                classSelect.value = preselectedClass;
+                classSelect.dispatchEvent(new Event('change'));
+                
+                // Небольшая задержка для загрузки юнитов, затем установка предварительно выбранного юнита
+                setTimeout(() => {
+                    if (preselectedUnit) {
+                        unitSelect.value = preselectedUnit;
+                        unitSelect.dispatchEvent(new Event('change'));
+                        
+                        // Еще одна задержка для загрузки модулей
+                        setTimeout(() => {
+                            if (preselectedModule) {
+                                moduleSelect.value = preselectedModule;
+                            }
+                        }, 500);
+                    }
+                }, 500);
+            }
+        });
+    </script>
+</body>
+</html>

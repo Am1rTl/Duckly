@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Тест: {{ test.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Левая колонка с текстом -->
+        <div class="col-lg-5">
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0"><i class="fas fa-book-open me-2"></i>Текст для чтения</h5>
+                </div>
+                <div class="card-body" style="max-height: 80vh; overflow-y: auto;">
+                    <p class="card-text lh-lg" style="white-space: pre-wrap;">{{ test.text_content }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая колонка с вопросами -->
+        <div class="col-lg-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">{{ test.title }}</h4>
+                        {% if test.time_limit and test.time_limit > 0 and not is_teacher_preview %}
+                        <div id="timer" class="fs-5 p-2 bg-white text-primary rounded shadow-sm">
+                            <i class="fas fa-clock me-2"></i><span id="time-display">--:--</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if is_teacher_preview %}
+                        <div class="alert alert-info" role="alert">
+                            Это режим предпросмотра. Ответы не будут сохранены.
+                        </div>
+                    {% else %}
+                        <form id="testForm" action="{{ url_for('submit_test', test_id=test.id) }}" method="POST">
+                            {% for question in questions %}
+                            <div class="mb-4 p-3 border rounded bg-light">
+                                <p class="fw-bold">Вопрос {{ loop.index }}: {{ question.word }}</p>
+                                
+                                {% set correct_answers_count = question.correct_answer.split('|')|length %}
+                                {% set options = question.options.split('|') %}
+
+                                <div class="vstack gap-2">
+                                {% for option in options %}
+                                <div class="form-check">
+                                    {% if correct_answers_count > 1 %}
+                                        <input class="form-check-input" type="checkbox" name="answer_{{ question.id }}" value="{{ option }}" id="option_{{ question.id }}_{{ loop.index }}">
+                                    {% else %}
+                                        <input class="form-check-input" type="radio" name="answer_{{ question.id }}" value="{{ option }}" id="option_{{ question.id }}_{{ loop.index }}">
+                                    {% endif %}
+                                    <label class="form-check-label" for="option_{{ question.id }}_{{ loop.index }}">
+                                        {{ option }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                                </div>
+                            </div>
+                            {% endfor %}
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-success btn-lg">Завершить и проверить</button>
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+{% if not is_teacher_preview and test.time_limit and test.time_limit > 0 %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const timeDisplay = document.getElementById('time-display');
+    const testForm = document.getElementById('testForm');
+    let remainingTime = {{ remaining_time_seconds if remaining_time_seconds is not none else -1 }};
+
+    if (remainingTime < 0) return;
+
+    function updateTimer() {
+        if (remainingTime <= 0) {
+            clearInterval(timerInterval);
+            timeDisplay.textContent = 'Время вышло!';
+            timeDisplay.closest('#timer').classList.add('bg-danger', 'text-white');
+            testForm.submit();
+            return;
+        }
+        
+        const minutes = Math.floor(remainingTime / 60);
+        const seconds = remainingTime % 60;
+        timeDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        
+        if (remainingTime < 60 && !timeDisplay.closest('#timer').classList.contains('bg-warning')) {
+             timeDisplay.closest('#timer').classList.remove('bg-white', 'text-primary');
+             timeDisplay.closest('#timer').classList.add('bg-warning', 'text-dark');
+        }
+
+        remainingTime--;
+    }
+
+    const timerInterval = setInterval(updateTimer, 1000);
+    updateTimer();
+});
+</script>
+{% endif %}
+{% endblock %}

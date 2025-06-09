@@ -134,10 +134,63 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Обновленная функция для показа соответствующих полей
+    function updateFormFields() {
+        const testType = testTypeSelect.value;
+        const testDirectionGroup = document.getElementById('test-direction-group');
+        const textContentGroup = document.getElementById('text-content-group');
+        
+        // Скрываем все дополнительные поля
+        if (testDirectionGroup) testDirectionGroup.style.display = 'none';
+        if (textContentGroup) textContentGroup.style.display = 'none';
+        
+        // Скрываем все описания
+        document.querySelectorAll('.test-description').forEach(desc => {
+            desc.style.display = 'none';
+        });
+        
+        // Показываем соответствующее описание
+        const descElement = document.getElementById(`desc-${testType}`);
+        if (descElement) {
+            descElement.style.display = 'block';
+        }
+        
+        // Показываем направление теста для multiple choice
+        if (testType === 'multiple_choice' || testType === 'multiple_choice_multiple' || 
+            testType === 'word_translation_choice' || testType === 'translation_word_choice') {
+            if (testDirectionGroup) testDirectionGroup.style.display = 'block';
+        }
+        
+        // Показываем текстовое поле для text_based тестов
+        if (testType === 'text_based') {
+            if (textContentGroup) textContentGroup.style.display = 'block';
+        }
+        
+        // Обновляем другие поля в зависимости от типа
+        updateOtherFields(testType);
+    }
+    
+    function updateOtherFields(testType) {
+        // Скрываем/показываем поля модулей в зависимости от типа теста
+        const moduleSelectionGroup = document.getElementById('module_selection_area_container');
+        const customWordsGroup = document.getElementById('custom_words_area_container');
+        
+        if (testType === 'text_based') {
+            // Для тестов по тексту не нужны модули и кастомные слова
+            if (moduleSelectionGroup) moduleSelectionGroup.style.display = 'none';
+            if (customWordsGroup) customWordsGroup.style.display = 'none';
+        } else {
+            // Для остальных типов показываем стандартные поля
+            if (moduleSelectionGroup) moduleSelectionGroup.style.display = 'block';
+            if (customWordsGroup) customWordsGroup.style.display = 'block';
+        }
+    }
+
     if (testTypeSelect) {
         testTypeSelect.addEventListener('change', function() {
             if(addLetterModeContainer) addLetterModeContainer.style.display = this.value === 'add_letter' ? 'block' : 'none';
             toggleDictationOptions();
+            updateFormFields(); // Добавляем вызов новой функции
         });
     }
 
@@ -212,6 +265,28 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             specificWordsCheckboxContainer.innerHTML = ''; // Clear if not applicable
         }
+    }
+
+    // Привязываем обработчик события
+    if (testTypeSelect) {
+        testTypeSelect.addEventListener('change', updateFormFields);
+        // Вызываем при загрузке страницы для правильной инициализации
+        updateFormFields();
+    }
+    
+    // Валидация для text_based тестов
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const testType = testTypeSelect.value;
+            const textContent = document.getElementById('text_content');
+            
+            if (testType === 'text_based' && (!textContent.value || textContent.value.trim().length < 50)) {
+                e.preventDefault();
+                alert('Для теста по тексту необходимо загрузить текст длиной не менее 50 символов.');
+                textContent.focus();
+                return false;
+            }
+        });
     }
 
     // Initial state setup

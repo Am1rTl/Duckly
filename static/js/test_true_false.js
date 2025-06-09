@@ -121,41 +121,62 @@ document.addEventListener('DOMContentLoaded', function() {
         const optionsDiv = document.createElement('div');
         optionsDiv.className = 'mt-2';
 
-        const trueOptionValue = "True";
-        const falseOptionValue = "False";
+        const options = [
+            { value: "True", text: "Верно", class: "btn-success" },
+            { value: "False", text: "Неверно", class: "btn-danger" },
+            { value: "Not_Stated", text: "Не указано", class: "btn-warning" }
+        ];
 
-        const trueDiv = document.createElement('div');
-        trueDiv.className = 'form-check form-check-inline';
-        const trueInput = document.createElement('input');
-        trueInput.className = 'form-check-input';
-        trueInput.type = 'radio';
-        trueInput.name = `answer_${wordData.id}`;
-        trueInput.id = `answer_${wordData.id}_true`;
-        trueInput.value = trueOptionValue;
-        trueInput.required = true;
-        const trueLabel = document.createElement('label');
-        trueLabel.className = 'form-check-label';
-        trueLabel.htmlFor = trueInput.id;
-        trueLabel.textContent = 'Верно';
-        trueDiv.appendChild(trueInput);
-        trueDiv.appendChild(trueLabel);
-        optionsDiv.appendChild(trueDiv);
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'btn-group-vertical d-grid gap-2';
+        optionsContainer.setAttribute('role', 'group');
+        optionsContainer.setAttribute('aria-label', 'Варианты ответов');
 
-        const falseDiv = document.createElement('div');
-        falseDiv.className = 'form-check form-check-inline';
-        const falseInput = document.createElement('input');
-        falseInput.className = 'form-check-input';
-        falseInput.type = 'radio';
-        falseInput.name = `answer_${wordData.id}`;
-        falseInput.id = `answer_${wordData.id}_false`;
-        falseInput.value = falseOptionValue;
-        const falseLabel = document.createElement('label');
-        falseLabel.className = 'form-check-label';
-        falseLabel.htmlFor = falseInput.id;
-        falseLabel.textContent = 'Неверно';
-        falseDiv.appendChild(falseInput);
-        falseDiv.appendChild(falseLabel);
-        optionsDiv.appendChild(falseDiv);
+        options.forEach(option => {
+            const optionButton = document.createElement('button');
+            optionButton.type = 'button';
+            optionButton.className = `btn btn-outline-secondary option-btn`;
+            optionButton.dataset.value = option.value;
+            optionButton.dataset.wordId = wordData.id;
+            optionButton.textContent = option.text;
+            
+            // Скрытый input для отправки формы
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'radio';
+            hiddenInput.name = `answer_${wordData.id}`;
+            hiddenInput.value = option.value;
+            hiddenInput.style.display = 'none';
+            hiddenInput.required = true;
+            
+            optionButton.addEventListener('click', function() {
+                // Убираем выделение с других кнопок
+                optionsContainer.querySelectorAll('.option-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.classList.add('btn-outline-secondary');
+                    btn.classList.remove('btn-success', 'btn-danger', 'btn-warning');
+                });
+                
+                // Выделяем выбранную кнопку
+                this.classList.add('active');
+                this.classList.remove('btn-outline-secondary');
+                this.classList.add(option.class);
+                
+                // Отмечаем соответствующий radio input
+                hiddenInput.checked = true;
+                
+                // Снимаем отметку с других radio inputs
+                optionsContainer.querySelectorAll('input[type="radio"]').forEach(input => {
+                    if (input !== hiddenInput) {
+                        input.checked = false;
+                    }
+                });
+            });
+            
+            optionsContainer.appendChild(optionButton);
+            optionsContainer.appendChild(hiddenInput);
+        });
+
+        optionsDiv.appendChild(optionsContainer);
 
         itemDiv.appendChild(optionsDiv);
         container.appendChild(itemDiv);

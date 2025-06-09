@@ -661,12 +661,18 @@ def generate_test_data():
                             options = create_multiple_choice_options(word_obj.word, words_for_test)
                             test_word_data['options'] = options
                         elif test_type_info['type'] == 'true_false':
-                            # Для правда/ложь иногда делаем неправильный перевод
-                            if random.choice([True, False]):
+                            # Для правда/ложь создаем разные типы вопросов
+                            choice = random.choice(['true', 'false', 'not_stated'])
+                            if choice == 'false':
                                 # Создаем неправильный перевод
                                 wrong_translation = create_wrong_translation(word_obj.perevod, words_for_test)
                                 test_word_data['perevod'] = wrong_translation
                                 test_word_data['correct_answer'] = 'False'
+                            elif choice == 'not_stated':
+                                # Создаем вопрос, информация о котором не указана в паре слово-перевод
+                                test_word_data['word'] = f"Слово '{word_obj.word}' происходит из латинского языка"
+                                test_word_data['perevod'] = "Верно или неверно?"
+                                test_word_data['correct_answer'] = 'Not_Stated'
                             else:
                                 test_word_data['correct_answer'] = 'True'
                         

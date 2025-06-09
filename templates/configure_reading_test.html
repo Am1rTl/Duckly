@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Настройка вопросов к тесту: {{ test.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Настройка вопросов для теста: "{{ test.title }}"</h2>
+    <hr>
+    
+    <div class="card bg-light mb-4">
+        <div class="card-body">
+            <h5 class="card-title"><i class="fas fa-book-open me-2"></i>Текст для анализа</h5>
+            <div class="reading-text" style="white-space: pre-wrap; max-height: 300px; overflow-y: auto;">{{ test.text_content }}</div>
+        </div>
+    </div>
+
+    <h4>Редактор вопросов</h4>
+    <p class="text-muted">Добавьте вопросы, варианты ответов и отметьте правильные. Вы можете выбрать несколько правильных ответов для одного вопроса.</p>
+
+    <form method="POST" id="questionsForm">
+        <input type="hidden" name="questions_data" id="questions_data_hidden_input">
+        
+        <div id="questions-container">
+            <!-- Вопросы будут динамически добавляться сюда через JS -->
+        </div>
+
+        <button type="button" id="add-question-btn" class="btn btn-success mt-3">
+            <i class="fas fa-plus"></i> Добавить вопрос
+        </button>
+
+        <hr>
+        <div class="d-flex justify-content-end mt-4">
+            <a href="{{ url_for('test_details', test_id=test.id) }}" class="btn btn-secondary me-2">Отмена</a>
+            <button type="submit" class="btn btn-primary btn-lg">Сохранить все вопросы</button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const questionsContainer = document.getElementById('questions-container');
+    const addQuestionBtn = document.getElementById('add-question-btn');
+    const form = document.getElementById('questionsForm');
+    const hiddenInput = document.getElementById('questions_data_hidden_input');
+    
+    let questionCounter = 0;
+    let existingQuestions = {{ questions_for_js | safe }};
+
+    function createOptionRow(questionIndex, optionText = '', isCorrect = false) {
+        const optionId = `q${questionIndex}-opt${Date.now()}`;
+        const optionRow = document.createElement('div');
+        optionRow.className = 'input-group mb-2';
+        optionRow.innerHTML = `
+            <div class="input-group-text">
+                <input class="form-check-input mt-0 correct-checkbox" type="checkbox" id="${optionId}" ${isCorrect ? 'checked' : ''}>
+            </div>
+            <input type="text" class="form-control option-text" placeholder="Текст варианта" value="${escapeHTML(optionText)}">
+            <button class="btn btn-outline-danger remove-option-btn" type="button"><i class="fas fa-trash"></i></button>
+        `;
+        optionRow.querySelector('.remove-option-btn').addEventListener('click', () => optionRow.remove());
+        return optionRow;
+    }
+
+    function createQuestionCard(qData = null) {
+        const questionIndex = questionCounter++;
+        const card = document.createElement('div');
+        card.className = 'card mb-3 question-card';
+        card.innerHTML = `
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Вопрос ${questionIndex + 1}</h5>
+                <button type="button" class="btn-close remove-question-btn"></button>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Текст вопроса:</label>
+                    <textarea class="form-control question-text" rows="2" placeholder="Введите ваш вопрос...">${qData ? escapeHTML(qData.text) : ''}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Варианты ответов (отметьте правильные):</label>
+                    <div class="options-container"></div>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-primary add-option-btn">
+                    <i class="fas fa-plus"></i> Добавить вариант
+                </button>
+            </div>
+        `;
+        const optionsContainer = card.querySelector('.options-container');
+        if (qData && qData.options) {
+            qData.options.forEach(opt => {
+                const isCorrect = qData.correct.includes(opt);
+                optionsContainer.appendChild(createOptionRow(questionIndex, opt, isCorrect));
+            });
+        } else {
+            optionsContainer.appendChild(createOptionRow(questionIndex));
+            optionsContainer.appendChild(createOptionRow(questionIndex));
+        }
+
+        card.querySelector('.add-option-btn').addEventListener('click', () => optionsContainer.appendChild(createOptionRow(questionIndex)));
+        card.querySelector('.remove-question-btn').addEventListener('click', () => { card.remove(); updateQuestionNumbers(); });
+        
+        return card;
+    }
+    
+    function updateQuestionNumbers() {
+        const allCards = document.querySelectorAll('.question-card');
+        allCards.forEach((card, index) => {
+            card.querySelector('h5').textContent = `Вопрос ${index + 1}`;
+        });
+    }
+
+    function escapeHTML(str) {
+        const p = document.createElement("p");
+        p.textContent = str;
+        return p.innerHTML;
+    }
+
+    // Load existing or add one empty question
+    if (existingQuestions.length > 0) {
+        existingQuestions.forEach(q => questionsContainer.appendChild(createQuestionCard(q)));
+    } else {
+        questionsContainer.appendChild(createQuestionCard());
+    }
+
+    addQuestionBtn.addEventListener('click', () => questionsContainer.appendChild(createQuestionCard()));
+
+    form.addEventListener('submit', function(e) {
+        const allData = [];
+        let isValid = true;
+        document.querySelectorAll('.question-card').forEach(card => {
+            const questionText = card.querySelector('.question-text').value.trim();
+            const options = Array.from(card.querySelectorAll('.option-text')).map(input => input.value.trim());
+            const correctAnswers = Array.from(card.querySelectorAll('.correct-checkbox:checked')).map(cb => cb.closest('.input-group').querySelector('.option-text').value.trim());
+
+            if (!questionText || options.some(opt => !opt) || correctAnswers.length === 0) {
+                isValid = false;
+            }
+
+            allData.push({ text: questionText, options: options, correct: correctAnswers });
+        });
+
+        if (!isValid) {
+            e.preventDefault();
+            alert('Пожалуйста, заполните все поля для всех вопросов и отметьте хотя бы один правильный ответ для каждого.');
+            return;
+        }
+
+        hiddenInput.value = JSON.stringify(allData);
+    });
+});
+</script>
+{% endblock %}

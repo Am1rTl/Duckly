@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ test.title }} - Прохождение теста</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6c63ff; --primary-light: #a5a1ff; --primary-dark: #5a52e0;
+            --secondary: #4a4a98; --background: #f8f9fe; --card-bg: #ffffff;
+            --text: #333333; --border: #ddd; --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --success: #28a745; --warning: #ffc107; --danger: #dc3545;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        body { background-color: var(--background); color: var(--text); padding: 20px; line-height: 1.6; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .test-header { text-align: center; margin-bottom: 30px; background-color: var(--card-bg); padding: 25px; border-radius: 15px; box-shadow: var(--shadow); }
+        .test-header h1 { color: var(--secondary); font-size: 2rem; font-weight: 600; margin-bottom: 10px; }
+        .test-meta { color: #666; font-size: 1rem; }
+        .main-content { display: grid; grid-template-columns: 1fr 400px; gap: 30px; }
+        @media (max-width: 1200px) { .main-content { grid-template-columns: 1fr; } }
+        .text-section { background-color: var(--card-bg); border-radius: 15px; box-shadow: var(--shadow); padding: 25px; margin-bottom: 30px; }
+        .text-section h3 { color: var(--secondary); margin-bottom: 15px; }
+        .text-content { background-color: #f8f9fa; border: 1px solid var(--border); border-radius: 8px; padding: 20px; max-height: 400px; overflow-y: auto; font-size: 1rem; line-height: 1.6; }
+        .questions-section { background-color: var(--card-bg); border-radius: 15px; box-shadow: var(--shadow); padding: 25px; }
+        .questions-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .questions-header h3 { color: var(--secondary); margin: 0; }
+        .progress-info { font-size: 0.9rem; color: #666; }
+        .question-block { background-color: #f8f9fa; border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+        .question-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .question-number { background-color: var(--primary); color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: 600; }
+        .question-type { font-size: 0.8rem; padding: 4px 8px; border-radius: 12px; font-weight: 500; }
+        .type-multiple_choice { background-color: #e3f2fd; color: #1976d2; }
+        .type-open_answer { background-color: #f3e5f5; color: #7b1fa2; }
+        .type-true_false { background-color: #e8f5e8; color: #388e3c; }
+        .question-text { font-weight: 500; margin-bottom: 15px; font-size: 1.1rem; }
+        .answer-options { margin-bottom: 15px; }
+        .option-item { margin-bottom: 8px; }
+        .option-item input[type="radio"] { margin-right: 8px; }
+        .option-item label { cursor: pointer; }
+        .text-answer { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; }
+        .text-answer:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2); }
+        .true-false-options { display: flex; gap: 10px; flex-wrap: wrap; }
+        .true-false-options .option-btn { flex: 1; min-width: 120px; padding: 12px 16px; font-weight: 500; transition: all 0.3s ease; }
+        .true-false-options .option-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .true-false-options .option-btn.active { font-weight: 600; transform: translateY(-1px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+        .true-false-options .option-btn.active.btn-outline-success { background-color: #28a745; color: white; border-color: #28a745; }
+        .true-false-options .option-btn.active.btn-outline-danger { background-color: #dc3545; color: white; border-color: #dc3545; }
+        .true-false-options .option-btn.active.btn-outline-warning { background-color: #ffc107; color: #212529; border-color: #ffc107; }
+        .multiple-choice-options { display: flex; flex-direction: column; gap: 8px; }
+        .multiple-choice-options .option-btn { text-align: left; padding: 12px 16px; font-weight: 500; transition: all 0.3s ease; }
+        .multiple-choice-options .option-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .multiple-choice-options .option-btn.active { font-weight: 600; transform: translateY(-1px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); background-color: var(--primary); color: white; border-color: var(--primary); }
+        
+        /* Стили для множественного выбора */
+        .multiple-select-options { display: flex; flex-direction: column; gap: 8px; }
+        .multiple-select-options .option-btn { 
+            text-align: left; 
+            padding: 12px 16px; 
+            padding-right: 40px;
+            font-weight: 500; 
+            transition: all 0.3s ease; 
+            position: relative;
+        }
+        .multiple-select-options .option-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .multiple-select-options .option-btn.active { 
+            font-weight: 600; 
+            transform: translateY(-1px); 
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15); 
+            background-color: var(--primary); 
+            color: white; 
+            border-color: var(--primary); 
+        }
+        .multiple-select-options .option-btn::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: 12px;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ccc;
+            border-radius: 3px;
+            background-color: white;
+        }
+        .multiple-select-options .option-btn.active::after {
+            background-color: white;
+            border-color: white;
+            background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='%23000' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='m13.854 3.646-7.5 7.5a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6 10.293l7.146-7.147a.5.5 0 0 1 .708.708z'/%3e%3c/svg%3e");
+        }
+        .help-text { font-size: 0.85rem; color: #666; }
+        .submit-section { background-color: var(--card-bg); border-radius: 15px; box-shadow: var(--shadow); padding: 25px; text-align: center; }
+        .btn { padding: 12px 30px; font-size: 1rem; font-weight: 500; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: var(--primary-dark); color: white; }
+        .btn-secondary { background-color: #6c757d; color: white; }
+        .btn-secondary:hover { background-color: #5a6268; color: white; }
+        .timer { background-color: var(--warning); color: #212529; padding: 10px 15px; border-radius: 8px; font-weight: 600; }
+        .sticky-sidebar { position: sticky; top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="test-header">
+            <h1><i class="fas fa-file-text"></i> {{ test.title }}</h1>
+            <div class="test-meta">
+                {{ test.classs }} класс
+                {% if test.unit and test.unit != 'N/A' %} | {{ test.unit }}{% endif %}
+                {% if test.module and test.module != 'N/A' %} | {{ test.module }}{% endif %}
+                {% if test.time_limit %} | Время: {{ test.time_limit }} мин{% endif %}
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div>
+                {% if text_content %}
+                <div class="text-section">
+                    <h3><i class="fas fa-book-open"></i> Текст для чтения</h3>
+                    <div class="text-content">{{ text_content.content }}</div>
+                </div>
+                {% elif test.text_content %}
+                <div class="text-section">
+                    <h3><i class="fas fa-book-open"></i> Текст для чтения</h3>
+                    <div class="text-content">{{ test.text_content }}</div>
+                </div>
+                {% endif %}
+
+                <div class="questions-section">
+                    <div class="questions-header">
+                        <h3><i class="fas fa-question-circle"></i> Вопросы</h3>
+                        <div class="progress-info">{{ questions|length }} вопросов</div>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('submit_text_test', test_result_id=test_result.id) }}">
+                        {% for question in questions %}
+                        <div class="question-block">
+                            <div class="question-header">
+                                <div class="question-number">{{ loop.index }}</div>
+                                <div class="question-type type-{{ question.type }}">
+                                    {% if question.type == 'multiple_choice' %}
+                                        Выбор ответа
+                                    {% elif question.type == 'open_answer' %}
+                                        Открытый вопрос
+                                    {% elif question.type == 'true_false' %}
+                                        Да/Нет
+                                    {% endif %}
+                                    {% if question.points %} | {{ question.points }} балл(ов){% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="question-text">{{ question.question }}</div>
+                            
+                            {% if question.type == 'multiple_choice' and question.options %}
+                                <div class="answer-options multiple-choice-options">
+                                    {% for option in question.options %}
+                                    <button type="button" class="option-btn btn btn-outline-primary mc-option" 
+                                            data-question="{{ loop.index0 }}" data-value="{{ option }}">
+                                        {{ option }}
+                                    </button>
+                                    {% endfor %}
+                                    <input type="hidden" name="question_{{ loop.index0 }}" 
+                                           id="hidden_mc_q{{ loop.index0 }}" required>
+                                </div>
+                            {% elif question.type == 'multiple_select' and question.options %}
+                                <div class="answer-options multiple-select-options">
+                                    <div class="help-text mb-2">
+                                        <i class="fas fa-info-circle"></i> Выберите все правильные варианты ответов
+                                    </div>
+                                    {% for option in question.options %}
+                                    <button type="button" class="option-btn btn btn-outline-primary ms-option" 
+                                            data-question="{{ loop.index0 }}" data-value="{{ option }}">
+                                        {{ option }}
+                                    </button>
+                                    {% endfor %}
+                                    <input type="hidden" name="question_{{ loop.index0 }}" 
+                                           id="hidden_ms_q{{ loop.index0 }}" required>
+                                </div>
+                            {% elif question.type == 'true_false' %}
+                                <div class="answer-options true-false-options">
+                                    <button type="button" class="option-btn btn btn-outline-success" 
+                                            data-question="{{ loop.index0 }}" data-value="Да">
+                                        <i class="fas fa-check"></i> Да
+                                    </button>
+                                    <button type="button" class="option-btn btn btn-outline-danger" 
+                                            data-question="{{ loop.index0 }}" data-value="Нет">
+                                        <i class="fas fa-times"></i> Нет
+                                    </button>
+                                    <button type="button" class="option-btn btn btn-outline-warning" 
+                                            data-question="{{ loop.index0 }}" data-value="Не указано">
+                                        <i class="fas fa-question"></i> Не указано
+                                    </button>
+                                    <input type="hidden" name="question_{{ loop.index0 }}" 
+                                           id="hidden_q{{ loop.index0 }}" required>
+                                </div>
+                            {% else %}
+                                <textarea name="question_{{ loop.index0 }}" class="text-answer" 
+                                          placeholder="Введите ваш ответ..." required></textarea>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+
+                        <div class="submit-section">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-check"></i> Завершить тест
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="sticky-sidebar">
+                {% if test.time_limit %}
+                <div class="timer" id="timer">
+                    <i class="fas fa-clock"></i> Осталось: <span id="timeLeft">{{ test.time_limit }}:00</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Обработка кликов по кнопкам true/false и multiple choice
+        document.addEventListener('DOMContentLoaded', function() {
+            // True/False кнопки
+            const trueFalseButtons = document.querySelectorAll('.true-false-options .option-btn');
+            trueFalseButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const questionIndex = this.dataset.question;
+                    const value = this.dataset.value;
+                    const hiddenInput = document.getElementById(`hidden_q${questionIndex}`);
+                    
+                    // Убираем активный класс с других кнопок в той же группе
+                    const sameGroupButtons = document.querySelectorAll(`.true-false-options [data-question="${questionIndex}"]`);
+                    sameGroupButtons.forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    
+                    // Добавляем активный класс к выбранной кнопке
+                    this.classList.add('active');
+                    
+                    // Устанавливаем значение в скрытое поле
+                    hiddenInput.value = value;
+                });
+            });
+            
+            // Multiple Choice кнопки
+            const mcButtons = document.querySelectorAll('.multiple-choice-options .option-btn');
+            mcButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const questionIndex = this.dataset.question;
+                    const value = this.dataset.value;
+                    const hiddenInput = document.getElementById(`hidden_mc_q${questionIndex}`);
+                    
+                    // Убираем активный класс с других кнопок в той же группе
+                    const sameGroupButtons = document.querySelectorAll(`.multiple-choice-options [data-question="${questionIndex}"]`);
+                    sameGroupButtons.forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    
+                    // Добавляем активный класс к выбранной кнопке
+                    this.classList.add('active');
+                    
+                    // Устанавливаем значение в скрытое поле
+                    hiddenInput.value = value;
+                });
+            });
+            
+            // Multiple Select кнопки
+            const msButtons = document.querySelectorAll('.multiple-select-options .option-btn');
+            msButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const questionIndex = this.dataset.question;
+                    const value = this.dataset.value;
+                    const hiddenInput = document.getElementById(`hidden_ms_q${questionIndex}`);
+                    
+                    // Переключаем активный класс для этой кнопки
+                    this.classList.toggle('active');
+                    
+                    // Собираем все выбранные варианты в этой группе
+                    const selectedOptions = [];
+                    const sameGroupButtons = document.querySelectorAll(`.multiple-select-options [data-question="${questionIndex}"].active`);
+                    sameGroupButtons.forEach(btn => {
+                        selectedOptions.push(btn.dataset.value);
+                    });
+                    
+                    // Устанавливаем значение в скрытое поле как JSON
+                    hiddenInput.value = JSON.stringify(selectedOptions);
+                });
+            });
+        });
+    </script>
+    {% if test.time_limit %}
+    <script>
+        // Таймер
+        let timeLeft = {{ test.time_limit }} * 60; // в секундах
+        const timerElement = document.getElementById('timeLeft');
+        
+        function updateTimer() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (timeLeft <= 0) {
+                alert('Время вышло! Тест будет автоматически отправлен.');
+                document.querySelector('form').submit();
+                return;
+            }
+            
+            timeLeft--;
+        }
+        
+        setInterval(updateTimer, 1000);
+    </script>
+    {% endif %}
+</body>
+</html>

@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+
+{% block title %}Создание вопросов по тексту{% endblock %}
+
+{% block styles %}
+<style>
+    body {
+        background-color: #f8f9fe;
+        font-family: 'Poppins', sans-serif;
+    }
+    .container-main {
+        max-width: 1000px;
+        margin: 20px auto;
+        padding: 25px;
+        background-color: #fff;
+        border-radius: 15px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    }
+    .uploaded-text-area {
+        background-color: #f9f9f9;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 30px;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .uploaded-text-area h3 {
+        margin-top: 0;
+        color: #5a52e0;
+    }
+    .question-builder-area h2 {
+        color: #5a52e0;
+        border-bottom: 2px solid #a5a1ff;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    .question-item {
+        background-color: #fdfdff;
+        border: 1px solid #e8e8f0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .question-item label {
+        font-weight: 500;
+        margin-bottom: 6px;
+        display: block;
+    }
+    .question-item input[type="text"],
+    .question-item textarea,
+    .question-item select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        margin-bottom: 10px;
+        font-size: 0.95rem;
+    }
+    .question-item textarea {
+        min-height: 80px;
+        resize: vertical;
+    }
+    .options-container .option-entry {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+    .options-container .option-entry input[type="text"] {
+        flex-grow: 1;
+        margin-bottom: 0;
+    }
+    .btn-add-option, .btn-remove-question, .btn-remove-option {
+        font-size: 0.85rem;
+        padding: 6px 10px;
+    }
+    .btn-primary-custom {
+        background-color: #6c63ff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        font-weight: 500;
+    }
+    .btn-primary-custom:hover {
+        background-color: #5a52e0;
+    }
+    .btn-secondary-custom {
+        background-color: #78799c;
+        color: white;
+    }
+     .btn-danger-custom {
+        background-color: #dc3545;
+        color: white;
+    }
+    .form-actions {
+        margin-top: 30px;
+        text-align: right;
+    }
+    .correct-answer-label {
+        margin-left: 5px;
+        font-size: 0.9em;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-main">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Создание вопросов по тексту</h2>
+            <p><strong>Тест:</strong> {{ test.title }}</p>
+        </div>
+        <a href="{{ url_for('test_details', test_id=test.id) }}" class="btn btn-outline-secondary">К деталям теста</a>
+    </div>
+
+    <div class="uploaded-text-area">
+        <h3>Загруженный текст:</h3>
+        <div class="bg-light p-3 border rounded">
+            {{ test.text_content|safe }}
+        </div>
+    </div>
+
+    <div class="question-builder-area">
+        <h2>Редактор Вопросов</h2>
+        <form method="POST" id="questionsForm">
+            <input type="hidden" name="questions_data" id="questions_data_hidden_input">
+            
+            <div id="questions_container">
+                <!-- Questions will be dynamically added here by JavaScript -->
+            </div>
+
+            <button type="button" id="addQuestionBtn" class="btn btn-success mt-3 mb-3">
+                <i class="fas fa-plus"></i> Добавить вопрос
+            </button>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-primary-custom">
+                    <i class="fas fa-save"></i> Сохранить вопросы
+                </button>
+                <a href="{{ url_for('test_details', test_id=test.id) }}" class="btn btn-secondary ms-2">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const questionsContainer = document.getElementById('questions_container');
+    const addQuestionBtn = document.getElementById('addQuestionBtn');
+    const questionsForm = document.getElementById('questionsForm');
+    const hiddenInput = document.getElementById('questions_data_hidden_input');
+    let questionCounter = 0;
+    const existingQuestions = {{ questions_for_js | safe }};
+
+    function escapeHTML(str) {
+        if (str === null || str === undefined) return "";
+        return str.toString().replace(/[&<>"']/g, function (match) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[match];
+        });
+    }
+
+    function addOptionEntry(optionsDiv, questionId, questionType, optionText = "", isCorrect = false) {
+        const optionEntryId = `option-${questionId}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+        const optionEntry = document.createElement('div');
+        optionEntry.className = 'option-entry mb-2';
+        let inputHtml = '';
+
+        if (questionType === 'mc_single') {
+            // Radio buttons need the same name within their group
+            inputHtml = `<input type="radio" name="correct_answer_radio_${questionId}" id="${optionEntryId}" class="form-check-input correct-option-input" ${isCorrect ? 'checked' : ''}>`;
+        } else if (questionType === 'mc_multiple') {
+            // Checkboxes can have unique IDs, selection is based on class and checked status
+            inputHtml = `<input type="checkbox" id="${optionEntryId}" class="form-check-input correct-option-input" ${isCorrect ? 'checked' : ''}>`;
+        }
+
+        optionEntry.innerHTML = `
+            <input type="text" class="form-control option-text me-2" placeholder="Текст варианта ответа" value="${escapeHTML(optionText)}">
+            ${inputHtml}
+            <label for="${optionEntryId}" class="form-check-label correct-answer-label">Верный</label>
+            <button type="button" class="btn btn-danger btn-sm btn-remove-option ms-2"><i class="fas fa-times"></i></button>
+        `;
+        optionsDiv.appendChild(optionEntry);
+
+        optionEntry.querySelector('.btn-remove-option').addEventListener('click', function() {
+            optionEntry.remove();
+        });
+    }
+    
+    function createQuestionElement(qData = null) {
+        questionCounter++;
+        const questionId = questionCounter; // Unique ID for the question block
+        const questionDiv = document.createElement('div');
+        questionDiv.className = 'question-item';
+        questionDiv.id = `question-${questionId}`;
+
+        const currentText = qData ? escapeHTML(qData.text) : '';
+        const currentType = qData ? qData.type : 'mc_single'; // Default to mc_single for new questions
+        const currentShortAnswer = qData && qData.type === 'short_answer' && qData.correct && qData.correct.length > 0 ? escapeHTML(qData.correct[0]) : '';
+
+        questionDiv.innerHTML = `
+            <h5>Вопрос ${questionId}</h5>
+            <div class="form-group">
+                <label for="question_text_${questionId}">Текст вопроса:</label>
+                <textarea id="question_text_${questionId}" class="form-control question-text-input" rows="2" placeholder="Введите текст вопроса">${currentText}</textarea>
+            </div>
+            <div class="form-group">
+                <label>Тип вопроса:</label>
+                <select class="form-select question-type-select">
+                    <option value="mc_single" ${currentType === 'mc_single' ? 'selected' : ''}>Один правильный ответ</option>
+                    <option value="mc_multiple" ${currentType === 'mc_multiple' ? 'selected' : ''}>Несколько правильных ответов</option>
+                    <option value="short_answer" ${currentType === 'short_answer' ? 'selected' : ''}>Краткий текстовый ответ</option>
+                </select>
+            </div>
+            <div class="options-section" style="display: ${currentType === 'mc_single' || currentType === 'mc_multiple' ? 'block' : 'none'};">
+                <label>Варианты ответа:</label>
+                <div class="options-container">
+                    <!-- Option entries will be added here -->
+                </div>
+                <button type="button" class="btn btn-info btn-sm btn-add-option mt-2">
+                    <i class="fas fa-plus-circle"></i> Добавить вариант
+                </button>
+            </div>
+            <div class="short-answer-section" style="display: ${currentType === 'short_answer' ? 'block' : 'none'};">
+                 <label for="correct_text_answer_${questionId}">Правильный текстовый ответ:</label>
+                 <input type="text" id="correct_text_answer_${questionId}" class="form-control correct-text-answer-input" placeholder="Введите точный правильный ответ" value="${currentShortAnswer}">
+            </div>
+            <hr>
+            <button type="button" class="btn btn-danger-custom btn-sm btn-remove-question float-end">
+                <i class="fas fa-trash"></i> Удалить этот вопрос
+            </button>
+            <div style="clear:both;"></div>
+        `;
+        questionsContainer.appendChild(questionDiv);
+
+        const questionTypeSelect = questionDiv.querySelector('.question-type-select');
+        const optionsSection = questionDiv.querySelector('.options-section');
+        const shortAnswerSection = questionDiv.querySelector('.short-answer-section');
+        const addOptionButton = questionDiv.querySelector('.btn-add-option');
+        const optionsDiv = questionDiv.querySelector('.options-container');
+
+        // Populate options if it's an existing mc_single or mc_multiple question
+        if (qData && (qData.type === 'mc_single' || qData.type === 'mc_multiple') && qData.options) {
+            qData.options.forEach(optText => {
+                const isCorrect = qData.correct ? qData.correct.includes(optText) : false;
+                addOptionEntry(optionsDiv, questionId, qData.type, optText, isCorrect);
+            });
+        } else if (currentType === 'mc_single' || currentType === 'mc_multiple') {
+            // Add 2 default empty options for new mc_single/mc_multiple questions
+            addOptionEntry(optionsDiv, questionId, currentType);
+            addOptionEntry(optionsDiv, questionId, currentType);
+        }
+
+        questionTypeSelect.addEventListener('change', function() {
+            const selectedType = this.value;
+            optionsDiv.innerHTML = ''; // Clear previous options
+            if (selectedType === 'mc_single' || selectedType === 'mc_multiple') {
+                optionsSection.style.display = 'block';
+                shortAnswerSection.style.display = 'none';
+                addOptionEntry(optionsDiv, questionId, selectedType);
+                addOptionEntry(optionsDiv, questionId, selectedType);
+            } else if (selectedType === 'short_answer') {
+                optionsSection.style.display = 'none';
+                shortAnswerSection.style.display = 'block';
+            }
+        });
+
+        addOptionButton.addEventListener('click', function() {
+            const currentSelectedType = questionTypeSelect.value;
+            addOptionEntry(optionsDiv, questionId, currentSelectedType);
+        });
+        
+        questionDiv.querySelector('.btn-remove-question').addEventListener('click', function() {
+            questionDiv.remove();
+        });
+    }
+
+    // Load existing questions
+    if (existingQuestions && existingQuestions.length > 0) {
+        existingQuestions.forEach(qData => {
+            createQuestionElement(qData);
+        });
+    } else {
+        // Add one empty question to start if none exist
+        createQuestionElement();
+    }
+
+    addQuestionBtn.addEventListener('click', () => createQuestionElement());
+
+    questionsForm.addEventListener('submit', function(event) {
+        const allQuestionsData = [];
+        const questionItems = questionsContainer.querySelectorAll('.question-item');
+        let formIsValid = true;
+
+        questionItems.forEach(item => {
+            const questionText = item.querySelector('.question-text-input').value.trim();
+            const questionType = item.querySelector('.question-type-select').value;
+            const options = [];
+            const correctAnswers = [];
+
+            if (!questionText) {
+                alert('Текст вопроса не может быть пустым.');
+                formIsValid = false;
+                return;
+            }
+
+            if (questionType === 'mc_single' || questionType === 'mc_multiple') {
+                const optionEntries = item.querySelectorAll('.options-container .option-entry');
+                let hasAtLeastOneOptionText = false;
+                optionEntries.forEach(optEntry => {
+                    const optionTextInput = optEntry.querySelector('.option-text');
+                    const optionText = optionTextInput.value.trim();
+                    if (optionText) {
+                        hasAtLeastOneOptionText = true;
+                        options.push(optionText);
+                        const inputField = optEntry.querySelector('.correct-option-input');
+                        if (inputField && inputField.checked) {
+                            correctAnswers.push(optionText);
+                        }
+                    }
+                });
+                if (!hasAtLeastOneOptionText && optionEntries.length > 0) {
+                     alert(`Для вопроса "${questionText.substring(0,30)}..." введите текст хотя бы для одного варианта ответа.`);
+                     formIsValid = false;
+                     return;
+                }
+                 if (options.length === 0 && (questionType === 'mc_single' || questionType === 'mc_multiple')){
+                    alert(`Для вопроса "${questionText.substring(0,30)}..." типа "${questionType}" должен быть как минимум один вариант ответа.`);
+                    formIsValid = false;
+                    return;
+                }
+                if (correctAnswers.length === 0) {
+                    alert(`Для вопроса "${questionText.substring(0,30)}..." должен быть отмечен хотя бы один правильный ответ.`);
+                    formIsValid = false;
+                    return;
+                }
+                if (questionType === 'mc_single' && correctAnswers.length > 1) {
+                    alert(`Для вопроса "${questionText.substring(0,30)}..." с одиночным выбором может быть только один правильный ответ.`);
+                    formIsValid = false;
+                    return;
+                }
+            } else if (questionType === 'short_answer') {
+                const shortAnswerInput = item.querySelector('.correct-text-answer-input');
+                if (shortAnswerInput && shortAnswerInput.value.trim()) {
+                    correctAnswers.push(shortAnswerInput.value.trim());
+                } else {
+                    alert(`Для вопроса "${questionText.substring(0,30)}..." типа "Краткий ответ" необходимо указать правильный ответ.`);
+                    formIsValid = false;
+                    return;
+                }
+                // For short_answer, options list is empty
+            }
+            
+            if (!formIsValid) return; // Stop processing this question item if an error occurred
+
+            allQuestionsData.push({
+                text: questionText,
+                type: questionType,
+                options: options, // Will be empty for short_answer
+                correct: correctAnswers
+            });
+        });
+
+        if (!formIsValid) {
+            event.preventDefault();
+            return;
+        }
+        
+        if (questionItems.length === 0 && allQuestionsData.length === 0) {
+            // Allow submitting if there are no questions (e.g. to remove all questions)
+            // Or, if you require at least one question:
+            // alert('Пожалуйста, добавьте хотя бы один вопрос к тексту.');
+            // event.preventDefault();
+            // return;
+        }
+
+        hiddenInput.value = JSON.stringify(allQuestionsData);
+    });
+});
+</script>
+{% endblock %} 

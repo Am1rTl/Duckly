@@ -98,10 +98,57 @@
                                         <option value="dictation">Диктант</option>
                                         <option value="add_letter">Вставить букву</option>
                                         <option value="true_false">Верно/Неверно</option>
-                                        <option value="multiple_choice_single">Выбор ответа (один правильный)</option>
-                                        <option value="multiple_choice_multiple">Выбор ответа (несколько правильных)</option>
-                                        <option value="fill_word">Вписать слово (по переводу)</option>
+                                        <option value="multiple_choice">Выбор одного варианта</option>
+                                        <option value="multiple_choice_multiple">Выбор нескольких вариантов</option>
+                                        <option value="fill_word">Впишите слово</option>
+                                        <option value="text_based">Тест по тексту</option>
+                                        <option value="word_translation_choice">Выбор перевода слова</option>
+                                        <option value="translation_word_choice">Выбор слова по переводу</option>
                                     </select>
+                                </div>
+
+                                <!-- Описания типов тестов -->
+                                <div class="test-description" id="desc-dictation" style="display: none;">
+                                    <small class="text-muted">Диктант: Студенты слышат/видят перевод и вписывают слово</small>
+                                </div>
+                                <div class="test-description" id="desc-add_letter" style="display: none;">
+                                    <small class="text-muted">Вставить букву: В словах пропущены буквы, нужно их вставить</small>
+                                </div>
+                                <div class="test-description" id="desc-true_false" style="display: none;">
+                                    <small class="text-muted">Верно/Неверно: Студенты отвечают, верно ли утверждение</small>
+                                </div>
+                                <div class="test-description" id="desc-multiple_choice" style="display: none;">
+                                    <small class="text-muted">Выбор одного варианта: Из 4 вариантов нужно выбрать правильный</small>
+                                </div>
+                                <div class="test-description" id="desc-multiple_choice_multiple" style="display: none;">
+                                    <small class="text-muted">Выбор нескольких вариантов: Можно выбрать несколько правильных ответов</small>
+                                </div>
+                                <div class="test-description" id="desc-fill_word" style="display: none;">
+                                    <small class="text-muted">Впишите слово: По переводу нужно написать исходное слово</small>
+                                </div>
+                                <div class="test-description" id="desc-text_based" style="display: none;">
+                                    <small class="text-muted">Тест по тексту: Вопросы создаются на основе загруженного текста</small>
+                                </div>
+                                <div class="test-description" id="desc-word_translation_choice" style="display: none;">
+                                    <small class="text-muted">Выбор перевода слова: Дается слово, нужно выбрать правильный перевод</small>
+                                </div>
+                                <div class="test-description" id="desc-translation_word_choice" style="display: none;">
+                                    <small class="text-muted">Выбор слова по переводу: Дается перевод, нужно выбрать правильное слово</small>
+                                </div>
+
+                                <!-- Добавить новые поля формы -->
+                                <div class="form-group" id="test-direction-group" style="display: none;">
+                                    <label for="test_direction">Направление теста:</label>
+                                    <select name="test_direction" id="test_direction" class="form-select">
+                                        <option value="word_to_translation">Слово → Перевод</option>
+                                        <option value="translation_to_word">Перевод → Слово</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group full-width" id="text-content-group" style="display: none;">
+                                    <label for="text_content">Загрузить текст для создания вопросов:</label>
+                                    <textarea name="text_content" id="text_content" class="form-control" rows="10" placeholder="Вставьте текст для создания вопросов..." maxlength="5000"></textarea>
+                                    <small class="form-text text-muted">Максимум 5000 символов. После создания теста вы перейдете к настройке вопросов.</small>
                                 </div>
 
                                 <div class="form-group">

@@ -218,6 +218,156 @@
             border-color: #aaa;
             background-color: #f0f0f0;
         }
+
+        /* Стили для текстовых тестов */
+        .question-info {
+            margin-bottom: 15px;
+        }
+
+        .question-number {
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .question-text {
+            font-size: 1rem;
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        .answer-section {
+            margin: 15px 0;
+        }
+
+        .user-answer-label,
+        .correct-answer-label {
+            font-weight: 500;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .user-answer-text {
+            background-color: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .correct-answer-text {
+            background-color: rgba(40, 167, 69, 0.1);
+            padding: 8px 12px;
+            border-radius: 6px;
+            color: var(--success);
+            border-left: 3px solid var(--success);
+        }
+
+        .result-status {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+
+        .status-text {
+            margin-left: 8px;
+            font-weight: 500;
+        }
+
+        .status-text.correct {
+            color: var(--success);
+        }
+
+        .status-text.incorrect {
+            color: var(--danger);
+        }
+
+        .correct-icon {
+            color: var(--success);
+            font-size: 1.2rem;
+        }
+
+        .incorrect-icon {
+            color: var(--danger);
+            font-size: 1.2rem;
+        }
+
+        /* Стили для текстовых тестов */
+        .question-info {
+            margin-bottom: 15px;
+        }
+
+        .question-number {
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .question-text {
+            font-size: 1rem;
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        .answer-section {
+            margin: 15px 0;
+        }
+
+        .user-answer-label,
+        .correct-answer-label {
+            font-weight: 500;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .user-answer-text {
+            background-color: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .correct-answer-text {
+            background-color: rgba(40, 167, 69, 0.1);
+            padding: 8px 12px;
+            border-radius: 6px;
+            color: var(--success);
+            border-left: 3px solid var(--success);
+        }
+
+        .result-status {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+
+        .status-text {
+            margin-left: 8px;
+            font-weight: 500;
+        }
+
+        .status-text.correct {
+            color: var(--success);
+        }
+
+        .status-text.incorrect {
+            color: var(--danger);
+        }
+
+        .correct-icon {
+            color: var(--success);
+            font-size: 1.2rem;
+        }
+
+        .incorrect-icon {
+            color: var(--danger);
+            font-size: 1.2rem;
+        }
     </style>
 </head>
 <body>
@@ -295,6 +445,62 @@
                                 <div style="font-size: 0.9em; color: #555; margin-bottom: 5px;">
                                     Слово: {{ item.prompt_or_support }}
                                 </div>
+            {% elif test.type == 'text_based' %}
+                <!-- Результаты текстового теста -->
+                {% if text_test_results %}
+                    {% for result in text_test_results %}
+                    <div class="result-item {% if result.is_correct %}correct{% else %}incorrect{% endif %}">
+                        <div class="question-info">
+                            <div class="question-number">Вопрос {{ result.question_number }}</div>
+                            <div class="question-text">{{ result.question.text }}</div>
+                        </div>
+                        
+                        <div class="answer-section">
+                            <div class="user-answer-label">Ваш ответ:</div>
+                            <div class="user-answer-text">
+                                {% if result.question.type == 'mc_multiple' and result.user_answer is iterable and result.user_answer is not string %}
+                                    {% if result.user_answer %}
+                                        {{ result.user_answer|join(', ') }}
+                                    {% else %}
+                                        <em>Не отвечено</em>
+                                    {% endif %}
+                                {% else %}
+                                    {% if result.user_answer %}
+                                        {{ result.user_answer }}
+                                    {% else %}
+                                        <em>Не отвечено</em>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                            
+                            {% if not result.is_correct %}
+                            <div class="correct-answer-label">Правильный ответ:</div>
+                            <div class="correct-answer-text">
+                                {% if result.question.correct is iterable and result.question.correct is not string %}
+                                    {{ result.question.correct|join(', ') }}
+                                {% else %}
+                                    {{ result.question.correct }}
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="result-status">
+                            {% if result.is_correct %}
+                                <i class="fas fa-check-circle correct-icon"></i>
+                                <span class="status-text correct">Правильно</span>
+                            {% else %}
+                                <i class="fas fa-times-circle incorrect-icon"></i>
+                                <span class="status-text incorrect">Неправильно</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="result-item" style="text-align: center;">
+                        <p>Подробные результаты для текстового теста не найдены.</p>
+                    </div>
+                {% endif %}
                             {% endif %}
                             {% if item.is_correct %}
                                 <div class="answer">Ваш ответ: <span class="correct-answer">{{ item.user_answer if item.user_answer else 'Нет ответа' }}</span></div>
@@ -319,6 +525,62 @@
                 <div class="result-item" style="text-align: center;">
                     <p>Подробные результаты для диктантов доступны после того, как тест будет перенесен в архив учителем.</p>
                 </div>
+            {% elif test.type == 'text_based' %}
+                <!-- Результаты текстового теста -->
+                {% if text_test_results %}
+                    {% for result in text_test_results %}
+                    <div class="result-item {% if result.is_correct %}correct{% else %}incorrect{% endif %}">
+                        <div class="question-info">
+                            <div class="question-number">Вопрос {{ result.question_number }}</div>
+                            <div class="question-text">{{ result.question.text }}</div>
+                        </div>
+                        
+                        <div class="answer-section">
+                            <div class="user-answer-label">Ваш ответ:</div>
+                            <div class="user-answer-text">
+                                {% if result.question.type == 'mc_multiple' and result.user_answer is iterable and result.user_answer is not string %}
+                                    {% if result.user_answer %}
+                                        {{ result.user_answer|join(', ') }}
+                                    {% else %}
+                                        <em>Не отвечено</em>
+                                    {% endif %}
+                                {% else %}
+                                    {% if result.user_answer %}
+                                        {{ result.user_answer }}
+                                    {% else %}
+                                        <em>Не отвечено</em>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                            
+                            {% if not result.is_correct %}
+                            <div class="correct-answer-label">Правильный ответ:</div>
+                            <div class="correct-answer-text">
+                                {% if result.question.correct is iterable and result.question.correct is not string %}
+                                    {{ result.question.correct|join(', ') }}
+                                {% else %}
+                                    {{ result.question.correct }}
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="result-status">
+                            {% if result.is_correct %}
+                                <i class="fas fa-check-circle correct-icon"></i>
+                                <span class="status-text correct">Правильно</span>
+                            {% else %}
+                                <i class="fas fa-times-circle incorrect-icon"></i>
+                                <span class="status-text incorrect">Неправильно</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="result-item" style="text-align: center;">
+                        <p>Подробные результаты для текстового теста не найдены.</p>
+                    </div>
+                {% endif %}
             {% else %}
                 <div class="result-item" style="text-align: center;">
                     <p>Подробные результаты для этого типа теста не отображаются в данный момент.</p> {# Fallback for other types if needed #}

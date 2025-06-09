@@ -36,7 +36,14 @@ class Test(db.Model):
     word_order = db.Column(db.String, nullable=False)  # 'random' or 'sequential'
     word_count = db.Column(db.Integer, nullable=True)  # For random order
     test_mode = db.Column(db.String, nullable=True)  # 'random_letters' or 'manual_letters' for add_letter type
-    
+    # Добавить в класс Test:
+    test_direction = db.Column(db.String(20), default='word_to_translation')  # 'word_to_translation' или 'translation_to_word'
+    text_content = db.Column(db.Text)  # Для загруженного текста (deprecated, используйте text_content_id)
+    text_based_questions = db.Column(db.Text)  # JSON с вопросами по тексту (deprecated, используйте text_content_id)
+    text_content_id = db.Column(db.Integer, db.ForeignKey('text_contents.id'), nullable=True)  # Связь с текстовым контентом
+
+
+
     # New fields for dictation test options
     dictation_word_source = db.Column(db.String, nullable=True) # e.g., "all_module", "selected_specific", "random_from_module"
     dictation_selected_words = db.Column(db.Text, nullable=True) # JSON list of word IDs for "selected_specific"
@@ -90,13 +97,54 @@ class TestProgress(db.Model):
     test_result_id = db.Column(db.Integer, db.ForeignKey('test_results.id'), nullable=False)
     test_word_id = db.Column(db.Integer, db.ForeignKey('test_words.id'), nullable=False)
     user_answer = db.Column(db.Text, nullable=True)  # JSON string for complex answers like dictation
-    last_updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+
+class TextContent(db.Model):
+    """Модель для хранения текстов"""
+    __tablename__ = 'text_contents'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    classs = db.Column('class', db.String, nullable=False)
+    unit = db.Column(db.String, nullable=True)
+    module = db.Column(db.String, nullable=True)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    is_active = db.Column(db.Boolean, default=True)
     
-    # Unique constraint to ensure one progress record per test_result and test_word
-    __table_args__ = (db.UniqueConstraint('test_result_id', 'test_word_id', name='_test_progress_uc'),)
+    # Relationships
+    questions = db.relationship('TextQuestion', backref='text_content', lazy=True, cascade='all, delete-orphan')
+    tests = db.relationship('Test', backref='text_content_ref', lazy=True)
+
+class TextQuestion(db.Model):
+    """Модель для вопросов к текстам"""
+    __tablename__ = 'text_questions'
+    id = db.Column(db.Integer, primary_key=True)
+    text_content_id = db.Column(db.Integer, db.ForeignKey('text_contents.id'), nullable=False)
+    question = db.Column(db.Text, nullable=False)
+    question_type = db.Column(db.String(50), nullable=False)  # 'multiple_choice', 'open_answer', 'true_false', 'multiple_select'
+    options = db.Column(db.Text, nullable=True)  # JSON для вариантов ответов
+    correct_answer = db.Column(db.Text, nullable=False)  # Для multiple_select - JSON массив правильных ответов
+    points = db.Column(db.Integer, default=1)
+    order_number = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+class TextTestAnswer(db.Model):
+    """Модель для ответов на вопросы текстовых тестов"""
+    __tablename__ = 'text_test_answers'
+    id = db.Column(db.Integer, primary_key=True)
+    test_result_id = db.Column(db.Integer, db.ForeignKey('test_results.id'), nullable=False)
+    text_question_id = db.Column(db.Integer, db.ForeignKey('text_questions.id'), nullable=False)
+    user_answer = db.Column(db.Text, nullable=True)
+    is_correct = db.Column(db.Boolean, nullable=False, default=False)
+    points_earned = db.Column(db.Integer, default=0)
+    answered_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     
-    test_result = db.relationship('TestResult', backref=db.backref('progress_entries', lazy=True, cascade='all, delete-orphan'))
-    test_word = db.relationship('TestWord', backref=db.backref('progress_entries', lazy=True))
+    # Relationships
+    text_question = db.relationship('TextQuestion', backref=db.backref('answers', lazy=True))
+    test_result = db.relationship('TestResult', backref=db.backref('text_answers', lazy=True))
+    
+    # Unique constraint to ensure one answer per test_result and text_question
+    __table_args__ = (db.UniqueConstraint('test_result_id', 'text_question_id', name='_text_test_answer_uc'),)
 
 class UserWordReview(db.Model):
     __tablename__ = 'user_word_reviews'

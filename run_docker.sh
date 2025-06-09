@@ -20,6 +20,7 @@ docker run -d \
   -v $(pwd)/instance:/app/instance \
   -v $(pwd)/flask_session:/app/flask_session \
   -e SECRET_KEY='super-secret-key-for-duckly-app' \
+  -e FLASK_DEBUG=1 \
   duckly-app
 
 echo "Контейнер запущен. Приложение доступно по адресу: http://localhost:1800"

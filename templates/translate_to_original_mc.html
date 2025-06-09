@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест: Выбор оригинального слова</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Anti-cheat protection -->
+    <script src="{{ url_for('static', filename='js/anti_cheat.js') }}"></script>
+    <style>
+        :root {
+            --primary: #6c63ff;
+            --primary-light: #a5a1ff;
+            --primary-dark: #5a52e0;
+            --secondary: #4a4a98;
+            --background: #f8f9fe;
+            --card-bg: #ffffff;
+            --text: #333333;
+            --border: #ddd;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .progress-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding: 10px;
+            background: var(--background);
+            border-radius: 10px;
+        }
+
+        .progress-item {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .progress-item.completed {
+            background: var(--success);
+            color: white;
+        }
+        
+        .progress-item.answered {
+            background: var(--primary-light);
+            color: white;
+        }
+
+        .progress-item.current {
+            border: 2px solid var(--primary);
+        }
+
+        .timer {
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        .word-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .question-text {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .option-btn {
+            background-color: var(--card-bg);
+            color: var(--text);
+            border: 2px solid var(--border);
+            padding: 15px;
+            font-size: 1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .option-btn:hover {
+            border-color: var(--primary);
+            background-color: var(--primary-light);
+            color: white;
+        }
+
+        .option-btn.selected {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary-dark);
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 500;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background-color: var(--background);
+            color: var(--text);
+            border: 2px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Тест: Выбор оригинального слова</h1>
+        </div>
+
+        <div class="timer" id="timer" data-time-limit="{{ time_limit | default(0) }}">
+            Осталось времени: <span id="time-left">--:--</span>
+        </div>
+
+        <div class="progress-bar" id="progress-bar">
+            <!-- Progress items will be dynamically inserted here by JavaScript -->
+        </div>
+
+        <form id="test-form" method="POST" 
+              data-test-db-id="{{ test_db_id }}" 
+              data-is-teacher-preview="{{ is_teacher_preview | lower }}"
+              data-test-type-slug="{{ test_type_slug }}">
+            <div id="test-questions-container">
+                <p class="loading-message" style="text-align:center; padding: 20px;">Загрузка вопросов...</p>
+                <!-- Questions will be dynamically inserted here by JavaScript -->
+            </div>
+            <div id="no-words-message-container">
+                <!-- Message if no words are loaded will be inserted here -->
+            </div>
+
+            <div class="navigation">
+                <button type="button" class="btn btn-secondary" id="prev-btn" style="display: none;">
+                    <i class="fas fa-arrow-left"></i>
+                    Назад
+                </button>
+                <button type="button" class="btn btn-primary" id="next-btn" style="display: none;">
+                    Далее
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+                <button type="submit" class="btn btn-primary" id="submit-btn" style="display: none;">
+                    Завершить тест
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/test_word_translation_choice.js') }}" defer></script>
+</body>
+</html> 

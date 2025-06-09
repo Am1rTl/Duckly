@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}Результаты теста - {{ test.title }}{% endblock %}
+
+{% block styles %}
+<style>
+    body {
+        background-color: #f8f9fe;
+        font-family: 'Poppins', sans-serif;
+    }
+    .container-main {
+        max-width: 900px;
+        margin: 20px auto;
+        padding: 25px;
+        background-color: #fff;
+        border-radius: 15px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    }
+    .result-header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #e8e8f0;
+    }
+    .result-header h1 {
+        color: #5a52e0;
+        margin-bottom: 10px;
+    }
+    .score-summary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    .score-summary h2 {
+        margin: 0 0 10px 0;
+        font-size: 2.5rem;
+    }
+    .score-details {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 15px;
+    }
+    .score-item {
+        text-align: center;
+    }
+    .score-item .number {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    .score-item .label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    .question-result {
+        background-color: #fdfdff;
+        border: 1px solid #e8e8f0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .question-result.correct {
+        border-left: 4px solid #28a745;
+        background-color: #f8fff9;
+    }
+    .question-result.incorrect {
+        border-left: 4px solid #dc3545;
+        background-color: #fff8f8;
+    }
+    .question-title {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 1.1rem;
+    }
+    .answer-section {
+        margin-top: 15px;
+    }
+    .answer-label {
+        font-weight: 500;
+        margin-bottom: 5px;
+        display: block;
+    }
+    .user-answer {
+        background-color: #f0f0f5;
+        padding: 8px 12px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+    }
+    .correct-answer {
+        background-color: #e8f5e8;
+        padding: 8px 12px;
+        border-radius: 6px;
+        color: #155724;
+    }
+    .status-icon {
+        float: right;
+        font-size: 1.2rem;
+    }
+    .status-icon.correct {
+        color: #28a745;
+    }
+    .status-icon.incorrect {
+        color: #dc3545;
+    }
+    .navigation-buttons {
+        text-align: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 2px solid #e8e8f0;
+    }
+    .btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        margin: 0 10px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    .btn-primary {
+        background-color: #6c63ff;
+        color: white;
+    }
+    .btn-primary:hover {
+        background-color: #5a52e0;
+        color: white;
+    }
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+    .btn-secondary:hover {
+        background-color: #5a6268;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-main">
+    <div class="result-header">
+        <h1>Результаты теста</h1>
+        <p class="text-muted">{{ test.title }}</p>
+    </div>
+
+    <div class="score-summary">
+        <h2>{{ test_result.score }}%</h2>
+        <p>Ваш результат</p>
+        <div class="score-details">
+            <div class="score-item">
+                <div class="number">{{ test_result.correct_answers }}</div>
+                <div class="label">Правильных ответов</div>
+            </div>
+            <div class="score-item">
+                <div class="number">{{ test_result.total_questions - test_result.correct_answers }}</div>
+                <div class="label">Неправильных ответов</div>
+            </div>
+            <div class="score-item">
+                <div class="number">{{ test_result.total_questions }}</div>
+                <div class="label">Всего вопросов</div>
+            </div>
+        </div>
+    </div>
+
+    <h3>Детальные результаты:</h3>
+
+    {% for result in detailed_results %}
+    <div class="question-result {% if result.is_correct %}correct{% else %}incorrect{% endif %}">
+        <div class="question-title">
+            Вопрос {{ result.question_number }}: {{ result.question.text }}
+            <span class="status-icon {% if result.is_correct %}correct{% else %}incorrect{% endif %}">
+                {% if result.is_correct %}
+                    <i class="fas fa-check-circle"></i>
+                {% else %}
+                    <i class="fas fa-times-circle"></i>
+                {% endif %}
+            </span>
+        </div>
+
+        <div class="answer-section">
+            <span class="answer-label">Ваш ответ:</span>
+            <div class="user-answer">
+                {% if result.question.type == 'mc_multiple' and result.user_answer is iterable and result.user_answer is not string %}
+                    {% if result.user_answer %}
+                        {{ result.user_answer|join(', ') }}
+                    {% else %}
+                        <em>Не отвечено</em>
+                    {% endif %}
+                {% else %}
+                    {% if result.user_answer %}
+                        {{ result.user_answer }}
+                    {% else %}
+                        <em>Не отвечено</em>
+                    {% endif %}
+                {% endif %}
+            </div>
+
+            {% if not result.is_correct %}
+            <span class="answer-label">Правильный ответ:</span>
+            <div class="correct-answer">
+                {% if result.question.correct is iterable and result.question.correct is not string %}
+                    {{ result.question.correct|join(', ') }}
+                {% else %}
+                    {{ result.question.correct }}
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="navigation-buttons">
+        <a href="{{ url_for('hello') }}" class="btn btn-primary">
+            <i class="fas fa-home"></i> На главную
+        </a>
+        <a href="{{ url_for('tests') }}" class="btn btn-secondary">
+            <i class="fas fa-list"></i> К списку тестов
+        </a>
+    </div>
+</div>
+{% endblock %}
