@@ -314,24 +314,55 @@
         {% for test_item in tests_data %}
           <tr>
             <td>
-              <a href="/test/{{ test_item.test.id }}">{{ test_item.test.title }}</a>
+              {% if test_item.test.type == 'text_based' %}
+                <a href="/test/{{ test_item.test.link }}">{{ test_item.test.title }}</a>
+              {% else %}
+                <a href="/test/{{ test_item.test.id }}">{{ test_item.test.title }}</a>
+              {% endif %}
             </td>
             <td>{{ test_item.test.classs if test_item.test.classs else 'N/A' }}</td>
-            <td>{{ test_item.test.unit if test_item.test.unit else 'N/A' }}</td>
-            <td>{{ test_item.test.module if test_item.test.module else 'N/A' }}</td>
-            <td>{{ test_item.test.type }}</td>
+            <td>
+              {% if test_item.test.type == 'text_based' and test_item.text_content %}
+                {{ test_item.text_content.unit if test_item.text_content.unit else 'N/A' }}
+              {% else %}
+                {{ test_item.test.unit if test_item.test.unit else 'N/A' }}
+              {% endif %}
+            </td>
+            <td>
+              {% if test_item.test.type == 'text_based' and test_item.text_content %}
+                {{ test_item.text_content.module if test_item.text_content.module else 'N/A' }}
+              {% else %}
+                {{ test_item.test.module if test_item.test.module else 'N/A' }}
+              {% endif %}
+            </td>
+            <td>
+              {% if test_item.test.type == 'text_based' %}
+                Тест по тексту
+              {% else %}
+                {{ test_item.test.type }}
+              {% endif %}
+            </td>
             <td>
               <span id="test-progress-{{ test_item.test.id }}">{{ test_item.completed_count }} / {{ test_item.students_in_class }}</span>
               ({{ test_item.progress }}%)
             </td>
             <td class="action-buttons" style="text-align: center;">
               {% if is_teacher %}
-                  <a href="/test/{{ test_item.test.id }}" class="btn btn-primary btn-sm" style="padding: 6px 10px; font-size: 0.9rem;">
-                      <i class="fas fa-eye"></i> Детали
-                  </a>
-                  <button class="btn-icon" onclick="copyToClipboard('http://{{ request.host }}/take_test/{{ test_item.test.link }}')" title="Скопировать ссылку для ученика">
-                      <i class="fas fa-copy"></i>
-                  </button>
+                  {% if test_item.test.type == 'text_based' %}
+                      <a href="/test/{{ test_item.test.link }}" class="btn btn-primary btn-sm" style="padding: 6px 10px; font-size: 0.9rem;">
+                          <i class="fas fa-eye"></i> Детали
+                      </a>
+                      <button class="btn-icon" onclick="copyToClipboard('http://{{ request.host }}/take_test/{{ test_item.test.link }}')" title="Скопировать ссылку для ученика">
+                          <i class="fas fa-copy"></i>
+                      </button>
+                  {% else %}
+                      <a href="/test/{{ test_item.test.id }}" class="btn btn-primary btn-sm" style="padding: 6px 10px; font-size: 0.9rem;">
+                          <i class="fas fa-eye"></i> Детали
+                      </a>
+                      <button class="btn-icon" onclick="copyToClipboard('http://{{ request.host }}/take_test/{{ test_item.test.link }}')" title="Скопировать ссылку для ученика">
+                          <i class="fas fa-copy"></i>
+                      </button>
+                  {% endif %}
                   <!-- Progress Bar for Teachers -->
                   {% if test_item.students_in_class > 0 %}
                       <div class="progress-bar-container-table" style="margin-top: 5px; height: 10px; background-color: #e0e0e0; border-radius: 5px;">
@@ -355,9 +386,15 @@
                   {# Student's view of action buttons #}
                   {% if test_item.test.is_active %}
                       {% if test_item.student_completed_result_id %}
-                          <a href="/test_results/{{ test_item.test.id }}/{{ test_item.student_completed_result_id }}" class="btn btn-info btn-sm" style="padding: 6px 10px; font-size: 0.9rem; background-color: #17a2b8; border-color: #17a2b8;">
-                              <i class="fas fa-check-circle"></i> Пройден
-                          </a>
+                          {% if test_item.test.type == 'text_based' %}
+                              <a href="/view_text_test_result/{{ test_item.student_completed_result_id }}" class="btn btn-info btn-sm" style="padding: 6px 10px; font-size: 0.9rem; background-color: #17a2b8; border-color: #17a2b8;">
+                                  <i class="fas fa-check-circle"></i> Пройден
+                              </a>
+                          {% else %}
+                              <a href="/test_results/{{ test_item.test.id }}/{{ test_item.student_completed_result_id }}" class="btn btn-info btn-sm" style="padding: 6px 10px; font-size: 0.9rem; background-color: #17a2b8; border-color: #17a2b8;">
+                                  <i class="fas fa-check-circle"></i> Пройден
+                              </a>
+                          {% endif %}
                       {% else %}
                           <a href="/take_test/{{ test_item.test.link }}" class="btn btn-success btn-sm" style="padding: 6px 10px; font-size: 0.9rem; background-color: var(--success-color); border-color: var(--success-color);">
                               <i class="fas fa-play"></i> Начать/Продолжить
@@ -366,9 +403,15 @@
                   {% else %}
                       {# Test is Archived #}
                       {% if test_item.student_completed_result_id %}
-                          <a href="/test_results/{{ test_item.test.id }}/{{ test_item.student_completed_result_id }}" class="btn btn-info btn-sm" style="padding: 6px 10px; font-size: 0.9rem; background-color: #17a2b8; border-color: #17a2b8;">
-                              <i class="fas fa-poll"></i> Смотреть результаты
-                          </a>
+                          {% if test_item.test.type == 'text_based' %}
+                              <a href="/view_text_test_result/{{ test_item.student_completed_result_id }}" class="btn btn-info btn-sm" style="padding: 6px 10px; font-size: 0.9rem; background-color: #17a2b8; border-color: #17a2b8;">
+                                  <i class="fas fa-poll"></i> Смотреть результаты
+                              </a>
+                          {% else %}
+                              <a href="/test_results/{{ test_item.test.id }}/{{ test_item.student_completed_result_id }}" class="btn btn-info btn-sm" style="padding: 6px 10px; font-size: 0.9rem; background-color: #17a2b8; border-color: #17a2b8;">
+                                  <i class="fas fa-poll"></i> Смотреть результаты
+                              </a>
+                          {% endif %}
                       {% else %}
                           <span class="btn btn-secondary btn-sm disabled" style="padding: 6px 10px; font-size: 0.9rem; background-color: #6c757d; border-color: #6c757d; color: #fff; cursor: not-allowed;">
                               <i class="fas fa-archive"></i> Архив (не пройден)

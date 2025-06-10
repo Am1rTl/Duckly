@@ -181,8 +181,6 @@ def auto_clear_previous_test_results(teacher_user, class_number, new_test_id):
                 for result in results_to_delete:
                     # Удаляем связанные ответы
                     TestAnswer.query.filter_by(test_result_id=result.id).delete(synchronize_session=False)
-                    # Удаляем ответы для текстовых тестов
-                    TextTestAnswer.query.filter_by(test_result_id=result.id).delete(synchronize_session=False)
                     # Удаляем результат
                     db.session.delete(result)
                     results_cleared_count += 1
@@ -1273,27 +1271,25 @@ def test_id(id):
     # Получаем активный тест из сессии или cookie для студента
     test_result = None
     
-    # Для учителей в режиме предпросмотра test_result остается None
-    if not is_teacher_preview_mode:
-        # Сначала пробуем получить из сессии
-        if 'active_test_result_id' in session:
-            test_result_id = session['active_test_result_id']
+    # Сначала пробуем получить из сессии
+    if 'active_test_result_id' in session:
+        test_result_id = session['active_test_result_id']
+        test_result = db.session.get(TestResult, test_result_id)
+        print(f"DEBUG: Found test_result from session: {test_result}")
+    
+    # Если не нашли в сессии, пробуем из cookie
+    if not test_result and 'active_test_result_id' in request.cookies:
+        try:
+            test_result_id = int(request.cookies.get('active_test_result_id'))
             test_result = db.session.get(TestResult, test_result_id)
-            print(f"DEBUG: Found test_result from session: {test_result}")
-        
-        # Если не нашли в сессии, пробуем из cookie
-        if not test_result and 'active_test_result_id' in request.cookies:
-            try:
-                test_result_id = int(request.cookies.get('active_test_result_id'))
-                test_result = db.session.get(TestResult, test_result_id)
-                if test_result:
-                    # Если нашли в cookie, сохраняем в сессию для будущих запросов
-                    session['active_test_result_id'] = test_result_id
-                    session['test_link'] = id
-                    session.modified = True
-                    print(f"DEBUG: Found test_result from cookie and saved to session: {test_result}")
-            except (ValueError, TypeError):
-                print("DEBUG: Invalid test_result_id in cookie")
+            if test_result:
+                # Если нашли в cookie, сохраняем в сессию для будущих запросов
+                session['active_test_result_id'] = test_result_id
+                session['test_link'] = id
+                session.modified = True
+                print(f"DEBUG: Found test_result from cookie and saved to session: {test_result}")
+        except (ValueError, TypeError):
+            print("DEBUG: Invalid test_result_id in cookie")
     
     # Если пользователь не учитель и нет активного теста ни в сессии, ни в cookie,
     # пробуем найти незавершенный тест для этого пользователя и этого теста
@@ -2760,8 +2756,6 @@ def clear_test_results(test_id):
         for result in results_to_delete:
             # Explicitly delete TestAnswer objects associated with this result
             TestAnswer.query.filter_by(test_result_id=result.id).delete(synchronize_session=False)
-            # Also delete TextTestAnswer objects for text-based tests
-            TextTestAnswer.query.filter_by(test_result_id=result.id).delete(synchronize_session=False)
             # Now delete the TestResult object
             db.session.delete(result)
         
@@ -2942,10 +2936,7 @@ def take_test(test_link):
 
     if completed_result:
         flash("Вы уже завершили этот тест. Посмотрите свои результаты.", "info")
-        if test.type == 'text_based':
-            return redirect(url_for('view_text_test_result', test_result_id=completed_result.id))
-        else:
-            return redirect(url_for('test_results', test_id=test.id, result_id=completed_result.id))
+        return redirect(url_for('test_results', test_id=test.id, result_id=completed_result.id))
 
     # Otherwise, show the test start page (if it's a GET request and no active/completed test for this user)
     return render_template('test_start.html', test=test, user=current_user)
@@ -2979,10 +2970,7 @@ def submit_test(test_id):
         ).filter(TestResult.completed_at.isnot(None)).order_by(TestResult.completed_at.desc()).first()
         if completed_result:
             flash("Вы уже завершили этот тест.", "info")
-            if test.type == 'text_based':
-                return redirect(url_for('view_text_test_result', test_result_id=completed_result.id))
-            else:
-                return redirect(url_for('test_results', test_id=test.id, result_id=completed_result.id))
+            return redirect(url_for('test_results', test_id=test.id, result_id=completed_result.id))
         else:
             flash("Не найдено активного прохождения теста для отправки. Пожалуйста, начните тест.", "warning")
             return redirect(url_for('take_test', test_link=test.link)) # Or to tests list
