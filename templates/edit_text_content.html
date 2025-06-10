@@ -48,10 +48,10 @@
 </head>
 <body>
     <div class="top-nav">
-        <a href="{{ url_for('text_contents') }}" class="btn-back">
+        <a href="{{ url_for('tests_bp.text_contents') }}" class="btn-back">
             <i class="fas fa-arrow-left"></i> Назад к списку
         </a>
-        <a href="{{ url_for('edit_text_questions', content_id=content.id) }}" class="btn btn-success">
+        <a href="{{ url_for('tests_bp.edit_text_questions', content_id=content.id) }}" class="btn btn-success">
             <i class="fas fa-question-circle"></i> Управление вопросами
         </a>
     </div>
@@ -122,7 +122,7 @@
             </div>
 
             <div class="form-actions">
-                <a href="{{ url_for('text_contents') }}" class="btn btn-secondary">
+                <a href="{{ url_for('tests_bp.text_contents') }}" class="btn btn-secondary">
                     <i class="fas fa-times"></i> Отмена
                 </a>
                 <button type="submit" class="btn btn-primary">

@@ -81,7 +81,7 @@ def add_words():
     user = User.query.get(session['user_id'])
     if not user or user.teacher != 'yes':
         flash("Только учителя могут добавлять слова.", "warning")
-        return redirect(url_for('words.words'))
+        return redirect(url_for('.words'))
 
 
     if request.method == "POST":
@@ -142,7 +142,7 @@ def add_words():
         elif not any(w.strip() and p.strip() for w, p in zip(words_input, perevods_input)):
              flash("Не было введено слов для добавления.", "info")
 
-        return redirect(url_for('words.words')) # Adjusted for blueprint
+        return redirect(url_for('.words')) # Adjusted for blueprint
 
     # GET method: query existing classes for dropdown
     classes_query = db.session.query(Word.classs).distinct().order_by(Word.classs).all()
@@ -161,7 +161,7 @@ def edit_word(word_id):
     user = User.query.get(session['user_id'])
     if not user or user.teacher != 'yes':
         flash("Только учителя могут редактировать слова.", "warning")
-        return redirect(url_for('words.words'))
+        return redirect(url_for('.words'))
 
     word_obj = Word.query.get_or_404(word_id)
 
@@ -219,7 +219,7 @@ def edit_word(word_id):
         try:
             db.session.commit()
             flash("Слово успешно обновлено!", "success")
-            return redirect(url_for('words.words', _anchor=f"word-{word_obj.id}"))
+            return redirect(url_for('.words', _anchor=f"word-{word_obj.id}"))
         except Exception as e:
             db.session.rollback()
             flash(f"Ошибка при обновлении слова: {str(e)}", "error")

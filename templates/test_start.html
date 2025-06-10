@@ -235,11 +235,11 @@
         </div>
 
         <div class="buttons">
-            <a href="{{ "/tests" }}" class="btn btn-secondary">
+            <a href="{{ url_for('tests_bp.tests') }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i>
                 Назад к тестам
             </a>
-            <form method="POST" action="{{ url_for('take_test', test_link=test.link) }}" style="display: inline-block;">
+            <form method="POST" action="{{ url_for('tests_bp.take_test', test_link=test.link) }}" style="display: inline-block;">
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-play"></i>
                     Начать тест

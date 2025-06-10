@@ -54,7 +54,7 @@
 </head>
 <body>
     <div class="top-nav">
-        <a href="{{ "/tests" }}" class="btn-back">
+        <a href="{{ url_for('tests_bp.tests') }}" class="btn-back">
             <i class="fas fa-arrow-left"></i> Назад к тестам
         </a>
     </div>
@@ -64,7 +64,7 @@
         <h1>Добавить новый тест</h1>
         </div>
 
-        <form method="POST" action="{{ "/add_tests" }}">
+        <form method="POST" action="{{ url_for('tests_bp.add_tests') }}">
             <div class="accordion" id="addTestAccordion">
                 <!-- Accordion Item 1: Basic Information -->
                 <div class="accordion-item">
@@ -290,6 +290,131 @@
                                 </select>
                             </div>
                             <!-- Other test-type specific settings can be added here -->
+
+                            <div id="text_content_meta_form_container" style="display: none;">
+                                <h4 style="margin-top:20px; margin-bottom: 15px; color: var(--secondary); border-top: 1px solid var(--border); padding-top:20px;">Метаданные и текст для чтения</h4>
+                                <div class="form-group">
+                                    <label for="text_meta_title"><i class="fas fa-heading"></i> Название текста *</label>
+                                    <input type="text" id="text_meta_title" name="text_meta_title" class="form-control" placeholder="Введите название текста">
+                                    <div class="help-text" style="font-size: 0.85rem; color: #666; margin-top: 5px;">Краткое описательное название для текста (вспомогательное, не для студентов)</div>
+                                </div>
+
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="text_meta_class"><i class="fas fa-graduation-cap"></i> Класс (для текста)</label>
+                                        <select id="text_meta_class" name="text_meta_class" class="form-select">
+                                            <option value="">Выберите класс</option>
+                                            {% for i in range(1, 12) %}
+                                            <option value="{{ i }}">{{ i }} класс</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="text_meta_unit"><i class="fas fa-book"></i> Юнит (для текста)</label>
+                                        <input type="text" id="text_meta_unit" name="text_meta_unit" class="form-control" placeholder="Например: Unit 1">
+                                        <div class="help-text" style="font-size: 0.85rem; color: #666; margin-top: 5px;">Необязательно</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="text_meta_module"><i class="fas fa-bookmark"></i> Модуль (для текста)</label>
+                                        <input type="text" id="text_meta_module" name="text_meta_module" class="form-control" placeholder="Например: Reading Comprehension">
+                                        <div class="help-text" style="font-size: 0.85rem; color: #666; margin-top: 5px;">Необязательно</div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="text_meta_content_textarea"><i class="fas fa-file-text"></i> Текст для чтения *</label>
+                                    <textarea id="text_meta_content_textarea" name="text_meta_content" class="form-control" rows="8" placeholder="Вставьте или введите текст для чтения. Минимум 50 символов."></textarea>
+                                    <div class="char-counter" id="textMetaCharCounter" style="font-size: 0.85rem; color: #666; margin-top: 5px;">0 символов (минимум 50)</div>
+                                </div>
+                            </div>
+
+                            <div id="text_question_management_container" style="display: none; margin-top: 20px;">
+                                <h4 style="margin-top:20px; margin-bottom: 15px; color: var(--secondary); border-top: 1px solid var(--border); padding-top:20px;">Вопросы к тексту</h4>
+                                <!-- Placeholder for where JS will add questions. For now, it's managed by JS not a form submission -->
+                                <input type="hidden" name="text_questions_json" id="text_questions_json">
+
+                                <div class="add-question-form-in-test" style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom:20px;">
+                                    <h5 style="margin-bottom: 15px; color: var(--primary-dark);">Добавить новый вопрос к тексту</h5>
+                                    <div class="form-group">
+                                        <label for="text_q_type"><i class="fas fa-list-ul"></i> Тип вопроса</label>
+                                        <select id="text_q_type" name="text_q_type" class="form-select"> <!-- No onchange here, will be handled by JS later -->
+                                            <option value="">Выберите тип</option>
+                                            <option value="multiple_choice">Выбор ответа (один)</option>
+                                            <option value="multiple_select">Множественный выбор</option>
+                                            <option value="open_answer">Открытый вопрос</option>
+                                            <option value="true_false">Да/Нет</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="text_q_text"><i class="fas fa-question"></i> Текст вопроса</label>
+                                        <textarea id="text_q_text" name="text_q_text" class="form-control" placeholder="Введите текст вопроса" rows="2"></textarea>
+                                    </div>
+
+                                    <div class="options-container" id="text_q_optionsContainer" style="display:none;"> <!-- Initially hidden -->
+                                        <label><i class="fas fa-list"></i> Варианты ответов</label>
+                                        <div class="option-input" style="margin-bottom: 8px;">
+                                            <input type="text" id="text_q_option1" name="text_q_option1" class="form-control" placeholder="Вариант 1">
+                                        </div>
+                                        <div class="option-input" style="margin-bottom: 8px;">
+                                            <input type="text" id="text_q_option2" name="text_q_option2" class="form-control" placeholder="Вариант 2">
+                                        </div>
+                                        <div class="option-input" style="margin-bottom: 8px;">
+                                            <input type="text" id="text_q_option3" name="text_q_option3" class="form-control" placeholder="Вариант 3 (необязательно)">
+                                        </div>
+                                        <div class="option-input" style="margin-bottom: 8px;">
+                                            <input type="text" id="text_q_option4" name="text_q_option4" class="form-control" placeholder="Вариант 4 (необязательно)">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="text_q_correct_answer_preview_area"> <!-- Changed from correct_answer to avoid conflict, JS will handle this -->
+                                            <i class="fas fa-check"></i> Правильный ответ
+                                        </label>
+                                        <!-- Hidden input for actual correct answer value, to be populated by JS -->
+                                        <input type="hidden" id="text_q_correct_answer_hidden_input" name="text_q_correct_answer_hidden_input">
+
+                                        <div id="text_q_correctAnswerSelector" class="correct-answer-selector" style="display:none;">
+                                            <div class="answer-options-preview" id="text_q_answerOptionsPreview">
+                                                <p class="text-muted">Сначала выберите тип вопроса и заполните варианты ответов</p>
+                                            </div>
+                                        </div>
+                                        <div id="text_q_multipleCorrectAnswerSelector" class="multiple-correct-answer-selector" style="display: none;">
+                                            <div class="help-text mb-2"><i class="fas fa-info-circle"></i> Выберите все правильные варианты ответов</div>
+                                            <div class="multiple-answer-options-preview" id="text_q_multipleAnswerOptionsPreview">
+                                                <p class="text-muted">Заполните варианты</p>
+                                            </div>
+                                        </div>
+                                        <div id="text_q_trueFalseSelector" class="true-false-selector" style="display: none;">
+                                            <div class="tf-options">
+                                                <button type="button" class="tf-option-btn btn btn-outline-success" data-value="Да"><i class="fas fa-check"></i> Да</button>
+                                                <button type="button" class="tf-option-btn btn btn-outline-danger" data-value="Нет"><i class="fas fa-times"></i> Нет</button>
+                                                <button type="button" class="tf-option-btn btn btn-outline-warning" data-value="Не указано"><i class="fas fa-question"></i> Не указано</button>
+                                            </div>
+                                        </div>
+                                        <div id="text_q_openAnswerInput" class="open-answer-input" style="display: none;">
+                                            <input type="text" id="text_q_open_answer_text" class="form-control" placeholder="Введите правильный ответ">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="text_q_points"><i class="fas fa-star"></i> Баллы за вопрос</label>
+                                        <input type="number" id="text_q_points" name="text_q_points" class="form-control" value="1" min="1" max="10">
+                                    </div>
+
+                                    <button type="button" id="add_text_question_btn_in_test" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-plus"></i> Добавить этот вопрос
+                                    </button>
+                                </div>
+
+                                <div id="current_text_questions_list_container" style="margin-top: 20px;">
+                                     <h5 style="margin-bottom: 10px; color: var(--primary-dark);">Добавленные вопросы к тексту:</h5>
+                                     <div id="current_text_questions_list" class="module-list-container" style="min-height: 50px; background-color: #f9f9f9; padding:10px;">
+                                        <p><em>Вопросы, добавленные к этому тексту, появятся здесь.</em></p>
+                                     </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -304,5 +429,28 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/static/js/add_tests.js" defer></script>
+    <script>
+        // Счетчик символов для мета-текста
+        const textMetaContentTextarea = document.getElementById('text_meta_content_textarea');
+        const textMetaCharCounter = document.getElementById('textMetaCharCounter');
+
+        if (textMetaContentTextarea && textMetaCharCounter) {
+            function updateTextMetaCharCounter() {
+                const length = textMetaContentTextarea.value.length;
+                textMetaCharCounter.textContent = `${length} символов`;
+
+                if (length < 50) {
+                    textMetaCharCounter.textContent += ' (минимум 50)';
+                    textMetaCharCounter.className = 'char-counter warning'; // Assuming .warning class styles exist or will be added
+                } else {
+                    textMetaCharCounter.className = 'char-counter success'; // Assuming .success class styles exist or will be added
+                }
+            }
+
+            textMetaContentTextarea.addEventListener('input', updateTextMetaCharCounter);
+            // Initial call in case there's pre-filled content (though not expected for new add_tests)
+            // updateTextMetaCharCounter(); // Not strictly necessary on load for an empty field
+        }
+    </script>
 </body>
 </html>

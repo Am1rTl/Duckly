@@ -56,7 +56,7 @@ def login():
 def logout():
     session.pop('user_id', None)
     flash("Вы успешно вышли из системы.", "info")
-    return redirect(url_for('auth.login')) # Adjusted for blueprint
+    return redirect(url_for('.login')) # Adjusted for blueprint
 
 @auth_bp.route('/registration', methods=['POST', 'GET'])
 def registration():
@@ -110,26 +110,26 @@ def registration():
 @auth_bp.route("/profile")
 def profile():
     if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('.login'))
 
     user = User.query.get(session['user_id'])
     if not user:
         session.pop('user_id', None)
         flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('.login'))
 
     return render_template('profile.html', nick=user.nick, fio=user.fio)
 
 @auth_bp.route("/edit_profile")
 def edit_profile():
     if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('.login'))
 
     user = User.query.get(session['user_id'])
     if not user:
         session.pop('user_id', None)
         flash("Пользователь не найден, пожалуйста, войдите снова.", "error")
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('.login'))
 
     return render_template('edit_profile.html', nick=user.nick, fio=user.fio)
 
@@ -137,7 +137,7 @@ def edit_profile():
 def save_profile():
     if 'user_id' not in session: # Added protection
         flash("Сначала войдите в систему.", "warning")
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('.login'))
 
     fio = request.form.get("fio")
     nick = request.form.get("nick") # Assuming nick cannot be changed, or if it can, need to check for uniqueness if it's different from current user's nick
@@ -149,7 +149,7 @@ def save_profile():
             existing_user_with_new_nick = User.query.filter(User.nick == nick, User.id != user.id).first()
             if existing_user_with_new_nick:
                 flash("Этот никнейм уже занят другим пользователем.", "error")
-                return redirect(url_for('auth.edit_profile'))
+                return redirect(url_for('.edit_profile'))
             user.nick = nick
 
         user.fio = fio
@@ -157,6 +157,6 @@ def save_profile():
         flash("Профиль успешно обновлен.", "success")
     else:
         flash("Пользователь не найден.", "error")
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('.login'))
 
-    return redirect(url_for('auth.profile'))
+    return redirect(url_for('.profile'))

@@ -168,25 +168,40 @@
   <!-- JS скрипты -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-        document.getElementById('words').addEventListener('click', function() {
-            window.location.href = '/words';
-        });
+        const wordsBtn = document.getElementById('words');
+        if (wordsBtn) {
+            wordsBtn.addEventListener('click', function() {
+                window.location.href = "{{ url_for('words_bp.words') }}";
+            });
+        }
         
-        document.getElementById('tests').addEventListener('click', function() {
-            window.location.href = '/tests';
-        });
+        const testsBtn = document.getElementById('tests');
+        if (testsBtn) {
+            testsBtn.addEventListener('click', function() {
+                window.location.href = "{{ url_for('tests_bp.tests') }}";
+            });
+        }
         
-        document.getElementById('games').addEventListener('click', function() {
-            window.location.href = '/games';
-        });
+        const gamesBtn = document.getElementById('games');
+        if (gamesBtn) {
+            gamesBtn.addEventListener('click', function() {
+                window.location.href = "{{ url_for('games_bp.games_home') }}";
+            });
+        }
 
-        document.getElementById('profile').addEventListener('click', function() {
-            window.location.href = '/profile';
-        });
+        const profileBtn = document.getElementById('profile');
+        if (profileBtn) {
+            profileBtn.addEventListener('click', function() {
+                window.location.href = "{{ url_for('auth_bp.profile') }}";
+            });
+        }
 
-        document.getElementById('about').addEventListener('click', function() {
-            window.location.href = '/about';
-        });
+        const aboutBtn = document.getElementById('about');
+        if (aboutBtn) {
+            aboutBtn.addEventListener('click', function() {
+                window.location.href = "{{ url_for('about') }}"; // Assuming 'about' is a route in site_1.py
+            });
+        }
     });
   </script>
 

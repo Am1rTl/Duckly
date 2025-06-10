@@ -212,16 +212,16 @@
 
         <div class="top-nav">
             <div>
-                <a href="{{ url_for('text_contents') }}" class="btn btn-secondary">
+                <a href="{{ url_for('tests_bp.text_contents') }}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> К списку текстов
                 </a>
-                <a href="{{ url_for('edit_text_content', content_id=content.id) }}" class="btn btn-warning">
+                <a href="{{ url_for('tests_bp.edit_text_content', content_id=content.id) }}" class="btn btn-warning">
                     <i class="fas fa-edit"></i> Редактировать текст
                 </a>
             </div>
             <div>
                 {% if questions|length > 0 %}
-                <a href="{{ url_for('create_test_from_text', content_id=content.id) }}" class="btn btn-success">
+                <a href="{{ url_for('tests_bp.create_test_from_text', content_id=content.id) }}" class="btn btn-success">
                     <i class="fas fa-plus-circle"></i> Создать тест
                 </a>
                 {% endif %}
@@ -306,7 +306,7 @@
                         </div>
                         
                         <div class="question-actions">
-                            <form method="POST" action="{{ url_for('delete_text_question', question_id=question.id) }}" style="display: inline;" onsubmit="return confirm('Вы уверены, что хотите удалить этот вопрос?')">
+                            <form method="POST" action="{{ url_for('tests_bp.delete_text_question', question_id=question.id) }}" style="display: inline;" onsubmit="return confirm('Вы уверены, что хотите удалить этот вопрос?')">
                                 <button type="submit" class="btn btn-danger btn-sm">
                                     <i class="fas fa-trash"></i> Удалить
                                 </button>
@@ -328,7 +328,7 @@
                     <i class="fas fa-plus"></i> Добавить вопрос
                 </h3>
                 
-                <form method="POST" action="{{ url_for('add_text_question', content_id=content.id) }}">
+                <form method="POST" action="{{ url_for('tests_bp.add_text_question', content_id=content.id) }}">
                     <div class="form-group">
                         <label for="question_type">
                             <i class="fas fa-list-ul"></i> Тип вопроса
