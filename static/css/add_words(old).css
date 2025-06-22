@@ -1,0 +1,71 @@
+.back {
+  border-radius: 10%;
+  height: 100px;
+  width: 8%;
+  text-align: center;
+  font-size: 200%;
+}
+.top_menu {
+  height: 100px;
+  width: 30%;
+  font-size: 200%;
+  background-color: #CBCFEF;
+  position: absolute;
+}
+
+/* Added styles for elements that had inline styles */
+.top_menu_words { /* Corresponds to style="background-color: #7982DA; right: 61.5%;" */
+  background-color: #7982DA;
+  right: 61.5%;
+}
+.top_menu_tests { /* Corresponds to style="right: 31%;" */
+  right: 31%;
+}
+.top_menu_games { /* Corresponds to style="right: 0.5%;" */
+  right: 0.5%;
+}
+.back_button_style { /* Corresponds to style="right: 80%;" */
+  /* Assuming this was for the back button, adjust if it was for another element */
+  /* If it's the same as .back, this specific class might not be needed if .back is unique */
+  right: 80%;
+}
+
+.add_word_button_style { /* Corresponds to style="left: 20%; font-size: 140%; top: 60%; width: 10%; background-color: #8d96e4; border-radius: 10px;" */
+  left: 20%;
+  font-size: 140%;
+  top: 60%; /* Note: 'top' might need position:absolute/relative on parent */
+  width: 10%;
+  background-color: #8d96e4;
+  border-radius: 10px;
+}
+
+.submit_button_style { /* Corresponds to style="left: 20%; font-size: 140%; top: 66%; width: 10%; background-color: #8d96e4; border-radius: 10px;" */
+  left: 20%;
+  font-size: 140%;
+  top: 66%; /* Note: 'top' might need position:absolute/relative on parent */
+  width: 10%;
+  background-color: #8d96e4;
+  border-radius: 10px;
+}
+
+/* Styles for labels and inputs that had inline styles in addWordField JS */
+.slova_label_style { /* Corresponds to class="slova" */
+  /* Assuming .slova was a base, and inline styles modified it.
+     This will be a base style for .slova if it didn't exist.
+     If .slova existed, these might override or add to it. */
+  /* Example base style that might have been in .slova */
+  /* display: inline-block; */
+  /* margin-right: 5px; */
+}
+.slova_label_modified_style { /* Corresponds to style="left: 53%;" on a .slova label */
+  left: 53%; /* Note: 'left' might need position:absolute/relative on parent */
+}
+
+.field1_input_style { /* Corresponds to class="field1" */
+  /* Example base style for .field1 */
+  /* padding: 5px; */
+  /* border: 1px solid #ccc; */
+}
+.field1_input_modified_style { /* Corresponds to style="left: 63.5%;" on a .field1 input */
+  left: 63.5%; /* Note: 'left' might need position:absolute/relative on parent */
+}

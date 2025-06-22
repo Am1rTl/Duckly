@@ -3,41 +3,7 @@
 {% block title %}Настройка слов для теста: {{ test.title }}{% endblock %}
 
 {% block head_extra %}
-<style>
-    .word-config-item {
-        border: 1px solid #eee;
-        padding: 15px;
-        margin-bottom: 15px;
-        border-radius: 8px;
-        background-color: #f9f9f9;
-    }
-    .word-original {
-        font-size: 1.4em;
-        font-weight: bold;
-        color: #333;
-        margin-bottom: 5px;
-    }
-    .word-translation {
-        font-style: italic;
-        color: #555;
-        margin-bottom: 10px;
-    }
-    .letter-selector span {
-        display: inline-block;
-        padding: 5px 10px;
-        margin: 2px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        cursor: pointer;
-        background-color: #fff;
-        user-select: none;
-    }
-    .letter-selector span.selected {
-        background-color: #6c63ff;
-        color: white;
-        border-color: #6c63ff;
-    }
-</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/configure_test_words.css') }}">
 {% endblock %}
 
 {% block content %}

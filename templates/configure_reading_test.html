@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Настройка вопросов к тесту: {{ test.title }}{% endblock %}
 
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/configure_reading_test.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
     <h2>Настройка вопросов для теста: "{{ test.title }}"</h2>
@@ -9,7 +13,7 @@
     <div class="card bg-light mb-4">
         <div class="card-body">
             <h5 class="card-title"><i class="fas fa-book-open me-2"></i>Текст для анализа</h5>
-            <div class="reading-text" style="white-space: pre-wrap; max-height: 300px; overflow-y: auto;">{{ test.text_content }}</div>
+            <div class="reading-text">{{ test.text_content }}</div>
         </div>
     </div>
 

@@ -1,0 +1,54 @@
+/* Assuming :root variables and Bootstrap base styles are available */
+
+body {
+    font-family: 'Poppins', sans-serif; /* Ensure Poppins is applied if not inherited */
+    background-color: #f8f9fe; /* Light background, var(--background) if defined */
+}
+
+.option-btn { /* For the answer choice buttons */
+    transition: all 0.2s ease-in-out;
+}
+.option-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.option-btn.selected { /* Class added by JS when an option is selected */
+    background-color: var(--bs-primary, #0d6efd); /* Bootstrap primary or fallback */
+    color: white;
+    border-color: var(--bs-primary, #0d6efd);
+}
+
+.progress-bar-container { /* Container for the progress bar */
+    background-color: #e9ecef; /* Bootstrap light gray */
+    border-radius: .375rem; /* Bootstrap default border-radius */
+    overflow: hidden; /* To clip the inner progress bar */
+}
+/* #test-progress (the progress bar itself) is styled by Bootstrap's .progress-bar class */
+
+/* Styles for dynamically added elements by JS */
+#timer { /* Timer display, if any */
+    /* Example styles, adjust as needed if timer is part of this test type */
+    /* font-size: 1.2rem; */
+    /* font-weight: bold; */
+    /* color: var(--primary, #6c63ff); */
+    /* margin-bottom: 20px; */
+    /* text-align: center; */
+}
+#question-area .card { /* Assuming questions are rendered inside Bootstrap cards */
+    /* Add custom card styling if needed beyond Bootstrap defaults */
+}
+#question-area .card-title { /* For the question prompt */
+    /* Styles for the prompt text */
+}
+#question-area .card-text { /* For the word to be translated */
+    /* Styles for the main word/question */
+}
+
+/* Buttons */
+#prev-btn, #next-btn, #submit-btn {
+    /* Base button styles are likely from Bootstrap .btn */
+    /* Add any specific overrides or additional styles here if needed */
+}
+#submit-btn {
+    display: none; /* Default to hidden, JS will show */
+}

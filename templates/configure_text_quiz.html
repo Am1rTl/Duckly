@@ -2,110 +2,8 @@
 
 {% block title %}Создание вопросов по тексту{% endblock %}
 
-{% block styles %}
-<style>
-    body {
-        background-color: #f8f9fe;
-        font-family: 'Poppins', sans-serif;
-    }
-    .container-main {
-        max-width: 1000px;
-        margin: 20px auto;
-        padding: 25px;
-        background-color: #fff;
-        border-radius: 15px;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-    }
-    .uploaded-text-area {
-        background-color: #f9f9f9;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 30px;
-        max-height: 400px;
-        overflow-y: auto;
-    }
-    .uploaded-text-area h3 {
-        margin-top: 0;
-        color: #5a52e0;
-    }
-    .question-builder-area h2 {
-        color: #5a52e0;
-        border-bottom: 2px solid #a5a1ff;
-        padding-bottom: 10px;
-        margin-bottom: 20px;
-    }
-    .question-item {
-        background-color: #fdfdff;
-        border: 1px solid #e8e8f0;
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-    .question-item label {
-        font-weight: 500;
-        margin-bottom: 6px;
-        display: block;
-    }
-    .question-item input[type="text"],
-    .question-item textarea,
-    .question-item select {
-        width: 100%;
-        padding: 10px 12px;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        margin-bottom: 10px;
-        font-size: 0.95rem;
-    }
-    .question-item textarea {
-        min-height: 80px;
-        resize: vertical;
-    }
-    .options-container .option-entry {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 8px;
-    }
-    .options-container .option-entry input[type="text"] {
-        flex-grow: 1;
-        margin-bottom: 0;
-    }
-    .btn-add-option, .btn-remove-question, .btn-remove-option {
-        font-size: 0.85rem;
-        padding: 6px 10px;
-    }
-    .btn-primary-custom {
-        background-color: #6c63ff;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-        font-weight: 500;
-    }
-    .btn-primary-custom:hover {
-        background-color: #5a52e0;
-    }
-    .btn-secondary-custom {
-        background-color: #78799c;
-        color: white;
-    }
-     .btn-danger-custom {
-        background-color: #dc3545;
-        color: white;
-    }
-    .form-actions {
-        margin-top: 30px;
-        text-align: right;
-    }
-    .correct-answer-label {
-        margin-left: 5px;
-        font-size: 0.9em;
-    }
-</style>
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/configure_text_quiz.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -222,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <option value="short_answer" ${currentType === 'short_answer' ? 'selected' : ''}>Краткий текстовый ответ</option>
                 </select>
             </div>
-            <div class="options-section" style="display: ${currentType === 'mc_single' || currentType === 'mc_multiple' ? 'block' : 'none'};">
+            <div class="options-section">
                 <label>Варианты ответа:</label>
                 <div class="options-container">
                     <!-- Option entries will be added here -->
@@ -231,7 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <i class="fas fa-plus-circle"></i> Добавить вариант
                 </button>
             </div>
-            <div class="short-answer-section" style="display: ${currentType === 'short_answer' ? 'block' : 'none'};">
+            <div class="short-answer-section">
                  <label for="correct_text_answer_${questionId}">Правильный текстовый ответ:</label>
                  <input type="text" id="correct_text_answer_${questionId}" class="form-control correct-text-answer-input" placeholder="Введите точный правильный ответ" value="${currentShortAnswer}">
             </div>
@@ -239,7 +137,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <button type="button" class="btn btn-danger-custom btn-sm btn-remove-question float-end">
                 <i class="fas fa-trash"></i> Удалить этот вопрос
             </button>
-            <div style="clear:both;"></div>
+            <div class="float-end-clear"></div>
         `;
         questionsContainer.appendChild(questionDiv);
 
@@ -248,6 +146,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const shortAnswerSection = questionDiv.querySelector('.short-answer-section');
         const addOptionButton = questionDiv.querySelector('.btn-add-option');
         const optionsDiv = questionDiv.querySelector('.options-container');
+
+        // Initial visibility based on currentType
+        optionsSection.style.display = (currentType === 'mc_single' || currentType === 'mc_multiple') ? 'block' : 'none';
+        shortAnswerSection.style.display = currentType === 'short_answer' ? 'block' : 'none';
+
 
         // Populate options if it's an existing mc_single or mc_multiple question
         if (qData && (qData.type === 'mc_single' || qData.type === 'mc_multiple') && qData.options) {

@@ -1,0 +1,184 @@
+:root {
+  --primary: #6c63ff;
+  --primary-light: #a5a1ff;
+  --primary-dark: #5a52e0;
+  --secondary: #4a4a98;
+  --background: #f8f9fe;
+  --card-bg: #ffffff;
+  --text: #333333;
+  --border: #ddd;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --success: #28a745;
+  --warning: #ffc107;
+  --danger: #dc3545;
+  --info-rgb: 23, 162, 184; /* For alert-info */
+  --warning-rgb: 255, 193, 7; /* For alert-warning */
+  --danger-rgb: 220, 53, 69; /* For timer */
+  --primary-rgb: 108, 99, 255; /* For input focus */
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text);
+  padding: 20px;
+  line-height: 1.6;
+}
+
+.test-container {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 25px;
+  background: var(--card-bg);
+  border-radius: 15px;
+  box-shadow: var(--shadow);
+}
+
+.test-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+ .test-header h2 {
+    color: var(--secondary);
+    font-weight: 600;
+    margin-bottom: 15px;
+ }
+.test-header .alert {
+    margin-top: 15px;
+    padding: 12px 15px;
+    border-radius: 8px;
+    font-size: 0.95em;
+}
+.alert-info {
+    background-color: rgba(var(--info-rgb), 0.1);
+    color: var(--secondary);
+    border: 1px solid rgba(var(--info-rgb), 0.3);
+}
+ .alert-warning {
+    background-color: rgba(var(--warning-rgb), 0.1);
+    color: #856404;
+    border: 1px solid rgba(var(--warning-rgb), 0.3);
+}
+
+.timer {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: var(--danger);
+  text-align: center;
+  margin-bottom: 25px;
+  padding: 12px;
+  background-color: rgba(var(--danger-rgb), 0.05);
+  border: 1px solid rgba(var(--danger-rgb), 0.2);
+  border-radius: 8px;
+}
+.timer.almost-up {
+    color: #c9302c;
+    background-color: rgba(var(--danger-rgb), 0.1);
+    font-weight: bold;
+}
+
+.dictation-word-container.word-item { /* Assuming word-item is a class applied by JS */
+    margin-bottom: 30px;
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background-color: #fff;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.07);
+}
+
+.dictation-word-container p.lead {
+    font-size: 1.25em;
+    color: var(--secondary);
+    margin-bottom: 15px;
+    font-weight: 500;
+}
+
+.char-inputs-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start; /* Or center if preferred */
+    margin-top: 10px;
+}
+
+.dictation-char-input {
+    width: 42px;
+    height: 42px;
+    text-align: center;
+    font-size: 1.35em;
+    font-family: 'Courier New', Courier, monospace;
+    margin: 5px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    caret-color: var(--primary);
+}
+
+.dictation-char-input:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(var(--primary-rgb), 0.25);
+}
+
+.submit-btn-container {
+    text-align: center;
+    margin-top: 35px;
+    padding-top: 25px;
+    border-top: 1px solid var(--border);
+}
+
+.btn {
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+}
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+}
+.btn-lg {
+    padding: 15px 30px;
+    font-size: 1.15rem;
+}
+ .btn-secondary {
+    background-color: var(--background);
+    color: var(--text);
+    border: 2px solid var(--border);
+}
+.btn-secondary:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background-color: rgba(var(--primary-rgb), 0.05);
+}
+
+/* Styles for dynamically added elements by JS */
+#dictation-loading-message {
+    text-align:center;
+    padding: 20px;
+    font-size: 1.1em;
+}
+#submit-test-button, #back-to-tests-link {
+    display: none; /* Default to hidden, JS will show */
+}

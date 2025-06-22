@@ -307,7 +307,7 @@
           <th>Модуль</th>
           <th>Тип</th>
           <th>Прогресс</th>
-          <th style="text-align: center;">Действия</th>
+          <th class="text-center-style">Действия</th>
         </tr>
       </thead>
       <tbody>
@@ -346,17 +346,17 @@
               <span id="test-progress-{{ test_item.test.id }}">{{ test_item.completed_count }} / {{ test_item.students_in_class }}</span>
               ({{ test_item.progress }}%)
             </td>
-            <td class="action-buttons" style="text-align: center;">
+            <td class="action-buttons text-center-style">
               {% if is_teacher %}
                   {% if test_item.test.type == 'text_based' %}
-                      <a href="/test/{{ test_item.test.link }}" class="btn btn-primary btn-sm" style="padding: 6px 10px; font-size: 0.9rem;">
+                      <a href="/test/{{ test_item.test.link }}" class="btn btn-primary btn-sm teacher-details-btn-style">
                           <i class="fas fa-eye"></i> Детали
                       </a>
                       <button class="btn-icon" onclick="copyToClipboard('http://{{ request.host }}/take_test/{{ test_item.test.link }}')" title="Скопировать ссылку для ученика">
                           <i class="fas fa-copy"></i>
                       </button>
                   {% else %}
-                      <a href="/test/{{ test_item.test.id }}" class="btn btn-primary btn-sm" style="padding: 6px 10px; font-size: 0.9rem;">
+                      <a href="/test/{{ test_item.test.id }}" class="btn btn-primary btn-sm teacher-details-btn-style">
                           <i class="fas fa-eye"></i> Детали
                       </a>
                       <button class="btn-icon" onclick="copyToClipboard('http://{{ request.host }}/take_test/{{ test_item.test.link }}')" title="Скопировать ссылку для ученика">
@@ -365,21 +365,19 @@
                   {% endif %}
                   <!-- Progress Bar for Teachers -->
                   {% if test_item.students_in_class > 0 %}
-                      <div class="progress-bar-container-table" style="margin-top: 5px; height: 10px; background-color: #e0e0e0; border-radius: 5px;">
-                          <div class="progress-bar-table" 
-                               id="action-progressbar-fill-{{ test_item.test.id }}"
-                               style="width: {{ test_item.progress }}%; height: 100%; background-color: {% if test_item.progress == 100 %}#4CAF50{% elif test_item.progress > 0 %}#FFC107{% else %}#DC3545{% endif %}; border-radius: 5px; text-align: center; color: white; font-size: 0.7em; line-height: 10px;">
+                      <div class="progress-bar-container-table teacher-progress-bar-container-style">
+                          <div class="progress-bar-table teacher-progress-bar-fill-style-{{ test_item.progress_status }}"
+                               id="action-progressbar-fill-{{ test_item.test.id }}">
                                {{ test_item.progress }}%
                           </div>
                       </div>
                   {% else %}
-                       <div class="progress-bar-container-table" style="margin-top: 5px; height: 10px; background-color: #e0e0e0; border-radius: 5px;">
-                          <div class="progress-bar-table" 
-                               id="action-progressbar-fill-{{ test_item.test.id }}"
-                               style="width: 0%; height: 100%; background-color: #DC3545; border-radius: 5px; text-align: center; color: white; font-size: 0.7em; line-height: 10px;">0%</div>
+                       <div class="progress-bar-container-table teacher-progress-bar-container-style">
+                          <div class="progress-bar-table teacher-progress-bar-fill-style-nostudents"
+                               id="action-progressbar-fill-{{ test_item.test.id }}">0%</div>
                       </div>
                   {% endif %}
-                   <small style="font-size: 0.75em; color: #666;" id="action-progress-text-{{ test_item.test.id }}">
+                   <small class="action-progress-text-style" id="action-progress-text-{{ test_item.test.id }}">
                        {{ test_item.completed_count }}/{{ test_item.students_in_class }}
                    </small>
               {% else %}
@@ -387,16 +385,16 @@
                   {% if test_item.test.is_active %}
                       {% if test_item.student_completed_result_id %}
                           {% if test_item.test.type == 'text_based' %}
-                              <a href="/view_text_test_result/{{ test_item.student_completed_result_id }}" class="btn btn-info btn-sm" style="padding: 6px 10px; font-size: 0.9rem; background-color: #17a2b8; border-color: #17a2b8;">
+                              <a href="/view_text_test_result/{{ test_item.student_completed_result_id }}" class="btn btn-info btn-sm student-action-btn-completed-style">
                                   <i class="fas fa-check-circle"></i> Пройден
                               </a>
                           {% else %}
-                              <a href="/test_results/{{ test_item.test.id }}/{{ test_item.student_completed_result_id }}" class="btn btn-info btn-sm" style="padding: 6px 10px; font-size: 0.9rem; background-color: #17a2b8; border-color: #17a2b8;">
+                              <a href="/test_results/{{ test_item.test.id }}/{{ test_item.student_completed_result_id }}" class="btn btn-info btn-sm student-action-btn-completed-style">
                                   <i class="fas fa-check-circle"></i> Пройден
                               </a>
                           {% endif %}
                       {% else %}
-                          <a href="/take_test/{{ test_item.test.link }}" class="btn btn-success btn-sm" style="padding: 6px 10px; font-size: 0.9rem; background-color: var(--success-color); border-color: var(--success-color);">
+                          <a href="/take_test/{{ test_item.test.link }}" class="btn btn-success btn-sm student-action-btn-start-style">
                               <i class="fas fa-play"></i> Начать/Продолжить
                           </a>
                       {% endif %}
@@ -404,16 +402,16 @@
                       {# Test is Archived #}
                       {% if test_item.student_completed_result_id %}
                           {% if test_item.test.type == 'text_based' %}
-                              <a href="/view_text_test_result/{{ test_item.student_completed_result_id }}" class="btn btn-info btn-sm" style="padding: 6px 10px; font-size: 0.9rem; background-color: #17a2b8; border-color: #17a2b8;">
+                              <a href="/view_text_test_result/{{ test_item.student_completed_result_id }}" class="btn btn-info btn-sm student-action-btn-results-style">
                                   <i class="fas fa-poll"></i> Смотреть результаты
                               </a>
                           {% else %}
-                              <a href="/test_results/{{ test_item.test.id }}/{{ test_item.student_completed_result_id }}" class="btn btn-info btn-sm" style="padding: 6px 10px; font-size: 0.9rem; background-color: #17a2b8; border-color: #17a2b8;">
+                              <a href="/test_results/{{ test_item.test.id }}/{{ test_item.student_completed_result_id }}" class="btn btn-info btn-sm student-action-btn-results-style">
                                   <i class="fas fa-poll"></i> Смотреть результаты
                               </a>
                           {% endif %}
                       {% else %}
-                          <span class="btn btn-secondary btn-sm disabled" style="padding: 6px 10px; font-size: 0.9rem; background-color: #6c757d; border-color: #6c757d; color: #fff; cursor: not-allowed;">
+                          <span class="btn btn-secondary btn-sm disabled student-action-btn-archived-style">
                               <i class="fas fa-archive"></i> Архив (не пройден)
                           </span>
                       {% endif %}
@@ -427,7 +425,7 @@
   </div>
 
   {% if is_teacher %}
-  <div style="margin-bottom: 30px; display: flex; gap: 15px; flex-wrap: wrap;">
+  <div class="add-manage-buttons-container">
     <a href="{{ "/add_tests" }}" class="btn btn-primary" id="addTestBtn">
       <i class="fas fa-plus"></i> Добавить тест
     </a>

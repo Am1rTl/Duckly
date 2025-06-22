@@ -2,73 +2,19 @@
 <html>
   <head>
     <title>Add words</title>
-    <style type="text/css">
-      .back {
-        border-radius: 10%;
-        height: 100px;
-        width: 10%;
-        text-align: center;
-        font-size: 200%;
-        border-radius: 10px;
-      }
-      .top_menu {
-        height: 100px;
-        width: 28%;
-        font-size: 210%;
-        background-color: #CBCFEF;
-        position: absolute;
-        border-radius: 10px;
-      }
-      .beforeFields1 {
-/*        position:absolute;*/
-/*        top: 54%;*/
-        height: 36px;
-        width: 10%;
-        font-size: 180%;
-        left: 20%;
-        background-color: #CBCFEF;
-        border-radius: 10px;
-      }
-      .slova {
-/*        position:absolute;*/
-/*        top: 54%;*/
-        height: 36px;
-        width: 10%;
-        font-size: 180%;
-        left: 20%;
-        background-color: #CBCFEF;
-        border-radius: 10px;
-      }
-      .field1 {
-/*        top: 54%;*/
-/*        position:absolute;*/
-        left:30.5%; 
-        height: 32px;
-        width: 20%;
-      }
-      .unitstext {
-        font-size: 160%;
-/*        position:absolute;*/
-        left:30.5%; 
-/*        top:42%;*/
-        height: 36px; 
-        width: 8%;
-      }
-
-
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/add_words.html_old.css') }}">
   </head>
   <body>
-    <button id="back" class="back" style="right: 80%;">
+    <button id="back" class="back back_button_style"> <!-- style="right: 80%;" was here -->
       Back
     </button>
-    <button id="words" class="top_menu" style="background-color: #8d96e4; right: 60%;">
+    <button id="words" class="top_menu top_menu_words"> <!-- style="background-color: #8d96e4; right: 60%;" was here -->
       List of words
     </button>
-    <button id="tests" class="top_menu" style="right: 30.5%;">
+    <button id="tests" class="top_menu top_menu_tests"> <!-- style="right: 30.5%;" was here -->
       Tests
     </button>
-    <button id="games" class="top_menu" style="right: 1%;">
+    <button id="games" class="top_menu top_menu_games"> <!-- style="right: 1%;" was here -->
       Games
     </button>
     <h1></h1>
@@ -80,11 +26,11 @@
       <div id="wordFields">
         <label class="slova" for="word0">Слово:</label>
         <input class="field1" type="text" id="word0" name="word0"><br><br>
-        <label class="slova" style="left: 53%;" for="perevod0">Значение:</label>
-        <input class="field1" style="left: 63.5%;" type="text" id="perevod0" name="perevod'0'"><br><br>
+        <label class="slova slova_label_perevod_style" for="perevod0">Значение:</label> <!-- style="left: 53%;" was here -->
+        <input class="field1 field1_input_perevod_style" type="text" id="perevod0" name="perevod'0'"><br><br> <!-- style="left: 63.5%;" was here -->
       </div>
-      <button type="button" style="left: 20%; font-size: 140%; top: 60%; width: 10%; background-color: #8d96e4; border-radius: 10px;" onclick="addWordField()">Add Word</button><br><br>
-      <input type="submit"  style="left: 20%; font-size: 140%; top: 66%; width: 10%; background-color: #8d96e4; border-radius: 10px;" value="Submit">
+      <button type="button" class="add_word_button_style" onclick="addWordField()">Add Word</button><br><br> <!-- style="left: 20%; font-size: 140%; top: 60%; width: 10%; background-color: #8d96e4; border-radius: 10px;" was here -->
+      <input type="submit" class="submit_button_style" value="Submit"> <!-- style="left: 20%; font-size: 140%; top: 66%; width: 10%; background-color: #8d96e4; border-radius: 10px;" was here -->
     </form>
   </body>
   <script type="text/javascript">

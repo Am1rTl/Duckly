@@ -1,0 +1,70 @@
+/* Assuming :root variables are defined in a base CSS or not strictly needed */
+
+.question-item {
+    background-color: #f8f9fa; /* Light gray background */
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #e0e0e0; /* Light border */
+}
+.question-item p { /* For the statement/question text */
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+    color: #333; /* Darker text for readability */
+}
+.question-item small { /* For the prompt/hint */
+    color: #555; /* Medium gray for hint */
+    display: block;
+    margin-bottom: 10px;
+}
+
+.form-check-label { /* For labels of radio/checkbox if used by Bootstrap */
+    font-weight: normal; /* Ensure labels are not overly bold if not intended */
+}
+
+.option-btn { /* Custom class for the True/False/Not Stated buttons */
+    padding: 12px 20px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    text-align: center;
+    margin-bottom: 8px; /* Space between buttons if they wrap */
+    /* Assuming these buttons might use Bootstrap's btn and btn-outline-* classes for base styling */
+}
+.option-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.option-btn.active { /* Class added by JS when an option is selected */
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    font-weight: 600; /* Make selected option bolder */
+    /* Specific background/color for active state will be handled by Bootstrap's .active or JS if needed */
+}
+
+.btn-group-vertical { /* If options are stacked vertically */
+    max-width: 300px; /* Limit width of the button group */
+    margin: 0 auto; /* Center the button group */
+}
+
+#timer {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--primary, #6c63ff); /* Use primary color, fallback if var not defined */
+    margin-bottom: 20px;
+    text-align: center;
+    padding: 10px;
+    background-color: var(--primary-light, #a5a1ff40); /* Light primary with alpha */
+    border-radius: 8px;
+    color: white; /* Ensure text is visible on light primary bg */
+}
+
+/* Styles for dynamically added elements by JS */
+.loading-message {
+    text-align:center;
+    padding: 20px;
+}
+#submit-test-button {
+    display: none; /* Default to hidden, JS will show */
+}

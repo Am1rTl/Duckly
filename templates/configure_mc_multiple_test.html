@@ -2,93 +2,8 @@
 
 {% block title %}Настройка вопросов для: {{ test.title }}{% endblock %}
 
-{% block styles %}
-<style>
-    body {
-        background-color: #f8f9fe;
-        font-family: 'Poppins', sans-serif;
-    }
-    .container-main {
-        max-width: 1000px;
-        margin: 20px auto;
-        padding: 25px;
-        background-color: #fff;
-        border-radius: 15px;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-    }
-    .question-builder-area h2 {
-        color: #5a52e0;
-        border-bottom: 2px solid #a5a1ff;
-        padding-bottom: 10px;
-        margin-bottom: 20px;
-    }
-    .question-item {
-        background-color: #fdfdff;
-        border: 1px solid #e8e8f0;
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-    .question-item label {
-        font-weight: 500;
-        margin-bottom: 6px;
-        display: block;
-    }
-    .question-item input[type="text"],
-    .question-item textarea {
-        width: 100%;
-        padding: 10px 12px;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        margin-bottom: 10px;
-        font-size: 0.95rem;
-    }
-    .question-item textarea {
-        min-height: 80px;
-        resize: vertical;
-    }
-    .options-container .option-entry {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 8px;
-    }
-    .options-container .option-entry input[type="text"] {
-        flex-grow: 1;
-        margin-bottom: 0;
-    }
-    .btn-add-option, .btn-remove-question, .btn-remove-option {
-        font-size: 0.85rem;
-        padding: 6px 10px;
-    }
-    .btn-primary-custom {
-        background-color: #6c63ff;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-        font-weight: 500;
-    }
-    .btn-primary-custom:hover {
-        background-color: #5a52e0;
-    }
-    .btn-danger-custom {
-        background-color: #dc3545;
-        color: white;
-    }
-    .form-actions {
-        margin-top: 30px;
-        text-align: right;
-    }
-    .correct-answer-label { /* For checkbox */
-        margin-left: 5px;
-        font-size: 0.9em;
-        user-select: none; /* Prevent text selection on click */
-    }
-</style>
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/configure_mc_multiple_test.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -186,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <button type="button" class="btn btn-danger-custom btn-sm btn-remove-question float-end">
                 <i class="fas fa-trash"></i> Удалить этот вопрос
             </button>
-            <div style="clear:both;"></div>
+            <div class="float-end-clear"></div>
         `;
         questionsContainer.appendChild(questionDiv);
 
