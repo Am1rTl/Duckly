@@ -1,0 +1,267 @@
+:root {
+    --primary: #6c63ff;
+    --primary-light: #a5a1ff;
+    --primary-dark: #5a52e0;
+    --secondary: #4a4a98;
+    --background: #f8f9fe;
+    --card-bg: #ffffff;
+    --text: #333333;
+    --border: #ddd;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --input-focus-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background-color: var(--background);
+    color: var(--text);
+    padding: 20px;
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.top-nav {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.btn-back {
+    background-color: transparent;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-back:hover {
+    background-color: var(--primary);
+    color: white;
+}
+
+.form-container {
+    background-color: var(--card-bg);
+    padding: 30px 40px;
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+    width: 100%;
+    max-width: 900px;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.form-header h1 {
+    color: var(--secondary);
+    font-size: 2rem;
+    font-weight: 600;
+    position: relative;
+    display: inline-block;
+    padding-bottom: 10px;
+}
+.form-header h1::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 70px;
+    height: 4px;
+    background: var(--primary);
+    border-radius: 2px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+@media (min-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr 1fr; /* Two columns on larger screens */
+        gap: 25px;
+    }
+    .form-group.full-width {
+        grid-column: 1 / -1; /* Span across both columns */
+    }
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-weight: 500;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    color: var(--text);
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group select {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background-color: #fff;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="number"]:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: var(--input-focus-shadow);
+}
+
+.form-group input[type="number"]::-webkit-outer-spin-button,
+.form-group input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.form-group input[type="number"] {
+    -moz-appearance: textfield; /* Firefox */
+}
+
+.form-actions {
+    margin-top: 30px;
+    text-align: right; /* Align button to the right */
+}
+
+.btn-submit {
+    background-color: var(--primary);
+    color: white;
+    padding: 12px 30px;
+    font-size: 1rem;
+    font-weight: 500;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-submit:hover {
+    background-color: var(--primary-dark);
+}
+
+/* Styles for dynamically shown/hidden sections that were previously inline */
+#dictation_options_group {
+    display: none;
+    margin-top: 20px;
+    padding-top:20px;
+    border-top: 1px solid var(--border);
+}
+#dictation_options_group h3 {
+    margin-bottom: 15px;
+    color: var(--secondary);
+}
+#dictation_options_group .form-group label { /* For radio button labels */
+    font-weight: normal;
+    margin-right: 15px;
+}
+#dictation_random_word_count_group {
+    display: none;
+    margin-top: 10px;
+}
+#dictation_specific_words_group {
+    display: none;
+    margin-top: 10px;
+}
+#specific_words_checkbox_container {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    padding: 10px;
+    border-radius: 8px;
+}
+.form-step .step-title { /* For h2 inside .form-step */
+    margin-bottom:15px;
+}
+#moduleSelectionContainer { /* Default visibility based on original HTML */
+    display: block;
+}
+#customWordsContainer { /* Default visibility based on original HTML */
+    display: none;
+}
+#addLetterModeContainer { /* Default visibility based on original HTML */
+    display: none;
+}
+/* Styles for elements inside JS-created word pairs */
+.custom-word-pair {
+    display: flex; /* Assuming flex layout was intended for alignment */
+    gap: 10px; /* Space between word and translation inputs */
+    margin-bottom: 10px; /* Space between pairs */
+}
+.custom-word-pair input {
+    flex-grow: 1; /* Allow inputs to take available space */
+}
+.btn-remove-word { /* Style for the remove button in custom word pairs */
+    background-color: var(--danger, #dc3545); /* Fallback if --danger not defined */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+.btn-add-field { /* Style for "Добавить еще слово" button */
+    background-color: var(--success, #28a745); /* Fallback if --success not defined */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 15px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+.module-list-container { /* For #moduleList */
+    max-height: 200px; /* Example max height */
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 5px; /* Space above the list */
+}
+.module-item { /* For individual items in #moduleList */
+    margin-bottom: 5px;
+}
+.module-item label {
+    font-weight: normal;
+    font-size: 0.9rem;
+}
+
+/* Divider style */
+hr.divider-style {
+    margin-top: 30px;
+    margin-bottom: 20px;
+    border-color: var(--border);
+    opacity: 0.5;
+}

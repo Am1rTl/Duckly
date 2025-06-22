@@ -1,0 +1,133 @@
+:root {
+  --primary: #6c63ff;
+  --primary-light: #a5a1ff;
+  --background: #f4f6ff;
+  --card-bg: #ffffff;
+  --text-color: #333;
+  --border-color: #ddd;
+  --button-hover: #5a52e0;
+  --input-focus-shadow: rgba(108, 99, 255, 0.2);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  background-color: var(--background);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.form-container { /* Unified class name */
+  background-color: var(--card-bg);
+  padding: 30px 40px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 450px;
+}
+
+.form-container h2 {
+  text-align: center;
+  color: var(--primary);
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 25px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: var(--text-color);
+  display: block;
+}
+
+.form-control {
+  height: calc(1.5em + .75rem + 10px); /* Bootstrap's default height + padding */
+  padding: .375rem .75rem; /* Bootstrap's default padding */
+  font-size: 1rem; /* Bootstrap's default font-size */
+  border: 1px solid var(--border-color);
+  border-radius: 8px; /* Slightly more rounded than Bootstrap's default */
+  transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+}
+
+.form-control:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 0.25rem var(--input-focus-shadow); /* Bootstrap's focus shadow */
+}
+
+.password-wrapper {
+  position: relative;
+  display: flex; /* Use flex to align input and icon if icon is inside */
+  align-items: center; /* Vertically align items in the wrapper */
+}
+
+.password-wrapper input[type="password"],
+.password-wrapper input[type="text"] { /* Apply to text type too if toggled */
+  padding-right: 40px; /* Make space for the toggle icon */
+  width: 100%; /* Ensure input takes full width of its parent */
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #888; /* Neutral color for the icon */
+}
+.password-toggle:hover {
+    color: var(--primary); /* Highlight on hover */
+}
+
+.btn-primary { /* Style for Bootstrap's .btn-primary */
+  background-color: var(--primary);
+  border-color: var(--primary);
+  padding: 12px 20px; /* Custom padding */
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background-color .15s ease-in-out, transform .15s ease-in-out, box-shadow .15s ease-in-out;
+}
+
+.btn-primary:hover {
+  background-color: var(--button-hover);
+  border-color: var(--button-hover);
+  transform: translateY(-2px); /* Subtle lift effect */
+  box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3); /* Enhanced shadow on hover */
+}
+
+.error-message {
+  color: #dc3545; /* Bootstrap's danger color */
+  background-color: #f8d7da; /* Light red background for errors */
+  border: 1px solid #f5c2c7; /* Border for error message */
+  padding: 10px 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.text-center a { /* For "Нет аккаунта? Зарегистрироваться" link */
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+.text-center a:hover {
+    text-decoration: underline;
+    color: var(--button-hover);
+}
+
+/* Removing old form-switch specific styles if not used, or adapt if needed */
+.form-switch { /* This was in your original HTML but seemed unused/hidden */
+    display: none; /* Hidden as per your current structure - if needed can be restyled */
+}

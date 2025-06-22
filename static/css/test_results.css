@@ -1,0 +1,278 @@
+:root {
+    --primary: #6c63ff;
+    --primary-light: #a5a1ff;
+    --primary-dark: #5a52e0;
+    --secondary: #4a4a98;
+    --background: #f8f9fe;
+    --card-bg: #ffffff;
+    --text: #333333;
+    --border: #ddd;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --success: #28a745;
+    --warning: #ffc107;
+    --danger: #dc3545;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background-color: var(--background);
+    color: var(--text);
+    padding: 20px;
+    line-height: 1.6;
+}
+
+.container { /* Main container for the results page */
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background: var(--card-bg);
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+/* h1 and p inside .header will inherit body font or can be styled if needed */
+
+.score-container {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.score {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 10px;
+}
+
+.score-label {
+    font-size: 1.2rem;
+    color: var(--text);
+    opacity: 0.8;
+}
+
+.results-list {
+    margin-bottom: 30px;
+}
+
+.result-item {
+    padding: 15px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+}
+
+.result-item.correct {
+    border-color: var(--success);
+    background-color: rgba(40, 167, 69, 0.1);
+}
+
+.result-item.incorrect {
+    border-color: var(--danger);
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+.word-pair { /* Container for question and answer in some test types */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.word { /* The question or word presented */
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+.answer { /* General class for answer lines */
+    font-size: 1.1rem;
+    color: var(--text);
+    opacity: 0.8;
+}
+
+.user-answer { /* Specifically for user's incorrect answer */
+    font-size: 1.1rem;
+    color: var(--danger);
+}
+
+.correct-answer { /* For displaying the correct answer */
+    font-size: 1.1rem;
+    color: var(--success);
+}
+
+.buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.btn { /* General button styling */
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: 500;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    color: white;
+}
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+}
+
+.btn-secondary {
+    background-color: var(--background);
+    color: var(--text);
+    border: 2px solid var(--border);
+}
+.btn-secondary:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Responsive grid */
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 15px;
+    background: var(--background);
+    border-radius: 10px;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--text);
+    opacity: 0.8;
+}
+
+/* Styles for add_letter reconstructed words */
+.reconstructed-word {
+    letter-spacing: 0.5px;
+    font-family: monospace;
+}
+.student-input-char {
+    font-weight: bold;
+    border: 1px solid #999;
+    padding: 1px 3px;
+    border-radius: 3px;
+    margin: 0 1px;
+    display: inline-block;
+    line-height: 1;
+}
+.student-input-char.correct {
+    color: var(--success);
+    border-color: var(--success);
+    background-color: rgba(40, 167, 69, 0.1);
+}
+.student-input-char.incorrect {
+    color: var(--danger);
+    border-color: var(--danger);
+    background-color: rgba(220, 53, 69, 0.1);
+}
+.student-input-char.missing {
+    color: #777;
+    border-style: dashed;
+    border-color: #aaa;
+    background-color: #f0f0f0;
+}
+
+/* Styles for text_based test results */
+.question-info {
+    margin-bottom: 15px;
+}
+.question-number {
+    font-weight: 600;
+    color: var(--primary);
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+}
+.question-text {
+    font-size: 1rem;
+    color: var(--text);
+    line-height: 1.5;
+}
+.answer-section {
+    margin: 15px 0;
+}
+.user-answer-label,
+.correct-answer-label {
+    font-weight: 500;
+    margin-bottom: 5px;
+    display: block;
+}
+.user-answer-text {
+    background-color: #f8f9fa;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    border-left: 3px solid var(--primary);
+}
+.correct-answer-text {
+    background-color: rgba(40, 167, 69, 0.1);
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: var(--success);
+    border-left: 3px solid var(--success);
+}
+.result-status {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end; /* Aligns icon and text to the right */
+    margin-top: 10px;
+}
+.status-text {
+    margin-left: 8px;
+    font-weight: 500;
+}
+.status-text.correct { color: var(--success); }
+.status-text.incorrect { color: var(--danger); }
+.correct-icon { color: var(--success); font-size: 1.2rem; }
+.incorrect-icon { color: var(--danger); font-size: 1.2rem; }
+
+/* Fallback style for result items if specific content isn't matched */
+.result-item-fallback {
+    text-align: center;
+}
+
+/* Inline style for prompt/support text */
+.prompt-support-text {
+    font-size: 0.9em;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+/* Inline style for options display */
+.options-display-text {
+    margin-top: 5px;
+    font-size:0.9em;
+}

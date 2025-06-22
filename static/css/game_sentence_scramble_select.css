@@ -1,0 +1,27 @@
+.form-container {
+    max-width: 600px;
+    margin: 40px auto;
+    padding: 30px;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+.form-container h1 {
+    color: var(--secondary); /* Assuming --secondary is defined in a base CSS */
+    text-align: center;
+    margin-bottom: 25px;
+}
+.form-label {
+    font-weight: 500;
+    color: var(--text); /* Assuming --text is defined */
+}
+.form-select, .btn-primary { /* Assuming .btn-primary is styled globally or in base.css */
+    border-radius: 8px;
+}
+.btn-primary { /* Example style if not global */
+    padding: 10px 20px;
+    font-size: 1.05rem;
+    /* background-color: var(--primary); */ /* Assuming --primary is defined */
+    /* color: white; */
+    /* border: none; */
+}

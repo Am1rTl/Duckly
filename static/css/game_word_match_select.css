@@ -1,0 +1,232 @@
+:root {
+  --primary: #4A90E2;
+  --primary-dark: #357ABD;
+  --secondary: #2C3E50;
+  --text: #34495E;
+  --bg: #F5F7FA;
+  --white: #FFFFFF;
+  --radius: 12px;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+body {
+  background-color: var(--bg);
+  font-family: 'Inter', sans-serif;
+}
+
+.form-container {
+  max-width: 680px;
+  margin: 60px auto;
+  padding: 40px;
+  background-color: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  transition: all 0.3s ease;
+}
+
+.form-container:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+.form-container h1 {
+  color: var(--secondary);
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 1.8rem;
+}
+
+.form-label {
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 6px;
+  display: block;
+}
+
+.form-select, .btn-primary, .form-control {
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.form-select:focus, .form-control:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  border: none;
+  padding: 12px 24px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  width: 100%;
+  transition: background-color 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+}
+
+.game-options {
+  background-color: #F8F9FA;
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 25px;
+  border: 1px solid #E9ECEF;
+  display: none; /* Initially hidden */
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.game-options h3 {
+  color: var(--primary);
+  font-size: 1.25rem;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.range-container {
+  position: relative;
+  padding-bottom: 30px;
+}
+
+.range-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  font-size: 0.85rem;
+  color: #6C757D;
+}
+
+.form-range::-webkit-slider-thumb {
+  background: var(--primary);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.form-range::-moz-range-thumb {
+  background: var(--primary);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.value-display {
+  position: absolute;
+  bottom: -22px; /* Adjusted to be directly under the range-labels or range input */
+  left: 50%;
+  transform: translateX(-50%);
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 0.95rem;
+}
+
+.toggle-options {
+  cursor: pointer;
+  color: var(--primary);
+  text-decoration: underline;
+  display: inline-block;
+  margin-bottom: 10px;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.toggle-options:hover {
+  color: var(--primary-dark);
+}
+
+.options-icon {
+  margin-right: 5px;
+}
+
+.selection-mode {
+  background-color: #F8F9FA;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  border: 1px solid #E9ECEF;
+}
+
+.selection-mode h4 {
+  color: var(--primary);
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+.form-check {
+  margin-bottom: 10px;
+}
+
+.form-check-input:checked {
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+
+.card-count-input {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.card-count-input input[type="number"] {
+  width: 80px;
+  text-align: center;
+}
+
+.timer-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.timer-option {
+  padding: 8px 12px;
+  border: 2px solid #E9ECEF;
+  border-radius: 6px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.timer-option:hover {
+  border-color: var(--primary);
+  background-color: rgba(74, 144, 226, 0.1);
+}
+
+.timer-option.selected {
+  border-color: var(--primary);
+  background-color: var(--primary);
+  color: white;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 576px) {
+  .form-container {
+    margin: 30px 20px;
+    padding: 25px;
+  }
+}
+
+/* Styles for dynamically shown/hidden elements */
+#unitContainer, #moduleContainer {
+    /* Default visibility will be block unless mode changes things */
+}
+#multipleModulesContainer {
+    display: none; /* Default hidden */
+}
+#timerSettingsContainer {
+    display: none; /* Default hidden */
+}

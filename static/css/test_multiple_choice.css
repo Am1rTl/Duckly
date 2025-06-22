@@ -1,0 +1,201 @@
+:root {
+    --primary: #6c63ff;
+    --primary-light: #a5a1ff;
+    --primary-dark: #5a52e0;
+    --secondary: #4a4a98;
+    --background: #f8f9fe;
+    --card-bg: #ffffff;
+    --text: #333333;
+    --border: #ddd;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --success: #28a745;
+    --warning: #ffc107;
+    --danger: #dc3545;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background-color: var(--background);
+    color: var(--text);
+    padding: 20px;
+    line-height: 1.6;
+}
+
+.container { /* Main container for the test page */
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background: var(--card-bg);
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+/* h1 is styled by Bootstrap or base.css, so no specific h1 style here unless needed */
+
+.progress-bar { /* Container for progress items */
+    display: flex;
+    justify-content: space-between; /* Or space-around/center based on exact look */
+    margin-bottom: 30px;
+    padding: 10px;
+    background: var(--background); /* Light background for the bar itself */
+    border-radius: 10px;
+}
+
+.progress-item {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9em; /* Ensure numbers fit well */
+}
+
+.progress-item.completed {
+    background: var(--success);
+    color: white;
+}
+
+.progress-item.answered {
+    background: var(--primary-light);
+    color: white;
+}
+
+.progress-item.current {
+    border: 2px solid var(--primary);
+    /* background: white; /* Optionally change background for current */
+    color: var(--primary); /* Make number primary color */
+    font-weight: bold;
+}
+
+.timer {
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin-bottom: 20px;
+    color: var(--primary);
+}
+/* #time-left is a span inside .timer, will inherit color or can be styled if needed */
+
+#test-form { /* The form element itself */
+    /* No specific styles needed unless for layout inside container */
+}
+
+#test-questions-container { /* Container for individual questions */
+    /* Styles for this will be applied by .word-container below for each question */
+}
+.loading-message { /* Style for the loading message */
+    text-align:center;
+    padding: 20px;
+}
+
+.word-container { /* This will wrap each question's content */
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px; /* Add padding for better spacing inside */
+    background-color: var(--card-bg); /* Ensure it has a background if body is different */
+    border-radius: 10px; /* Rounded corners for question block */
+    border: 1px solid var(--border); /* Subtle border */
+}
+
+.question-text {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: var(--secondary); /* Use secondary color for question text */
+}
+
+.options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.option-btn {
+    background-color: var(--card-bg);
+    color: var(--text);
+    border: 2px solid var(--border);
+    padding: 15px;
+    font-size: 1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+}
+
+.option-btn:hover {
+    border-color: var(--primary);
+    background-color: var(--primary-light);
+    color: white;
+}
+
+.option-btn.selected {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary-dark);
+}
+
+.navigation {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.btn { /* General button styling, assuming Bootstrap .btn is used */
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: 500;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1; /* Make buttons take equal width in flex container */
+    justify-content: center; /* Center text/icon in button */
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    color: white;
+}
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+}
+
+.btn-secondary {
+    background-color: var(--background); /* Light background for secondary */
+    color: var(--text);
+    border: 2px solid var(--border);
+}
+.btn-secondary:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background-color: var(--primary-light); /* Optional: change bg on hover */
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Styles for elements shown/hidden by JS */
+#prev-btn, #next-btn, #submit-btn {
+    display: none; /* Default to hidden, JS will manage visibility */
+}

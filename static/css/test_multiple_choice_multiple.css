@@ -1,0 +1,58 @@
+/* Assuming :root variables are defined in a base CSS or globally */
+.question-item {
+    background-color: #f8f9fa; /* Light gray background for each question block */
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #e0e0e0; /* Light border */
+}
+.question-item p.prompt { /* The question text itself */
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin-bottom: 5px;
+    color: #333; /* Darker text for readability */
+}
+.question-item small.instruction { /* Instruction text like "Выберите все правильные варианты:" */
+    color: #555; /* Medium gray for instructions */
+    display: block;
+    margin-bottom: 10px;
+}
+.form-check { /* Styling for each checkbox container */
+    margin-bottom: 0.5rem;
+    background-color: #fff; /* White background for options */
+    padding: 10px 15px; /* Padding around checkbox and label */
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.form-check:hover {
+    border-color: var(--primary, #6c63ff); /* Use primary color on hover */
+}
+.form-check-input:checked + .form-check-label {
+    color: var(--primary, #6c63ff); /* Highlight label of checked option */
+    font-weight: 500;
+}
+.form-check-label {
+    font-weight: normal; /* Default weight for labels */
+    cursor: pointer; /* Indicate clickable labels */
+}
+#timer {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--primary, #6c63ff); /* Primary color for timer text */
+    margin-bottom: 20px;
+    text-align: center;
+    padding: 10px;
+    background-color: var(--primary-light, #a5a1ff40); /* Light primary background with alpha */
+    border-radius: 8px;
+    color: white; /* Ensure text is visible on light primary bg */
+}
+
+/* Styles for dynamically added elements by JS */
+.loading-message {
+    text-align:center;
+    padding: 20px;
+}
+#submit-test-button {
+    display: none; /* Default to hidden, JS will show */
+}

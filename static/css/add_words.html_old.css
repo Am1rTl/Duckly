@@ -1,0 +1,88 @@
+.back {
+  border-radius: 10%;
+  height: 100px;
+  width: 10%;
+  text-align: center;
+  font-size: 200%;
+  border-radius: 10px; /* This was duplicated, kept one */
+}
+.top_menu {
+  height: 100px;
+  width: 28%;
+  font-size: 210%;
+  background-color: #CBCFEF;
+  position: absolute;
+  border-radius: 10px;
+}
+.beforeFields1 {
+/* position:absolute; */ /* Commented out as in original */
+/* top: 54%; */ /* Commented out as in original */
+  height: 36px;
+  width: 10%;
+  font-size: 180%;
+  left: 20%;
+  background-color: #CBCFEF;
+  border-radius: 10px;
+}
+.slova {
+/* position:absolute; */ /* Commented out as in original */
+/* top: 54%; */ /* Commented out as in original */
+  height: 36px;
+  width: 10%;
+  font-size: 180%;
+  left: 20%;
+  background-color: #CBCFEF;
+  border-radius: 10px;
+}
+.field1 {
+/* top: 54%; */ /* Commented out as in original */
+/* position:absolute; */ /* Commented out as in original */
+  left:30.5%;
+  height: 32px;
+  width: 20%;
+}
+.unitstext {
+  font-size: 160%;
+/* position:absolute; */ /* Commented out as in original */
+  left:30.5%;
+/* top:42%; */ /* Commented out as in original */
+  height: 36px;
+  width: 8%;
+}
+
+/* Styles for elements that had inline styles */
+.back_button_style { /* For: style="right: 80%;" */
+  right: 80%;
+}
+.top_menu_words { /* For: style="background-color: #8d96e4; right: 60%;" */
+  background-color: #8d96e4;
+  right: 60%;
+}
+.top_menu_tests { /* For: style="right: 30.5%;" */
+  right: 30.5%;
+}
+.top_menu_games { /* For: style="right: 1%;" */
+  right: 1%;
+}
+.slova_label_perevod_style { /* For: style="left: 53%;" on a .slova label */
+  left: 53%;
+}
+.field1_input_perevod_style { /* For: style="left: 63.5%;" on a .field1 input */
+  left: 63.5%;
+}
+.add_word_button_style { /* For: style="left: 20%; font-size: 140%; top: 60%; width: 10%; background-color: #8d96e4; border-radius: 10px;" */
+  left: 20%;
+  font-size: 140%;
+  top: 60%;
+  width: 10%;
+  background-color: #8d96e4;
+  border-radius: 10px;
+}
+.submit_button_style { /* For: style="left: 20%; font-size: 140%; top: 66%; width: 10%; background-color: #8d96e4; border-radius: 10px;" */
+  left: 20%;
+  font-size: 140%;
+  top: 66%;
+  width: 10%;
+  background-color: #8d96e4;
+  border-radius: 10px;
+}

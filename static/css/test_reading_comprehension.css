@@ -1,0 +1,37 @@
+/* Assuming Bootstrap is loaded, so some base styles like .card, .btn are present */
+/* These styles will complement or override Bootstrap where needed */
+
+/* Styles for elements that had inline styles */
+.sticky-top-custom { /* For the text column: style="top: 20px;" */
+    top: 20px;
+    /* Note: 'sticky-top' is a Bootstrap class. This class can be used if
+       additional sticky behavior or offsets are needed beyond Bootstrap's default.
+       If only 'top: 20px' is needed, it can be applied directly to an element
+       that also has 'sticky-top'. */
+}
+
+.text-content-scrollable { /* For the text content div: style="max-height: 80vh; overflow-y: auto;" */
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.text-content-formatted { /* For the text itself: style="white-space: pre-wrap;" */
+    white-space: pre-wrap;
+}
+
+.timer-inline-style { /* For #timer: style="font-size: 1.1rem; padding: 0.5rem 1rem; background-color: #e9ecef; border-radius: 0.375rem;" */
+    font-size: 1.1rem;
+    padding: 0.5rem 1rem;
+    background-color: #e9ecef; /* Bootstrap's light gray */
+    border-radius: 0.375rem; /* Bootstrap's default border-radius */
+}
+/* If #timer also had Bootstrap classes like 'bg-danger text-white', those would take precedence or combine. */
+/* This CSS class handles the specific inline styles. */
+
+.timer-preview-style { /* For the preview timer: style="font-size: 1rem; padding: 0.5rem 1rem; background-color: #cfe2ff; color: #084298; border-radius: 0.375rem;" */
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    background-color: #cfe2ff; /* Bootstrap's info alert background */
+    color: #084298; /* Bootstrap's info alert text color */
+    border-radius: 0.375rem;
+}

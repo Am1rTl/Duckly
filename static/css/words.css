@@ -1,0 +1,313 @@
+:root {
+  --primary: #6c63ff;
+  --primary-light: #a5a1ff;
+  --primary-dark: #5a52e0;
+  --secondary: #4a4a98;
+  --background: #f8f9fe;
+  --card-bg: #ffffff; /* Not directly used here but good for consistency */
+  --text: #333333;
+  --border: #ddd;
+  --danger-color: #ff4757;
+  --success-color: #2ed573; /* Added for consistency, though not used in original inline */
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text);
+  padding: 20px;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap; /* Allow wrapping on small screens */
+  gap: 20px; /* Gap between items if they wrap */
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow);
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+}
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  gap: 5px;
+  transition: all 0.2s ease;
+}
+.action-btn i {
+  font-size: 0.8rem;
+}
+.action-btn.btn-primary {
+    background-color: var(--primary);
+    color: white;
+}
+.action-btn.btn-primary:hover {
+    background-color: var(--primary-dark);
+}
+.action-btn.btn-danger {
+    background-color: var(--danger-color);
+    color: white;
+}
+.action-btn.btn-danger:hover {
+    background-color: #d63031;
+}
+
+.nav-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.nav-tab {
+  flex: 1;
+  min-width: 120px;
+  padding: 14px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: center;
+  color: var(--text);
+  background: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none; /* For <a> tags styled as buttons */
+}
+.nav-tab.active {
+  background: var(--primary);
+  color: white;
+}
+.nav-tab:hover:not(.active) {
+  background: var(--primary-light);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.page-title {
+  text-align: center;
+  font-size: 2.2rem;
+  color: var(--secondary);
+  margin-bottom: 30px;
+  font-weight: 600;
+  position: relative;
+}
+.page-title::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 4px;
+  background: var(--primary);
+  border-radius: 2px;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+.filters select, .filters input[type="text"] { /* Combined for similar styling */
+  padding: 10px 15px;
+  font-size: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  flex-grow: 1;
+  min-width: 180px;
+}
+
+.view-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+.view-toggle button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  background-color: white;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow); /* Added shadow */
+}
+.view-toggle button.active {
+  background-color: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+.view-toggle button:hover:not(.active) {
+  background-color: var(--primary-light);
+  color: white;
+  border-color: var(--primary-light); /* Match border to hover background */
+}
+
+
+.cards-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+.word-card {
+  background: white;
+  padding: 15px 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.word-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+.word-text {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: var(--primary);
+}
+.translation {
+  font-size: 1rem;
+  color: var(--text);
+  margin-bottom: 15px;
+  flex-grow: 1;
+}
+.card-actions { /* Container for buttons in card view */
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+
+table#tableView { /* More specific selector for the table */
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 30px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: none; /* Default to hidden, JS will show */
+}
+table#tableView th, table#tableView td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+table#tableView th {
+  background-color: var(--primary-light); /* Consistent with other headers */
+  color: white;
+  font-weight: 500;
+}
+table#tableView tr:last-child td {
+  border-bottom: none;
+}
+table#tableView tr:hover {
+  background-color: rgba(108, 99, 255, 0.05);
+}
+table#tableView td a.module-link {
+  text-decoration: none;
+  font-weight: 600;
+  color: var(--primary);
+}
+table#tableView td a.module-link:hover {
+  text-decoration: underline;
+}
+.word-actions { /* Container for action buttons in table view */
+  display: flex;
+  gap: 8px;
+}
+
+
+.add-btn-container {
+  text-align: center;
+  margin-top: 30px;
+}
+
+@media (max-width: 768px) {
+  .nav-tabs {
+    flex-direction: column;
+    align-items: stretch; /* Make tabs full width */
+  }
+  .filters {
+      flex-direction: column;
+  }
+  .filters select,
+  .filters input[type="text"] {
+    width: 100%;
+  }
+  .cards-view {
+    grid-template-columns: 1fr;
+  }
+  .header {
+      flex-direction: column;
+      align-items: stretch;
+  }
+  .page-title {
+      margin-bottom: 20px;
+  }
+  .header .btn {
+    width: auto;
+    align-self: flex-start;
+    margin-bottom: 10px; /* Added margin for spacing */
+  }
+}

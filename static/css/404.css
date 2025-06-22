@@ -1,0 +1,46 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background: linear-gradient(135deg, #fff0f5 0%, #ffffff 70%, #ffe4e1 100%); /* Светло-розовый и белый фон */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: 'Arial', sans-serif;
+    color: #555;
+    text-align: center;
+}
+#animationCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0; /* Холст под контентом */
+}
+.content {
+    position: relative; /* Чтобы был над холстом */
+    z-index: 1;
+    padding: 20px;
+    /* ИЗМЕНЕНИЕ: Убран задний фон и тень */
+    /* background-color: rgba(255, 255, 255, 0.75); */
+    /* box-shadow: 0 0 15px rgba(0,0,0,0.1); */
+    border-radius: 10px; /* Оставим, если пригодится для других элементов в будущем */
+}
+h1 {
+    font-size: 3em; /* Увеличил для заметности */
+    color: #ff69b4; /* Розовый акцент */
+    /* ИЗМЕНЕНИЕ: Убран нижний отступ */
+    margin-bottom: 0;
+}
+/* Параграфы были удалены из HTML, так что этот стиль больше не нужен, но оставлю его закомментированным, чтобы показать, что он относился к параграфам */
+/*
+p {
+    font-size: 1.2em;
+    line-height: 1.5;
+    margin: 0;
+    margin-bottom: 0.5em;
+}
+p:last-child {
+    margin-bottom: 0;
+}
+*/

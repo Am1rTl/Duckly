@@ -2,34 +2,19 @@
 <html>
   <head>
     <title>Add words</title>
-    <style type="text/css">
-      .back {
-        border-radius: 10%;
-        height: 100px;
-        width: 8%;
-        text-align: center;
-        font-size: 200%;
-      }
-      .top_menu {
-        height: 100px;
-        width: 30%;
-        font-size: 200%;
-        background-color: #CBCFEF;
-        position: absolute;
-      }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/add_words(old).css') }}">
   </head>
   <body>
-    <button id="back" class="back">
+    <button id="back" class="back back_button_style">
       Back
     </button>
-    <button id="words" class="top_menu" style="background-color: #7982DA; right: 61.5%;">
+    <button id="words" class="top_menu top_menu_words">
       Слова
     </button>
-    <button id="tests" class="top_menu" style="right: 31%;">
+    <button id="tests" class="top_menu top_menu_tests">
       Тесты
     </button>
-    <button id="games" class="top_menu" style="right: 0.5%;">
+    <button id="games" class="top_menu top_menu_games">
       Игры
     </button>
     <h1></h1>
