@@ -3,102 +3,7 @@
 {% block title %}Игра: Собери Предложение - {{ module_name }}{% endblock %}
 
 {% block head_extra %}
-<style>
-    .game-scramble-container {
-        max-width: 750px;
-        margin: 30px auto;
-        padding: 25px;
-        background-color: #fff;
-        border-radius: 12px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-    .module-info-scramble h1 {
-        color: var(--secondary);
-        text-align: center;
-        margin-bottom: 10px;
-        font-size: 1.8rem;
-    }
-    .module-info-scramble p {
-        text-align: center;
-        color: var(--text-muted, #6c757d);
-        margin-bottom: 20px;
-    }
-    #translation-hint-area {
-        text-align: center;
-        margin-bottom: 20px;
-        padding: 10px;
-        background-color: #f8f9fa;
-        border-radius: 6px;
-        min-height: 40px; /* Ensure space even if empty */
-        font-style: italic;
-        color: #555;
-    }
-    #user-sentence-area {
-        min-height: 60px;
-        padding: 15px;
-        border: 2px dashed var(--primary-light);
-        border-radius: 8px;
-        margin-bottom: 20px;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        align-items: center;
-        background-color: #fdfdff;
-    }
-    #scrambled-words-pool {
-        min-height: 60px;
-        padding: 15px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        margin-bottom: 25px;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        align-items: center;
-        justify-content: center; /* Center the words in the pool */
-        background-color: #f0f2f5;
-    }
-    .word-token {
-        padding: 8px 12px;
-        background-color: var(--primary);
-        color: white;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: background-color 0.2s ease, transform 0.2s ease;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .word-token:hover {
-        background-color: var(--primary-dark);
-        transform: translateY(-2px);
-    }
-    #user-sentence-area .word-token { /* Slightly different style for words in user area */
-        background-color: var(--success);
-    }
-    #user-sentence-area .word-token:hover {
-        background-color: #1e7e34; /* Darker green */
-    }
-    .game-controls-scramble {
-        text-align: center;
-        margin-bottom: 20px;
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-    #game-feedback-scramble {
-        text-align: center;
-        margin-top: 15px;
-        font-size: 1.1rem;
-        font-weight: 500;
-        min-height: 25px; /* Ensure space for feedback */
-    }
-    #sentence-counter {
-        text-align: center;
-        font-size: 0.9rem;
-        color: var(--text-muted, #6c757d);
-        margin-bottom: 15px;
-    }
-</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/game_sentence_scramble.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -124,7 +29,7 @@
     <div class="game-controls-scramble">
         <button id="checkAnswerBtnScramble" class="btn btn-primary">Проверить</button>
         <button id="resetCurrentBtnScramble" class="btn btn-warning">Сбросить</button>
-        <button id="nextSentenceBtnScramble" class="btn btn-info" style="display: none;">Следующее</button>
+        <button id="nextSentenceBtnScramble" class="btn btn-info">Следующее</button>
     </div>
 
     <div class="mt-3 text-center">
