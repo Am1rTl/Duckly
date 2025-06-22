@@ -344,7 +344,7 @@
       
       // If all parameters exist, go back to the module page
       if (classParam && unitParam && moduleParam) {
-        location.href = window.location.origin + `/class/${encodeURIComponent(classParam)}/${encodeURIComponent(unitParam)}/${encodeURIComponent(moduleParam)}`;
+        location.href = window.location.origin + `/words/class/${encodeURIComponent(classParam)}/${encodeURIComponent(unitParam)}/${encodeURIComponent(moduleParam)}`;
       } else {
         // Otherwise go to the words page
         location.href = window.location.origin + "/words";

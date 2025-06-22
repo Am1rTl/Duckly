@@ -1,0 +1,78 @@
+/* Utility CSS Classes for Common Inline Styles */
+
+/* Display utilities */
+.d-none { display: none !important; }
+.d-block { display: block !important; }
+.d-inline { display: inline !important; }
+.d-inline-block { display: inline-block !important; }
+.d-flex { display: flex !important; }
+
+/* Flex utilities */
+.flex-grow-1 { flex-grow: 1 !important; }
+.align-items-center { align-items: center !important; }
+.justify-content-center { justify-content: center !important; }
+.gap-5 { gap: 5px !important; }
+.gap-10 { gap: 10px !important; }
+.gap-15 { gap: 15px !important; }
+
+/* Margin utilities */
+.mt-5 { margin-top: 5px !important; }
+.mt-10 { margin-top: 10px !important; }
+.mt-15 { margin-top: 15px !important; }
+.mt-20 { margin-top: 20px !important; }
+.mb-5 { margin-bottom: 5px !important; }
+.mb-15 { margin-bottom: 15px !important; }
+.mb-20 { margin-bottom: 20px !important; }
+.ml-10 { margin-left: 10px !important; }
+.mr-15 { margin-right: 15px !important; }
+
+/* Padding utilities */
+.p-20 { padding: 20px !important; }
+.pt-20 { padding-top: 20px !important; }
+.pb-20 { padding-bottom: 20px !important; }
+
+/* Text alignment */
+.text-center { text-align: center !important; }
+.text-left { text-align: left !important; }
+.text-right { text-align: right !important; }
+
+/* Font utilities */
+.font-weight-normal { font-weight: normal !important; }
+.font-weight-bold { font-weight: bold !important; }
+.font-size-sm { font-size: 0.8rem !important; }
+.font-size-md { font-size: 0.9rem !important; }
+.font-size-lg { font-size: 1.1rem !important; }
+
+/* Color utilities */
+.text-success { color: #38a169 !important; }
+.text-danger { color: #e53e3e !important; }
+.text-muted { color: #666 !important; }
+.text-light { color: #999 !important; }
+
+/* Background utilities */
+.bg-primary { background-color: var(--primary, #6c63ff) !important; }
+.bg-success { background-color: #17a2b8 !important; }
+.text-white { color: white !important; }
+
+/* Border utilities */
+.border-top { border-top: 1px solid var(--border, #ddd) !important; }
+.clear-both { clear: both !important; }
+
+/* Specific positioning */
+.position-relative { position: relative !important; }
+.position-absolute { position: absolute !important; }
+.top-20 { top: 20px !important; }
+
+/* Overflow utilities */
+.overflow-auto { overflow: auto !important; }
+.overflow-y-auto { overflow-y: auto !important; }
+.max-height-80vh { max-height: 80vh !important; }
+.max-height-300 { max-height: 300px !important; }
+
+/* White space */
+.white-space-pre-wrap { white-space: pre-wrap !important; }
+.text-decoration-none { text-decoration: none !important; }
+
+/* Progress bar utilities */
+.progress-bar-0 { width: 0% !important; }
+.progress-bar-full { width: 100% !important; }

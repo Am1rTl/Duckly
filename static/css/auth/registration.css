@@ -1,0 +1,121 @@
+/* Styles extracted from registration */
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background-color: var(--background); /* Light purple-ish background */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .form-container {
+      background-color: var(--card-bg);
+      padding: 30px 40px; /* Adjusted padding */
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); /* Softer shadow */
+      width: 100%;
+      max-width: 480px; /* Slightly adjusted max-width */
+    }
+
+    .form-container h2 {
+      text-align: center;
+      color: var(--primary);
+      font-size: 2rem; /* 32px */
+      font-weight: 600;
+      margin-bottom: 25px; /* Increased bottom margin */
+    }
+
+    .form-group {
+      margin-bottom: 20px; /* Consistent margin for form groups */
+    }
+    
+    .form-group label {
+      font-weight: 500;
+      margin-bottom: 8px; /* Increased space below label */
+      color: var(--text-color);
+      display: block; /* Ensure label takes full width */
+    }
+
+    .form-control { /* General styling for bootstrap form controls */
+      height: calc(1.5em + .75rem + 10px); /* Increased height */
+      padding: .375rem .75rem;
+      font-size: 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+    }
+    
+    .form-control:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 0.25rem var(--input-focus-shadow);
+    }
+
+    .password-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .password-wrapper input[type="password"],
+    .password-wrapper input[type="text"] { /* Ensure text type also gets full width */
+      padding-right: 40px; /* Space for the icon */
+      width: 100%; /* Ensure input takes full width inside wrapper */
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: #888;
+    }
+    .password-toggle:hover {
+        color: var(--primary);
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      border-color: var(--primary);
+      padding: 12px 20px; /* Adjusted padding */
+      font-size: 1rem;
+      font-weight: 500; /* Slightly reduced weight */
+      transition: background-color .15s ease-in-out, transform .15s ease-in-out, box-shadow .15s ease-in-out;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--button-hover);
+      border-color: var(--button-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
+    }
+
+    .error-message {
+      color: #dc3545; /* Bootstrap danger color */
+      background-color: #f8d7da; /* Light red background */
+      border: 1px solid #f5c2c7;
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .text-center a {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .text-center a:hover {
+        text-decoration: underline;
+        color: var(--button-hover);
+    }
+
+    /* Removed redundant .registration-form styles as .form-container is now used */

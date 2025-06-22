@@ -1,0 +1,35 @@
+/* Styles extracted from test_multiple_choice_multiple */
+.question-item {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 1px solid #e0e0e0;
+    }
+    .question-item p.prompt {
+        font-size: 1.2rem;
+        font-weight: 500;
+        margin-bottom: 5px;
+    }
+    .question-item small.instruction {
+        color: #555;
+        display: block;
+        margin-bottom: 10px;
+    }
+    .form-check {
+        margin-bottom: 0.5rem;
+    }
+    .form-check-label {
+        font-weight: normal;
+    }
+    #timer {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: var(--primary);
+        margin-bottom: 20px;
+        text-align: center;
+        padding: 10px;
+        background-color: var(--primary-light);
+        border-radius: 8px;
+        color: white;
+    }

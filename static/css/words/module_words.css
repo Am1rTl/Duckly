@@ -1,0 +1,281 @@
+/* Styles extracted from module_words */
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background-color: var(--background);
+      color: var(--text);
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 24px;
+      font-size: 1rem;
+      font-weight: 500;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: var(--shadow);
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .page-title {
+      text-align: center;
+      font-size: 2.2rem;
+      color: var(--secondary);
+      margin-bottom: 30px;
+      font-weight: 600;
+      position: relative;
+    }
+
+    .page-title::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 4px;
+      background: var(--primary);
+      border-radius: 2px;
+    }
+
+    /* Link box styles */
+    .link-box {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      box-shadow: var(--shadow);
+    }
+    
+    .link-box .btn {
+      padding: 8px 15px;
+      font-size: 0.9rem;
+    }
+
+    .link-box input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-size: 0.9rem;
+    }
+
+    /* View toggle */
+    .view-toggle {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .view-toggle button {
+      padding: 10px 20px;
+      background: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow);
+    }
+
+    .view-toggle button.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* Cards view */
+    .cards-view {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .word-card {
+      background: white;
+      padding: 15px 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .word-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .word-text {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--primary);
+    }
+
+    .translation {
+      font-size: 1rem;
+      color: var(--text);
+      margin-bottom: 15px;
+      flex-grow: 1;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      gap: 5px;
+      transition: all 0.2s ease;
+    }
+
+    .action-btn.btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .action-btn.btn-primary:hover {
+      background-color: var(--primary-dark);
+    }
+
+    .action-btn.btn-danger {
+      background-color: var(--danger-color);
+      color: white;
+    }
+
+    .action-btn.btn-danger:hover {
+      background-color: #d63031;
+    }
+
+    /* Table view */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+      background-color: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    th, td {
+      padding: 15px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background-color: var(--primary);
+      color: white;
+      font-weight: 500;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover {
+      background-color: rgba(108, 99, 255, 0.05);
+    }
+
+    /* Стиль для контейнера кнопки добавления слов */
+    .add-btn-container {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      z-index: 1000;
+    }
+    
+    /* Стиль для круглой кнопки с плюсом */
+    .add-btn-circle {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background-color: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 4px 15px rgba(108, 99, 255, 0.4);
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+    }
+    
+    .add-btn-circle:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(108, 99, 255, 0.5);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .link-box {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .header {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .header .btn {
+        width: auto;
+        align-self: flex-start;
+      }
+    }

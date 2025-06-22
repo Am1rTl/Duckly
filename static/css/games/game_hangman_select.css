@@ -1,0 +1,77 @@
+/* Styles extracted from game_hangman_select */
+.form-check-card {
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  padding: 12px;
+  transition: all 0.3s ease;
+  height: 100%;
+}
+
+.form-check-card:hover {
+  border-color: #0d6efd;
+  background-color: #f8f9ff;
+}
+
+.form-check-card .form-check-input:checked ~ .form-check-label {
+  color: #0d6efd;
+}
+
+.form-check-card .form-check-input:checked {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+.form-check-card .form-check-label {
+  display: block;
+  width: 100%;
+  cursor: pointer;
+}
+
+.form-check-card .form-check-label i {
+  font-size: 1.2em;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.form-check-card .form-check-label small {
+  display: block;
+  color: #6c757d;
+  font-size: 0.85em;
+  margin-top: 4px;
+}
+
+.timer-option {
+  transition: all 0.3s ease;
+}
+
+.timer-option:hover {
+  transform: translateY(-2px);
+}
+
+.timer-option.selected {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: white;
+}
+
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #6f42c1, #0d6efd);
+}
+
+#gameOptions {
+  border-top: 2px solid #e9ecef;
+  padding-top: 20px;
+  margin-top: 20px;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

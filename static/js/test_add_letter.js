@@ -250,33 +250,94 @@ document.addEventListener('DOMContentLoaded', function() {
             const currentInputIndexInWord = inputsInWord.indexOf(this);
             if (currentInputIndexInWord < inputsInWord.length - 1) {
                 inputsInWord[currentInputIndexInWord + 1].focus();
+            } else {
+                // если это был последний инпут слова, переходим к первому инпуту следующего слова
+                const allWordContainers = Array.from(document.querySelectorAll('.word-container'));
+                const currentWordContainer = this.closest('.word-container');
+                const wordIdx = allWordContainers.indexOf(currentWordContainer);
+                if (wordIdx < allWordContainers.length - 1) {
+                    const nextWordContainer = allWordContainers[wordIdx + 1];
+                    const nextInputs = Array.from(nextWordContainer.querySelectorAll('.letter-input'));
+                    const previousIndex = wordIdx;
+                    currentWordIndex = wordIdx + 1;
+                    showWord(currentWordIndex, previousIndex);
+                    if (nextInputs.length > 0) {
+                        nextInputs[0].focus();
+                    } else if (nextButton && nextButton.style.display !== 'none') {
+                        nextButton.click();
+                    }
+                } else if (nextButton && nextButton.style.display !== 'none') {
+                    nextButton.click();
+                }
             }
         }
     }
 
     function handleKeyDownLetter(e) {
-        const parentWordDisplay = this.closest('.word-display');
+        const currentInput = e.target;
+        const parentWordDisplay = currentInput.closest('.word-display');
         if (!parentWordDisplay) return;
+
         const inputsInWord = Array.from(parentWordDisplay.querySelectorAll('.letter-input'));
-        const currentIndexInWord = inputsInWord.indexOf(this);
+        const currentIndexInWord = inputsInWord.indexOf(currentInput);
 
         if (e.key === 'ArrowRight') {
             e.preventDefault();
             if (currentIndexInWord < inputsInWord.length - 1) {
                 inputsInWord[currentIndexInWord + 1].focus();
-            } else if (nextButton && nextButton.style.display !== 'none') {
-                nextButton.click();
+            } else {
+                const allWordContainers = Array.from(document.querySelectorAll('.word-container'));
+                const currentWordContainer = currentInput.closest('.word-container');
+                const currentWordGlobalIndex = allWordContainers.indexOf(currentWordContainer);
+                if (currentWordGlobalIndex < allWordContainers.length - 1) {
+                    showWord(currentWordGlobalIndex + 1, currentWordGlobalIndex);
+                    const nextWordContainer = allWordContainers[currentWordGlobalIndex + 1];
+                    const nextInputs = Array.from(nextWordContainer.querySelectorAll('.letter-input'));
+                    if (nextInputs.length > 0) {
+                        nextInputs[0].focus();
+                    }
+                }
             }
         } else if (e.key === 'ArrowLeft') {
             e.preventDefault();
             if (currentIndexInWord > 0) {
                 inputsInWord[currentIndexInWord - 1].focus();
-            } else if (prevButton && prevButton.style.display !== 'none') {
-                prevButton.click();
+            } else {
+                const allWordContainers = Array.from(document.querySelectorAll('.word-container'));
+                const currentWordContainer = currentInput.closest('.word-container');
+                const currentWordGlobalIndex = allWordContainers.indexOf(currentWordContainer);
+                if (currentWordGlobalIndex > 0) {
+                    showWord(currentWordGlobalIndex - 1, currentWordGlobalIndex);
+                    const prevWordContainer = allWordContainers[currentWordGlobalIndex - 1];
+                    const prevInputs = Array.from(prevWordContainer.querySelectorAll('.letter-input'));
+                    if (prevInputs.length > 0) {
+                        prevInputs[prevInputs.length - 1].focus();
+                    }
+                }
             }
-        } else if (e.key === 'Backspace' && this.value.length === 0) {
+        } else if (e.key === 'Backspace') {
+            e.preventDefault();
+            const wasEmpty = currentInput.value.length === 0;
+
+            if (!wasEmpty) {
+                currentInput.value = '';
+                currentInput.dispatchEvent(new Event('input', { bubbles: true })); // Trigger autosave
+            }
+
             if (currentIndexInWord > 0) {
                 inputsInWord[currentIndexInWord - 1].focus();
+            } else {
+                const allWordContainers = Array.from(document.querySelectorAll('.word-container'));
+                const currentWordContainer = currentInput.closest('.word-container');
+                const currentWordGlobalIndex = allWordContainers.indexOf(currentWordContainer);
+                if (currentWordGlobalIndex > 0) {
+                    showWord(currentWordGlobalIndex - 1, currentWordGlobalIndex);
+                    const prevWordContainer = allWordContainers[currentWordGlobalIndex - 1];
+                    const prevInputs = Array.from(prevWordContainer.querySelectorAll('.letter-input'));
+                    if (prevInputs.length > 0) {
+                        prevInputs[prevInputs.length - 1].focus();
+                    }
+                }
             }
         } else if (e.key === 'Enter') {
             e.preventDefault();

@@ -545,7 +545,8 @@ def generate_test_data():
             fio='Тестовый Учитель',
             nick='teacher',
             password=hashed_teacher_password,
-            teacher='yes'
+            teacher='yes',
+            class_number='0'  # Using '0' as a special class number for teachers
         )
         db.session.add(teacher)
         db.session.commit()

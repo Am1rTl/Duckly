@@ -1,0 +1,68 @@
+/* Global CSS Variables */
+:root {
+    /* Primary colors */
+    --primary: #6c63ff;
+    --primary-light: #a5a1ff;
+    --primary-dark: #5a52e0;
+    
+    /* Secondary colors */
+    --secondary: #4a4a98;
+    --secondary-light: #6c6bb3;
+    --secondary-dark: #2a2a5a;
+    
+    /* Background colors */
+    --background: #f8f9fe;
+    --background-light: #f4f6ff;
+    --card-bg: #ffffff;
+    --card-bg-light: #fafafa;
+    
+    /* Text colors */
+    --text: #333333;
+    --text-color: #333;
+    --text-light: #666666;
+    --text-muted: #999999;
+    
+    /* Border and outline */
+    --border: #ddd;
+    --border-color: #ddd;
+    --border-light: #e6e6e6;
+    --border-dark: #ccc;
+    
+    /* Status colors */
+    --success: #28a745;
+    --success-color: #28a745;
+    --danger: #dc3545;
+    --danger-color: #dc3545;
+    --warning: #ffc107;
+    --warning-color: #ffc107;
+    --info: #17a2b8;
+    --info-color: #17a2b8;
+    
+    /* Shadows */
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.15);
+    
+    /* Focus and hover effects */
+    --input-focus-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
+    --button-hover: #5a52e0;
+    
+    /* Transitions */
+    --transition-fast: 0.15s ease-in-out;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s ease;
+    
+    /* Border radius */
+    --border-radius-sm: 4px;
+    --border-radius: 8px;
+    --border-radius-md: 12px;
+    --border-radius-lg: 16px;
+    
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+}

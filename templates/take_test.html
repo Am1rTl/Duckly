@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/take_test.css') }}">
-    <script src="{{ url_for('static', filename='js/anti_cheat.js') }}"></script>
+    <!-- <script src="{{ url_for('static', filename='js/anti_cheat.js') }}"></script> -->
 </head>
 <body>
     <div class="container">
@@ -17,7 +17,7 @@
         </div>
 
         <div class="progress-bar" id="progressBar">
-            {% for word in test.test_words %}
+            {% for word in words_json %}
             <div class="progress-item" data-index="{{ loop.index0 }}">{{ loop.index }}</div>
             {% endfor %}
         </div>
@@ -43,11 +43,18 @@
             id: {{ test.id }},
             type: "{{ test.type }}",
             timeLimit: {{ test.time_limit or 0 }},
-            words: {{ test.test_words|tojson|safe }},
-            currentIndex: 0
+            words: {{ words_json|tojson|safe }},
+            currentIndex: 0,
+            submitUrl: "{{ url_for('tests.submit_test_proxy', test_id=test.id) }}"
         };
 
-        let answers = new Array(testData.words.length).fill(null);
+        let answers = (() => {
+            const saved = localStorage.getItem(`test_${testData.id}_answers`);
+            if (saved) {
+                try { return JSON.parse(saved); } catch (e) {}
+            }
+            return new Array(testData.words.length).fill(null);
+        })();
         let timer = null;
         let timeLeft = testData.timeLimit * 60;
 
@@ -70,39 +77,85 @@
                 item.classList.remove('current', 'completed');
                 if (index === testData.currentIndex) {
                     item.classList.add('current');
-                } else if (index < testData.currentIndex) {
-                    item.classList.add('completed');
+                }
+                // For add_letter: completed if all gaps filled (no '_') and not null
+                if (testData.type === 'add_letter') {
+                    if (answers[index] && !answers[index].includes('_') && answers[index].length === testData.words[index].word.length) {
+                        item.classList.add('completed');
+                    }
+                } else {
+                    if (answers[index]) {
+                        item.classList.add('completed');
+                    }
                 }
             });
         }
 
+        // Create input UI for the current question
         function createAnswerInput(word) {
             const container = document.getElementById('answerContainer');
             container.innerHTML = '';
 
+            // ---------- Add-letter test ----------
             if (testData.type === 'add_letter') {
-                const missingLetters = word.missing_letters || '';
-                const wordWithGaps = word.word;
-                const letterInputs = document.createElement('div');
-                letterInputs.classList.add('letter-inputs');
+                /*
+                 * `word.word` is expected to contain '_' symbols in places where the
+                 * user must supply a letter, e.g.  "C_T".
+                 * We convert every '_' to a one-character input field, keeping the
+                 * surrounding letters as normal spans so that the result looks like
+                 * a single word with gaps.
+                 */
+                const wordWrapper = document.createElement('div');
+                wordWrapper.className = 'add-letter-wrapper';
 
-                for (let i = 0; i < missingLetters.length; i++) {
-                    const input = document.createElement('input');
-                    input.type = 'text';
-                    input.maxLength = 1;
-                    input.className = 'letter-input';
-                    input.dataset.index = i;
-                    input.addEventListener('input', function() {
-                        this.value = this.value.toUpperCase();
-                        if (this.value && this.nextElementSibling) {
-                            this.nextElementSibling.focus();
+                // Previously saved answer: array of entered letters (not template string)
+                const existingAnswerArr = Array.isArray(answers[testData.currentIndex]) ? answers[testData.currentIndex] : [];
+                let inputIdx = 0;
+                for (let i = 0; i < word.word.length; i++) {
+                    const ch = word.word[i];
+                    if (ch === '_') {
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.maxLength = 1;
+                        input.className = 'letter-input';
+                        input.dataset.pos = i; // position in the word
+
+                        // Prefill value from existingAnswerArr (if present)
+                        if (existingAnswerArr[inputIdx]) {
+                            input.value = existingAnswerArr[inputIdx];
                         }
-                    });
-                    letterInputs.appendChild(input);
-                }
+                        inputIdx++;
 
-                container.appendChild(letterInputs);
-            } else if (testData.type === 'multiple_choice') {
+                        // -------- Event handlers --------
+                        input.addEventListener('keydown', handleLetterKeyNavigation);
+                        input.addEventListener('input', handleLetterInput);
+
+                        wordWrapper.appendChild(input);
+                    } else {
+                        // Normal visible letter
+                        const span = document.createElement('span');
+                        span.textContent = ch;
+                        wordWrapper.appendChild(span);
+                    }
+                }
+                // Center the word with gaps
+                wordWrapper.style.display = 'flex';
+                wordWrapper.style.justifyContent = 'center';
+                wordWrapper.style.alignItems = 'center';
+                wordWrapper.style.gap = '6px';
+                wordWrapper.style.margin = '0 auto 20px auto';
+                // Center the word with gaps (fallback inline style)
+                wordWrapper.style.display = 'flex';
+                wordWrapper.style.justifyContent = 'center';
+                wordWrapper.style.alignItems = 'center';
+                wordWrapper.style.gap = '6px';
+                wordWrapper.style.margin = '0 auto 20px auto';
+                container.appendChild(wordWrapper);
+                return; // done for add-letter
+            }
+
+            // ---------- Multiple-choice test ----------
+            if (testData.type === 'multiple_choice') {
                 const options = word.options.split('|');
                 const optionsContainer = document.createElement('div');
                 optionsContainer.className = 'options-container';
@@ -111,34 +164,114 @@
                     const button = document.createElement('button');
                     button.className = 'option-btn';
                     button.textContent = option;
-                    button.addEventListener('click', function() {
-                        document.querySelectorAll('.option-btn').forEach(btn => 
-                            btn.classList.remove('selected'));
+                    button.addEventListener('click', function () {
+                        document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
                         this.classList.add('selected');
                         answers[testData.currentIndex] = option;
+                        persistAnswers();
+                        updateProgressBar();
                     });
+                    // Mark selected if already chosen earlier
+                    if (answers[testData.currentIndex] === option) {
+                        button.classList.add('selected');
+                    }
                     optionsContainer.appendChild(button);
                 });
-
                 container.appendChild(optionsContainer);
-            } else {
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.className = 'answer-input';
-                input.placeholder = 'Введите ответ';
-                input.addEventListener('input', function() {
-                    answers[testData.currentIndex] = this.value;
-                });
-                container.appendChild(input);
+                return;
             }
+
+            // ---------- Default text answer ----------
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'answer-input';
+            input.placeholder = 'Введите ответ';
+            if (answers[testData.currentIndex]) {
+                input.value = answers[testData.currentIndex];
+            }
+            input.addEventListener('input', function () {
+                answers[testData.currentIndex] = this.value;
+                persistAnswers();
+                updateProgressBar();
+            });
+            container.appendChild(input);
+        }
+
+        // ---------------- Helper functions for add-letter test ----------------
+        function handleLetterKeyNavigation(e) {
+            if (e.key === 'ArrowLeft') {
+                const prev = this.previousElementSibling;
+                if (prev) { prev.focus(); e.preventDefault(); }
+            } else if (e.key === 'ArrowRight') {
+                const next = this.nextElementSibling;
+                if (next) { next.focus(); e.preventDefault(); }
+            } else if (e.key === 'Backspace') {
+                // If input is empty or caret is at start, move to previous input
+                if (this.value === '' || this.selectionStart === 0) {
+                    const prev = this.previousElementSibling;
+                    if (prev && prev.tagName === 'INPUT') {
+                        prev.focus();
+                        e.preventDefault();
+                    }
+                }
+            }
+        }
+
+        function handleLetterInput(e) {
+            // Uppercase the entered character and keep only the first symbol
+            this.value = this.value.toUpperCase().slice(0, 1);
+
+            // Если удаляем (Backspace) и поле пустое — перейти к предыдущему и удалить там
+            if (e.inputType === 'deleteContentBackward' && this.value === '') {
+                const prev = this.previousElementSibling;
+                if (prev && prev.tagName === 'INPUT') {
+                    prev.focus();
+                    // Удалить букву в предыдущем инпуте
+                    prev.value = '';
+                    // Рекурсивно вызвать обработчик для цепного удаления
+                    const event = new InputEvent('input', {inputType: 'deleteContentBackward'});
+                    prev.dispatchEvent(event);
+                }
+            }
+            updateCurrentAnswerForAddLetter();
+        }
+
+        // Save array of entered letters for add_letter
+        function updateCurrentAnswerForAddLetter() {
+            const inputs = document.querySelectorAll('#answerContainer .letter-input');
+            const entered = Array.from(inputs).map(inp => inp.value || '');
+            answers[testData.currentIndex] = entered;
+            persistAnswers();
+            updateProgressBar();
+        }
+
+        function persistAnswers() {
+            localStorage.setItem(`test_${testData.id}_answers`, JSON.stringify(answers));
         }
 
         function showQuestion() {
             const word = testData.words[testData.currentIndex];
-            document.getElementById('wordDisplay').textContent = word.word;
+            // Hide word display for add_letter type to avoid duplication
+            const wordDisplay = document.getElementById('wordDisplay');
+            if (testData.type === 'add_letter') {
+                wordDisplay.style.display = 'none';
+            } else {
+                wordDisplay.style.display = '';
+                wordDisplay.textContent = word.word;
+            }
             document.getElementById('translation').textContent = word.perevod;
             createAnswerInput(word);
             updateProgressBar();
+
+            // Always re-bind progress bar click handlers after rendering
+            document.querySelectorAll('.progress-item').forEach(item => {
+                item.onclick = null;
+                item.addEventListener('click', () => {
+                    const index = parseInt(item.dataset.index);
+                    testData.currentIndex = index;
+                    showQuestion();
+                });
+            });
 
             document.getElementById('prevBtn').disabled = testData.currentIndex === 0;
             document.getElementById('nextBtn').textContent = 
@@ -146,7 +279,7 @@
         }
 
         function submitTest() {
-            fetch(`/submit_test/${testData.id}`, {
+            fetch(testData.submitUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -179,13 +312,12 @@
             }
         });
 
+        // Make all progress items always clickable for navigation
         document.querySelectorAll('.progress-item').forEach(item => {
             item.addEventListener('click', () => {
                 const index = parseInt(item.dataset.index);
-                if (index <= testData.currentIndex || answers[index] !== null) {
-                    testData.currentIndex = index;
-                    showQuestion();
-                }
+                testData.currentIndex = index;
+                showQuestion();
             });
         });
 

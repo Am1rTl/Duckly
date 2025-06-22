@@ -39,7 +39,7 @@
 
         {% if is_teacher and test.is_active %}
         <div class="link-section">
-            <input type="text" value="{{ url_for('take_test', test_link=test.link, _external=True) }}" id="testLink" readonly title="Ссылка для учеников">
+            <input type="text" value="{{ url_for('tests.take_test', test_link=test.link, _external=True) }}" id="testLink" readonly title="Ссылка для учеников">
             <button class="btn btn-success" onclick="copyLink()"><i class="fas fa-copy"></i> Копировать ссылку</button>
         </div>
         {% endif %}
@@ -61,7 +61,7 @@
                     <ul>
                         {% for item in completed_students_details %}
                             <li class="status-completed">
-                                <a href="{{ url_for('test_results', test_id=test.id, user_id=item.user.id, result_id=item.result.id) }}" class="student-entry-link">
+                                <a href="{{ url_for('tests.test_results', test_id=test.id, user_id=item.user.id, result_id=item.result.id) }}" class="student-entry-link">
                                     <div>
                                         <span class="student-name">{{ item.user.fio }} ({{ item.user.nick }})</span><br>
                                         <span class="student-meta">Completed: {{ item.result.completed_at.strftime('%d %b %Y, %H:%M') if item.result.completed_at else 'N/A' }}</span>
@@ -84,7 +84,7 @@
                     <ul>
                         {% for item in in_progress_students_details %}
                             <li class="status-inprogress">
-                                <a href="{{ url_for('test_results', test_id=test.id, user_id=item.user.id, result_id=item.result.id) }}" class="student-entry-link">
+                                <a href="{{ url_for('tests.test_results', test_id=test.id, user_id=item.user.id, result_id=item.result.id) }}" class="student-entry-link">
                                     <div>
                                         <span class="student-name">{{ item.user.fio }} ({{ item.user.nick }})</span><br>
                                         <span class="student-meta">Started: {{ item.result.started_at.strftime('%d %b %Y, %H:%M') }}</span>
@@ -122,24 +122,24 @@
             <a href="{{ "/tests" }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Tests</a>
             {% if is_teacher %}
                 {% if test.is_active %}
-                    <form action="{{ url_for('archive_test', test_id=test.id) }}" method="POST" class="actions-form">
+                    <form action="{{ url_for('tests.archive_test', test_id=test.id) }}" method="POST" class="actions-form">
                         <button type="submit" class="btn btn-warning"><i class="fas fa-archive"></i> Archive Test</button>
                     </form>
                 {% else %}
-                    <form action="{{ url_for('unarchive_test', test_id=test.id) }}" method="POST" class="actions-form">
+                    <form action="{{ url_for('tests.unarchive_test', test_id=test.id) }}" method="POST" class="actions-form">
                         <button type="submit" class="btn btn-success"><i class="fas fa-undo"></i> Unarchive Test</button>
                     </form>
                 {% endif %}
-                <form action="{{ url_for('clear_test_results', test_id=test.id) }}" method="POST" class="actions-form" onsubmit="return confirm('Вы уверены, что хотите удалить все результаты для этого теста? Это действие необратимо.');">
+                <form action="{{ url_for('tests.clear_test_results', test_id=test.id) }}" method="POST" class="actions-form" onsubmit="return confirm('Вы уверены, что хотите удалить все результаты для этого теста? Это действие необратимо.');">
                     <button type="submit" class="btn btn-info"><i class="fas fa-eraser"></i> Clear Results</button>
                 </form>
-                <form action="{{ url_for('delete_test_completely', test_id=test.id) }}" method="POST" class="actions-form" onsubmit="return confirm('Вы уверены, что хотите ПОЛНОСТЬЮ удалить этот тест и все связанные с ним данные (результаты, слова)? Это действие необратимо.');">
+                <form action="{{ url_for('tests.delete_test_completely', test_id=test.id) }}" method="POST" class="actions-form" onsubmit="return confirm('Вы уверены, что хотите ПОЛНОСТЬЮ удалить этот тест и все связанные с ним данные (результаты, слова)? Это действие необратимо.');">
                     <button type="submit" class="btn btn-danger"><i class="fas fa-trash-alt"></i> Delete Test</button>
                 </form>
                 
                 {# Configuration buttons for different test types #}
                 {% if test.type == 'true_false' %}
-                    <a href="{{ url_for('configure_true_false_test', test_id=test.id) }}" class="btn btn-primary configure-questions-btn">
+                    <a href="{{ url_for('tests.configure_true_false_test', test_id=test.id) }}" class="btn btn-primary configure-questions-btn">
                         <i class="fas fa-cog"></i> Настроить вопросы
                     </a>
                 {% endif %}
@@ -293,7 +293,7 @@
             if (!IS_TEACHER) return; // Only fetch for teachers
 
             try {
-                const url = '/test_details_data/' + TEST_ID; // Use string concatenation
+                const url = '/tests/details_data/' + TEST_ID; // Use string concatenation
                 const response = await fetch(url);
                 if (!response.ok) {
                     console.error('Failed to fetch test details:', response.status, await response.text());

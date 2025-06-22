@@ -522,7 +522,7 @@
         // The edit link now uses wordObj.id
         card.innerHTML = `
           <a href="javascript:void(0);" class="module-link"
-             onclick="window.location.href = '/class/' + encodeURIComponent('${wordObj.class}') + '/' + encodeURIComponent('${wordObj.unit}') + '/' + encodeURIComponent('${wordObj.module}');"
+             onclick="window.location.href = '/words/class/' + encodeURIComponent('${wordObj.class}') + '/' + encodeURIComponent('${wordObj.unit}') + '/' + encodeURIComponent('${wordObj.module}');"
              style="text-decoration: none; color: inherit;">
             <div class="word-text">${wordObj.word}</div>
             <div class="translation">${wordObj.perevod}</div>
@@ -556,7 +556,7 @@
         // The edit link now uses wordObj.id
         row.innerHTML = `
           <td><a href="javascript:void(0);" class="module-link"
-                 onclick="window.location.href = '/class/' + encodeURIComponent('${wordObj.class}') + '/' + encodeURIComponent('${wordObj.unit}') + '/' + encodeURIComponent('${wordObj.module}');">
+                 onclick="window.location.href = '/words/class/' + encodeURIComponent('${wordObj.class}') + '/' + encodeURIComponent('${wordObj.unit}') + '/' + encodeURIComponent('${wordObj.module}');">
                  ${wordObj.word}
               </a>
           </td>

@@ -1,0 +1,15 @@
+/* Styles extracted from add_words(old) */
+.back {
+        border-radius: 10%;
+        height: 100px;
+        width: 8%;
+        text-align: center;
+        font-size: 200%;
+      }
+      .top_menu {
+        height: 100px;
+        width: 30%;
+        font-size: 200%;
+        background-color: #CBCFEF;
+        position: absolute;
+      }

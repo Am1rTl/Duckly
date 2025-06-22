@@ -271,13 +271,29 @@
         font-size:0.9rem;
       }
     }
+    /* Style tweaks */
+    .teacher-details-btn-style {
+      padding: 6px 10px !important; /* smaller button */
+      font-size: 0.85rem;
+    }
+
+    .action-buttons .btn,
+    .action-buttons .btn-icon {
+      margin-right: 4px; /* tighter spacing so both buttons sit neatly */
+    }
+
+    /* Hide teacher progress bar container and progress text */
+    .progress-bar-container-table,
+    .action-progress-text-style {
+      display: none !important;
+    }
   </style>
 </head>
 <body>
 
   <div class="container">
   <div class="header">
-    <button class="btn btn-primary" id="back"><i class="fas fa-arrow-left"></i> Назад</button>
+    <a href="{{ url_for('tests.hello') }}" class="btn btn-primary" id="back-link"><i class="fas fa-arrow-left"></i> Назад</a>
   </div>
 
   <div class="nav-tabs">
@@ -315,9 +331,9 @@
           <tr>
             <td>
               {% if test_item.test.type == 'text_based' %}
-                <a href="/test/{{ test_item.test.link }}">{{ test_item.test.title }}</a>
+                <a href="/tests/{{ test_item.test.link }}">{{ test_item.test.title }}</a>
               {% else %}
-                <a href="/test/{{ test_item.test.id }}">{{ test_item.test.title }}</a>
+                <a href="/tests/{{ test_item.test.link }}">{{ test_item.test.title }}</a>
               {% endif %}
             </td>
             <td>{{ test_item.test.classs if test_item.test.classs else 'N/A' }}</td>
@@ -349,17 +365,17 @@
             <td class="action-buttons text-center-style">
               {% if is_teacher %}
                   {% if test_item.test.type == 'text_based' %}
-                      <a href="/test/{{ test_item.test.link }}" class="btn btn-primary btn-sm teacher-details-btn-style">
+                      <a href="/tests/{{ test_item.test.link }}/details" class="btn btn-primary btn-sm teacher-details-btn-style" data-test-link="{{ test_item.test.link }}">
                           <i class="fas fa-eye"></i> Детали
                       </a>
-                      <button class="btn-icon" onclick="copyToClipboard('http://{{ request.host }}/take_test/{{ test_item.test.link }}')" title="Скопировать ссылку для ученика">
+                      <button class="btn-icon" onclick="copyToClipboard('http://{{ request.host }}/tests/take_test/{{ test_item.test.link }}')" title="Скопировать ссылку для ученика">
                           <i class="fas fa-copy"></i>
                       </button>
                   {% else %}
-                      <a href="/test/{{ test_item.test.id }}" class="btn btn-primary btn-sm teacher-details-btn-style">
+                      <a href="/tests/{{ test_item.test.link }}/details" class="btn btn-primary btn-sm teacher-details-btn-style" data-test-link="{{ test_item.test.link }}">
                           <i class="fas fa-eye"></i> Детали
                       </a>
-                      <button class="btn-icon" onclick="copyToClipboard('http://{{ request.host }}/take_test/{{ test_item.test.link }}')" title="Скопировать ссылку для ученика">
+                      <button class="btn-icon" onclick="copyToClipboard('http://{{ request.host }}/tests/take_test/{{ test_item.test.link }}')" title="Скопировать ссылку для ученика">
                           <i class="fas fa-copy"></i>
                       </button>
                   {% endif %}
@@ -372,12 +388,12 @@
                           </div>
                       </div>
                   {% else %}
-                       <div class="progress-bar-container-table teacher-progress-bar-container-style">
+                       <div class="progress-bar-container-table teacher-progress-bar-container-style" style="display: none;">
                           <div class="progress-bar-table teacher-progress-bar-fill-style-nostudents"
                                id="action-progressbar-fill-{{ test_item.test.id }}">0%</div>
                       </div>
                   {% endif %}
-                   <small class="action-progress-text-style" id="action-progress-text-{{ test_item.test.id }}">
+                   <small class="action-progress-text-style" id="action-progress-text-{{ test_item.test.id }}" style="display: none;">
                        {{ test_item.completed_count }}/{{ test_item.students_in_class }}
                    </small>
               {% else %}
@@ -394,7 +410,7 @@
                               </a>
                           {% endif %}
                       {% else %}
-                          <a href="/take_test/{{ test_item.test.link }}" class="btn btn-success btn-sm student-action-btn-start-style">
+                          <a href="/tests/take_test/{{ test_item.test.link }}" class="btn btn-success btn-sm student-action-btn-start-style">
                               <i class="fas fa-play"></i> Начать/Продолжить
                           </a>
                       {% endif %}
@@ -429,7 +445,7 @@
     <a href="{{ "/add_tests" }}" class="btn btn-primary" id="addTestBtn">
       <i class="fas fa-plus"></i> Добавить тест
     </a>
-    <a href="{{ url_for('text_contents') }}" class="btn btn-success">
+    <a href="{{ url_for('text_content.text_contents') }}" class="btn btn-success">
       <i class="fas fa-file-text"></i> Управление текстами
     </a>
   </div>
@@ -498,7 +514,7 @@
     var backButton = document.getElementById("back");
     if (backButton) {
         backButton.onclick = function() { 
-            location.href = "{{ "/hello" }}";
+            location.href = "{{ url_for('tests.hello') }}";
         };
     }
     // Navigation links (words, tests, games, addTestBtn) are <a> tags with hrefs.
@@ -514,7 +530,7 @@
       }
 
       function fetchTestProgress() {
-          fetch('/api/tests_progress')
+          fetch('/tests/progress')
               .then(response => {
                   if (!response.ok) {
                       console.error('Network response was not ok for /api/tests_progress. Status: ' + response.status);
@@ -575,5 +591,6 @@
   {% endif %}
 
 </div> <!-- Close container -->
+<script src="/static/js/test_details_modal.js"></script>
 </body>
 </html>

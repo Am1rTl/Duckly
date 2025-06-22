@@ -57,10 +57,10 @@
         </div>
 
         <div class="top-nav">
-            <a href="{{ url_for('hello') }}" class="btn btn-secondary">
+            <a href="{{ url_for('tests.hello') }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Назад к главной
             </a>
-            <a href="{{ url_for('create_text_content') }}" class="btn btn-primary">
+            <a href="{{ url_for('text_content.add_text_content') }}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Создать новый текст
             </a>
         </div>
@@ -94,10 +94,10 @@
                     </div>
                     
                     <div class="content-actions">
-                        <a href="{{ url_for('edit_text_questions', content_id=content.id) }}" class="btn btn-primary btn-sm">
+                        <a href="{{ url_for('text_content.add_questions', text_content_id=content.id) }}" class="btn btn-primary btn-sm">
                             <i class="fas fa-edit"></i> Вопросы
                         </a>
-                        <a href="{{ url_for('edit_text_content', content_id=content.id) }}" class="btn btn-warning btn-sm">
+                        <a href="{{ url_for('text_content.add_text_content') }}" class="btn btn-warning btn-sm">
                             <i class="fas fa-pen"></i> Редактировать
                         </a>
                         {% if content.questions|length > 0 %}
@@ -114,7 +114,7 @@
                 <i class="fas fa-file-text"></i>
                 <h3>Пока нет текстового контента</h3>
                 <p>Создайте первый текст с вопросами для тестирования навыков чтения</p>
-                <a href="{{ url_for('create_text_content') }}" class="btn btn-primary">
+                <a href="{{ url_for('text_content.add_text_content') }}" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Создать первый текст
                 </a>
             </div>
