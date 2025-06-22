@@ -8,440 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Иконки Font Awesome (по желанию) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --primary: #6c63ff;
-            --primary-light: #a5a1ff;
-            --primary-dark: #5a52e0;
-            --secondary: #4a4a98; /* Used for titles in tests.html */
-            --background: #f8f9fe;
-            --card-bg: #ffffff;
-            --text: #333333;
-            --text-light: #555;
-            --border: #dddddd;
-            --danger-color: #ff4757;
-            --success-color: #2ed573;
-            --warning-color: #ffa500; /* Added for in-progress status */
-            --info-color: #17a2b8; /* Teal for btn-info */
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            --shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.12);
-            --navbar-text-color: #ffffff; /* Explicit navbar text color */
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        body {
-            background-color: var(--background);
-            color: var(--text);
-            line-height: 1.6;
-        }
-        
-        /* Navbar from previous test_details, adapted to Poppins and --primary */
-        .navbar {
-            background-color: var(--primary);
-            padding: 0.8rem 1.5rem; /* Adjusted padding */
-            color: var(--navbar-text-color);
-            display: flex;
-            justify-content: space-between; /* This will be managed by children */
-            align-items: center;
-            box-shadow: var(--shadow); /* Use theme shadow */
-        }
-        .navbar-start,
-        .navbar-center,
-        .navbar-end {
-            flex: 1;
-            display: flex;
-            align-items: center; /* Vertically align items within each section */
-        }
-        .navbar-start {
-            justify-content: flex-start;
-        }
-        .navbar-center {
-            justify-content: center;
-        }
-        .navbar-end {
-            justify-content: flex-end;
-        }
-
-        .navbar a,
-        .navbar .nav-link {
-            color: var(--navbar-text-color);
-            text-decoration: none;
-            font-size: 1rem; /* Adjusted font size */
-            font-weight: 500;
-            padding: 0.5rem 0.75rem;
-            border-radius: 6px; /* Add mild rounding to resemble a button */
-            transition: background-color 0.2s ease;
-        }
-        .navbar a:hover,
-        .navbar .nav-link:hover {
-            background-color: var(--primary-dark); /* Darken on hover for button feel */
-            color: var(--navbar-text-color); /* Keep text color consistent on hover */
-        }
-        .navbar .navbar-brand {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: var(--navbar-text-color);
-        }
-
-        .container {
-            max-width: 950px; /* Slightly wider for more content */
-            margin: 30px auto;
-            padding: 20px; /* Consistent padding */
-        }
-
-        .page-title { /* Style for the main H1 title */
-            text-align: center;
-            font-size: 2.2rem;
-            color: var(--secondary); /* Match tests.html title color */
-            margin-bottom: 35px;
-            font-weight: 600;
-            position: relative;
-        }
-
-        .page-title::after { /* Underline effect for title */
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 80px;
-            height: 4px;
-            background: var(--primary);
-            border-radius: 2px;
-        }
-        
-        /* Card styling from tests.html */
-        .card {
-            background-color: var(--card-bg);
-            padding: 25px; /* Increased padding */
-            border-radius: 12px; /* More rounded corners */
-            box-shadow: var(--shadow);
-            margin-bottom: 30px;
-        }
-        
-        .card h2 { /* Styling for sub-headings within cards */
-            font-size: 1.5rem;
-            color: var(--primary-dark);
-            margin-top: 0; /* Remove top margin if it's the first element */
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid var(--primary-light);
-            font-weight: 500;
-        }
-        
-        .card h3 { /* Styling for sub-sub-headings, e.g., student list titles */
-            font-size: 1.3rem;
-            color: var(--secondary);
-            margin-top: 0;
-            margin-bottom: 15px;
-            font-weight: 500;
-        }
-
-        .test-info p {
-            margin: 10px 0;
-            font-size: 1rem;
-            color: var(--text-light);
-        }
-        .test-info strong {
-            color: var(--text);
-            font-weight: 500;
-            min-width: 120px; /* Align keys */
-            display: inline-block;
-        }
-
-        .progress-bar-container {
-            width: 100%;
-            background-color: #e9ecef;
-            border-radius: 25px;
-            margin-bottom: 10px; /* Reduced margin if only showing bar */
-            overflow: hidden;
-            height: 30px;
-        }
-        .progress-bar {
-            background-color: var(--success-color); /* Use theme success color */
-            height: 100%;
-            text-align: center;
-            line-height: 30px;
-            color: white;
-            border-radius: 25px; /* Always fully rounded for a cleaner look */
-            transition: width 0.6s cubic-bezier(0.65, 0, 0.35, 1); /* Smoother transition */
-            font-weight: 600;
-        }
-        .progress-label {
-            text-align: right;
-            font-size: 0.9rem;
-            color: var(--text-light);
-            margin-bottom: 20px;
-        }
-        
-        .student-section .card { /* Minor adjustment if sections are also cards */
-             margin-top: 0;
-        }
-
-        .student-list ul {
-            list-style-type: none;
-            padding: 0;
-        }
-        .student-list li {
-            background-color: #fdfdff; /* Slightly off-white */
-            border: 1px solid var(--border);
-            padding: 15px 20px;
-            margin-bottom: 12px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .student-list li:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-hover);
-            border-left-width: 5px; /* Keep consistent border on hover */
-        }
-
-        /* Status indicators using left border, more prominent */
-        .student-list .status-completed { border-left: 5px solid var(--success-color); }
-        .student-list .status-inprogress { border-left: 5px solid var(--warning-color); } /* Use warning color */
-        .student-list .status-notstarted { border-left: 5px solid #adb5bd; } /* Neutral grey */
-
-        .student-name {
-            font-weight: 500;
-            color: var(--text);
-            font-size: 1.05rem;
-        }
-        .student-score {
-            color: var(--primary);
-            font-weight: 600;
-            font-size: 1rem;
-        }
-        .student-meta {
-            font-size: 0.85rem;
-            color: var(--text-light);
-            margin-top: 3px;
-        }
-        .student-list li > div { /* Container for name and meta */
-            flex-grow: 1;
-        }
-         .student-list li > span:last-child { /* Score or status text */
-            white-space: nowrap;
-            margin-left: 15px;
-        }
-
-        /* Styles for clickable student entries */
-        .student-list li a.student-entry-link {
-            display: flex; /* Children (div and span) will be flex items */
-            flex-grow: 1;  /* Link will expand to fill the parent li */
-            justify-content: space-between; /* Distribute children within the link */
-            align-items: center; /* Align children vertically */
-            text-decoration: none; /* Remove default link underline */
-            color: inherit; /* Inherit text color from parent styles */
-        }
-        
-        /* Style for the div (name/meta) inside the link */
-        .student-list li a.student-entry-link > div {
-            flex-grow: 1; /* Ensures the name/meta container takes available space */
-        }
-
-        /* Style for the last span (score/status) inside the link */
-        .student-list li a.student-entry-link > span:last-child {
-            white-space: nowrap; /* Keep original styling */
-            margin-left: 15px;   /* Keep original styling */
-        }
-
-        /* Button styling from tests.html */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 12px 24px;
-            font-size: 1rem;
-            font-weight: 500;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: var(--shadow);
-            text-decoration: none;
-            color: white; /* Default text color for buttons */
-        }
-        .btn i { /* Icon spacing */
-            margin-right: 8px;
-        }
-        .btn-primary {
-            background-color: var(--primary);
-        }
-        .btn-primary:hover {
-            background-color: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-hover);
-        }
-        .btn-danger {
-            background-color: var(--danger-color);
-        }
-        .btn-danger:hover {
-            background-color: #d63031; /* Darker danger */
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-hover);
-        }
-        .btn-secondary {
-            background-color: var(--secondary);
-        }
-        .btn-secondary:hover {
-            background-color: #3a3a78; /* Darker secondary */
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-hover);
-        }
-        
-        .actions-container {
-            margin-top: 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap; /* Allow wrapping on small screens */
-            gap: 15px;
-        }
-        .actions-container form { /* Ensure form doesn't add extra margin */
-            margin: 0;
-        }
-
-        .link-section { /* Re-style link section as a card */
-            background-color: var(--primary-light); /* Lighter primary shade */
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: var(--shadow);
-            margin-bottom: 30px;
-            display: flex; /* For aligning input and button */
-            align-items: center;
-            gap: 15px;
-        }
-        .link-section h3 { /* No h3 in current structure, but if added */
-            margin:0 0 10px 0;
-            color: var(--primary-dark);
-            border-bottom: none;
-            font-size: 1.2rem;
-        }
-        .link-section input[type="text"] {
-            flex-grow: 1; /* Take available space */
-            padding: 12px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-        .link-section .btn { /* Specific styling for copy button in this section */
-            padding: 12px 20px; /* Match other buttons */
-            min-width: 120px; /* Ensure text fits */
-        }
-        .status-archived-text {
-            color: var(--danger-color);
-            font-weight: bold;
-            font-size: 1rem;
-        }
-        .no-students {
-            color: var(--text-light);
-            font-style: italic;
-            padding: 15px 0;
-            text-align: center;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .container {
-                margin: 20px;
-                padding: 15px;
-            }
-            .page-title {
-                font-size: 1.9rem;
-            }
-            .card {
-                padding: 20px;
-            }
-            .card h2 {
-                font-size: 1.3rem;
-            }
-            .card h3 {
-                font-size: 1.1rem;
-            }
-            .student-list li {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 8px;
-            }
-             .student-list li > span:last-child {
-                margin-left: 0;
-                align-self: flex-end; /* Push score to the right */
-            }
-            .link-section {
-                flex-direction: column;
-            }
-            .link-section input[type="text"] {
-                width: 100%;
-            }
-            .link-section .btn {
-                width: 100%;
-            }
-            .actions-container {
-                 justify-content: center; /* Center buttons on small screens */
-            }
-             .actions-container .btn {
-                width: 100%;
-                margin-bottom: 10px;
-            }
-            .actions-container .btn:last-child {
-                margin-bottom: 0;
-            }
-        }
-         @media (max-width: 480px) {
-            .navbar {
-                padding: 0.8rem 1rem;
-                flex-direction: column; /* Stack navbar items */
-                gap: 10px;
-            }
-            .page-title {
-                font-size: 1.7rem;
-            }
-             .btn { /* Smaller buttons on very small screens */
-                padding: 10px 18px;
-                font-size: 0.9rem;
-            }
-        }
-
-        .btn-success {
-            background-color: var(--success-color);
-            color: white;
-        }
-        .btn-success:hover {
-            background-color: #25a25a; /* Darker green */
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-hover);
-        }
-
-        .btn-warning {
-            background-color: var(--warning-color);
-            color: white; /* Consider black text for better contrast if needed */
-        }
-        .btn-warning:hover {
-            background-color: #e69500; /* Darker orange */
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-hover);
-        }
-
-        .btn-info {
-            background-color: var(--info-color);
-            color: white;
-        }
-        .btn-info:hover {
-            background-color: #138496; /* Darker teal */
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-hover);
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/test_details.css') }}">
 </head>
 <body>
     <nav class="navbar">
@@ -465,9 +32,9 @@
             <p><strong>Type:</strong> {{ test.type }}</p>
             <p><strong>Created:</strong> {{ test.created_at.strftime('%d %B %Y, %H:%M') }}</p>
             {% if test.time_limit %}
-            <p><strong>Time Limit:</strong> <span style="color: var(--danger-color); font-weight: bold;">{{ test.time_limit }} minutes</span></p>
+            <p><strong>Time Limit:</strong> <span class="test-info-time-limit">{{ test.time_limit }} minutes</span></p>
             {% endif %}
-            <p><strong>Status:</strong> <span style="font-weight: bold; color: {% if test.is_active %}var(--success-color){% else %}var(--text-light){% endif %};">{{ 'Active' if test.is_active else 'Archived' }}</span></p>
+            <p><strong>Status:</strong> <span class="test-info-status {% if test.is_active %}test-info-status-active{% else %}test-info-status-archived{% endif %}">{{ 'Active' if test.is_active else 'Archived' }}</span></p>
         </div>
 
         {% if is_teacher and test.is_active %}
@@ -488,7 +55,7 @@
         </div>
 
         <div class="card student-section">
-            <h3 id="completed-students-title"><i class="fas fa-check-circle" style="color: var(--success-color);"></i> Completed Students ({{ completed_students_details|length }})</h3>
+            <h3 id="completed-students-title"><i class="fas fa-check-circle"></i> Completed Students ({{ completed_students_details|length }})</h3>
             <div class="student-list" id="completed-students-list">
                 {% if completed_students_details %}
                     <ul>
@@ -511,7 +78,7 @@
         </div>
 
         <div class="card student-section">
-            <h3 id="inprogress-students-title"><i class="fas fa-spinner fa-pulse" style="color: var(--warning-color);"></i> In Progress ({{ in_progress_students_details|length }})</h3>
+            <h3 id="inprogress-students-title"><i class="fas fa-spinner fa-pulse"></i> In Progress ({{ in_progress_students_details|length }})</h3>
             <div class="student-list" id="inprogress-students-list">
                 {% if in_progress_students_details %}
                     <ul>
@@ -534,7 +101,7 @@
         </div>
         
         <div class="card student-section">
-            <h3 id="notstarted-students-title"><i class="fas fa-hourglass-half" style="color: #adb5bd;"></i> Not Started ({{ not_started_students|length }})</h3>
+            <h3 id="notstarted-students-title"><i class="fas fa-hourglass-half"></i> Not Started ({{ not_started_students|length }})</h3>
             <div class="student-list" id="notstarted-students-list">
                 {% if not_started_students %}
                     <ul>
@@ -555,24 +122,24 @@
             <a href="{{ "/tests" }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Tests</a>
             {% if is_teacher %}
                 {% if test.is_active %}
-                    <form action="{{ url_for('archive_test', test_id=test.id) }}" method="POST" style="display: inline-block;">
+                    <form action="{{ url_for('archive_test', test_id=test.id) }}" method="POST" class="actions-form">
                         <button type="submit" class="btn btn-warning"><i class="fas fa-archive"></i> Archive Test</button>
                     </form>
                 {% else %}
-                    <form action="{{ url_for('unarchive_test', test_id=test.id) }}" method="POST" style="display: inline-block;">
+                    <form action="{{ url_for('unarchive_test', test_id=test.id) }}" method="POST" class="actions-form">
                         <button type="submit" class="btn btn-success"><i class="fas fa-undo"></i> Unarchive Test</button>
                     </form>
                 {% endif %}
-                <form action="{{ url_for('clear_test_results', test_id=test.id) }}" method="POST" style="display: inline-block; margin-left: 5px;" onsubmit="return confirm('Вы уверены, что хотите удалить все результаты для этого теста? Это действие необратимо.');">
+                <form action="{{ url_for('clear_test_results', test_id=test.id) }}" method="POST" class="actions-form" onsubmit="return confirm('Вы уверены, что хотите удалить все результаты для этого теста? Это действие необратимо.');">
                     <button type="submit" class="btn btn-info"><i class="fas fa-eraser"></i> Clear Results</button>
                 </form>
-                <form action="{{ url_for('delete_test_completely', test_id=test.id) }}" method="POST" style="display: inline-block; margin-left: 5px;" onsubmit="return confirm('Вы уверены, что хотите ПОЛНОСТЬЮ удалить этот тест и все связанные с ним данные (результаты, слова)? Это действие необратимо.');">
+                <form action="{{ url_for('delete_test_completely', test_id=test.id) }}" method="POST" class="actions-form" onsubmit="return confirm('Вы уверены, что хотите ПОЛНОСТЬЮ удалить этот тест и все связанные с ним данные (результаты, слова)? Это действие необратимо.');">
                     <button type="submit" class="btn btn-danger"><i class="fas fa-trash-alt"></i> Delete Test</button>
                 </form>
                 
                 {# Configuration buttons for different test types #}
                 {% if test.type == 'true_false' %}
-                    <a href="{{ url_for('configure_true_false_test', test_id=test.id) }}" class="btn btn-primary" style="margin-left: 5px;">
+                    <a href="{{ url_for('configure_true_false_test', test_id=test.id) }}" class="btn btn-primary configure-questions-btn">
                         <i class="fas fa-cog"></i> Настроить вопросы
                     </a>
                 {% endif %}
@@ -631,9 +198,7 @@
         function updateStudentList(listElement, titleElement, students, listType, urls) {
             titleElement.innerHTML = `<i class="fas ${
                 listType === 'completed' ? 'fa-check-circle' : (listType === 'inprogress' ? 'fa-spinner fa-pulse' : 'fa-hourglass-half')
-            }" style="color: ${
-                listType === 'completed' ? 'var(--success-color)' : (listType === 'inprogress' ? 'var(--warning-color)' : '#adb5bd')
-            };"></i> ${listType.charAt(0).toUpperCase() + listType.slice(1)} Students (${students.length})`;
+            }"></i> ${listType.charAt(0).toUpperCase() + listType.slice(1)} Students (${students.length})`;
 
             if (students.length === 0) {
                 listElement.innerHTML = `<p class="no-students">${
