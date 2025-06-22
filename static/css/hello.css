@@ -21,7 +21,7 @@ body {
   font-family: 'Poppins', sans-serif;
   color: var(--text-color);
   min-height: 100vh;
-  display: flex;
+ display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start; /* Changed from center to flex-start to allow content to be at top */

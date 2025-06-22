@@ -142,7 +142,7 @@ def add_words():
         elif not any(w.strip() and p.strip() for w, p in zip(words_input, perevods_input)):
              flash("Не было введено слов для добавления.", "info")
 
-        return redirect(url_for('words.words')) # Adjusted for blueprint
+        return redirect(url_for('words.words'))
 
     # GET method: query existing classes for dropdown
     classes_query = db.session.query(Word.classs).distinct().order_by(Word.classs).all()

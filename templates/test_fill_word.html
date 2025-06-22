@@ -4,43 +4,7 @@
 
 {% block head_extra %}
 <script src="{{ url_for('static', filename='js/anti_cheat.js') }}"></script>
-<style>
-    .question-item {
-        background-color: #f8f9fa;
-        padding: 15px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        border: 1px solid #e0e0e0;
-    }
-    .question-item p.prompt { /* The translation shown as the question */
-        font-size: 1.2rem;
-        font-weight: 500;
-        margin-bottom: 5px;
-    }
-    .question-item small.instruction { /* "Впишите соответствующее слово (оригинал):" */
-        color: #555;
-        display: block;
-        margin-bottom: 10px;
-    }
-    #timer {
-        font-size: 1.2rem;
-        font-weight: bold;
-        color: var(--primary);
-        margin-bottom: 20px;
-        text-align: center;
-        padding: 10px;
-        background-color: var(--primary-light);
-        border-radius: 8px;
-        color: white;
-    }
-    .form-control {
-        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
-    }
-    .form-control:focus {
-        border-color: var(--primary);
-        box-shadow: 0 0 0 0.25rem rgba(108, 99, 255, 0.25);
-    }
-</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/test_fill_word.css') }}">
 {% endblock %}
 
 {% block content %}

@@ -1,37 +1,37 @@
 /* General */
-.container { /* Assuming .container is used as the main wrapper */
+.container {
     max-width: 800px;
     margin: auto;
-    padding-top: 20px;
+    padding-top: 20px; /* Added padding */
 }
 h1 {
     text-align: center;
     color: #333;
-    margin-bottom: 30px;
-    font-size: 2em;
+    margin-bottom: 30px; /* Increased margin */
+    font-size: 2em; /* Larger heading */
 }
 
-/* Question Header */
+/* Question Header (New Element) */
 .question-header {
     font-size: 1.2em;
     font-weight: bold;
-    margin-bottom: 15px;
+    margin-bottom: 15px; /* Increased margin */
     color: #444;
     text-align: center;
 }
 
-/* Word Container */
+/* Word Container - for overall structure of each question */
 .word-container {
     background-color: #ffffff;
-    padding: 25px;
+    padding: 25px; /* Increased padding */
     border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05); /* Softer shadow */
     margin-bottom: 25px;
-    border: 1px solid #e0e0e0;
-    transition: box-shadow 0.3s ease-in-out;
+    border: 1px solid #e0e0e0; /* Added border */
+    transition: box-shadow 0.3s ease-in-out; /* Transition for hover */
 }
 .word-container:hover {
-    box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.08); /* Slightly larger shadow on hover */
 }
 
 /* Prompt */
@@ -52,28 +52,27 @@ h1 {
     margin-bottom: 20px;
 }
 .letter-input {
-    width: 35px;
-    height: 40px;
+    width: 35px; /* Increased */
+    height: 40px; /* Increased */
     text-align: center;
     font-size: 1.4em;
-    margin: 0 4px;
+    margin: 0 4px; /* Increased */
     border: 1px solid #ccc;
     border-radius: 5px;
     box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
-    transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
-    background-color: #fdfdfd;
+    transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out; /* Added transition */
+    background-color: #fdfdfd; /* Subtle background for inputs */
 }
 .letter-input:focus {
-    border-color: #6c63ff; /* Assuming --primary color */
-    box-shadow: 0 0 0 0.2rem rgba(108, 99, 255, 0.25), inset 0 1px 2px rgba(0,0,0,0.1);
-    outline: none; /* Remove default outline */
+    border-color: #6c63ff;
+    box-shadow: 0 0 0 0.2rem rgba(108, 99, 255, 0.25), inset 0 1px 2px rgba(0,0,0,0.1); /* Keep inner shadow on focus */
 }
 .word-char {
-    margin: 0 3px;
+    margin: 0 3px; /* Increased */
     line-height: 40px; /* Match input height */
     color: #333;
-    min-width: 20px;
-    display: inline-block;
+    min-width: 20px; /* Give some space for narrow chars */
+    display: inline-block; /* For alignment */
     text-align: center;
 }
 
@@ -82,27 +81,25 @@ h1 {
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
-    margin-bottom: 30px;
+    margin-bottom: 30px; /* Increased margin */
     padding: 10px;
-    background-color: #f8f9fa;
+    background-color: #f8f9fa; /* Light background for panel from question-item */
     border-radius: 6px;
 }
 .nav-item {
-    width: 32px;
-    height: 32px;
-    border: 1px solid #ced4da;
-    margin: 4px;
-    background-color: #e9ecef;
-    color: #495057;
+    width: 32px; /* Larger */
+    height: 32px; /* Larger */
+    border: 1px solid #ced4da; /* Consistent border color */
+    margin: 4px; /* Increased margin */
+    background-color: #e9ecef; /* Slightly different background */
+    color: #495057; /* Darker text for contrast */
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 0.9em;
     border-radius: 4px;
-    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
-    font-weight: 500;
-}
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;\n    font-weight: 500;\n}
 .nav-item:hover {
     background-color: #dee2e6;
     border-color: #adb5bd;
@@ -113,24 +110,24 @@ h1 {
     color: #fff;
 }
 .nav-item.current {
-    border-color: #6c63ff; /* Assuming --primary color */
-    background-color: #e6e3ff; /* Assuming --primary-light like color */
-    color: #6c63ff;
+    border-color: #6c63ff;
+    background-color: #e6e3ff;
+    color: #6c63ff; /* Text color matches border */
     font-weight: bold;
-    box-shadow: 0 0 5px rgba(108, 99, 255, 0.5);
-    border-width: 2px;
+    box-shadow: 0 0 5px rgba(108, 99, 255, 0.5); /* Subtle glow for current */
+    border-width: 2px; /* Thicker border for current */
 }
 
 /* Timer */
 #timer {
-    font-size: 1.3em;
+    font-size: 1.3em; /* Adjusted size */
     font-weight: bold;
-    color: #495057;
-    margin-bottom: 30px;
+    color: #495057; /* Darker color for better contrast on light bg */
+    margin-bottom: 30px; /* Increased margin */
     text-align: center;
-    padding: 12px;
+    padding: 12px; /* Increased padding */
     background-color: #e9ecef;
-    border: 1px solid #ced4da;
+    border: 1px solid #ced4da; /* Added border */
     border-radius: 6px;
 }
 
@@ -140,36 +137,35 @@ h1 {
     margin-top: 25px;
     margin-bottom: 25px;
 }
-.button-container .btn { /* Assuming .btn class from Bootstrap or a base CSS */
-    margin: 0 8px;
+.button-container .btn {
+    margin: 0 8px; /* Increased space between buttons */
     padding: 10px 20px;
     font-size: 1em;
-    min-width: 100px;
+    min-width: 100px; /* Ensure buttons have a decent minimum width */
 }
-/* Example hover for primary button if not covered by Bootstrap/base */
+/* Assuming Bootstrap handles basic button styling, these are specific hover overrides if needed */
 .button-container .btn-primary:hover {
-    background-color: #564ee0; /* Darker primary */
+    background-color: #564ee0; /* Slightly darker primary */
     border-color: #4d44c4;
 }
+.button-container .btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+.button-container .btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
 .button-container .btn:active {
-    transform: translateY(1px);
+    transform: translateY(1px); /* Simple pressed effect */
 }
 
-/* Accessibility */
+/* Add a general focus outline style for accessibility if not already present */
 *:focus-visible {
     outline: 2px solid #6c63ff !important; /* Or your primary color */
     outline-offset: 2px !important;
 }
-/* Remove default outline if custom focus is handled, e.g., for .letter-input */
+/* Remove default outline if using focus-visible, for elements that have custom focus styles */
 .letter-input:focus, .button-container .btn:focus {
     outline: none;
-}
-
-/* Styles for dynamically added elements or states by JS */
-.loading-message {
-    text-align:center;
-    padding: 20px;
-}
-#submitTestBtn, #prevWordBtn, #nextWordBtn {
-    display: none; /* Default to hidden, JS will show */
 }

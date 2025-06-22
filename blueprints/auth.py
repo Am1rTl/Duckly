@@ -37,7 +37,7 @@ def login():
                 session['user_id'] = teacher.id
                 session.permanent = True
                 current_app.permanent_session_lifetime = timedelta(days=15)
-                return redirect(url_for('hello'))
+ return redirect(url_for('main.hello')) # 'hello' might need to be 'main.hello' if it also moves
             else:
                 error = 'Invalid teacher credentials'
         else:
@@ -46,7 +46,7 @@ def login():
                 session['user_id'] = user.id
                 session.permanent = True
                 current_app.permanent_session_lifetime = timedelta(days=15)
-                return redirect(url_for('hello'))
+ return redirect(url_for('main.hello'))
             else:
                 error = 'Invalid username/password'
 
@@ -101,7 +101,7 @@ def registration():
         session['user_id'] = new_user.id
         session.permanent = True
         current_app.permanent_session_lifetime = timedelta(days=15)
-        flash("Регистрация прошла успешно! Вы вошли в систему.", "success")
+ flash("Регистрация прошла успешно! Вы вошли в систему.", "success")
         return redirect(url_for('hello'))
 
     classes = [str(i) for i in range(1, 12)]
